@@ -1,9 +1,10 @@
 """CareerPilot AI backend. Run with:  uvicorn app.main:app --reload"""
 import logging
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.auth import current_uid
 from app.config import GEMINI_API_KEY
 from app.orchestrator.blackboard import SECTIONS, Blackboard
 from app.services.firebase import init_firestore
@@ -30,6 +31,12 @@ def health():
         "firestore_connected": blackboard.persistent,
         "gemini_key_set": bool(GEMINI_API_KEY),
     }
+
+
+@app.get("/me")
+def me(uid: str = Depends(current_uid)):
+    """The logged-in user's full Blackboard state."""
+    return {"uid": uid, "state": blackboard.read(uid)}
 
 
 # --- Temporary test endpoints (replaced by real agents + login on Day 3+) ---

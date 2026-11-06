@@ -1,6 +1,6 @@
-# CareerPilot AI — 30-Day Build Roadmap
+﻿# CareerPilot AI â€” 30-Day Build Roadmap
 
-Start: Sun 8 Nov 2026 · Target finish: Mon 7 Dec 2026
+Start: Sun 8 Nov 2026 Â· Target finish: Mon 7 Dec 2026
 Budget: Claude Pro ($20) + free tiers only (Firebase Spark, Gemini API free tier, Hugging Face Spaces).
 
 Tick each box when it's done and committed to git.
@@ -24,39 +24,39 @@ Tick each box when it's done and committed to git.
 
 ```
 CareerPilot AI/
-├── backend/            FastAPI + agents (Python)
-│   ├── app/
-│   │   ├── main.py
-│   │   ├── orchestrator/   blackboard.py (shared state), orchestrator.py
-│   │   ├── agents/         resume_agent.py, career_agent.py, interview_agent.py
-│   │   ├── services/       pdf_parser.py, ats_scorer.py, embeddings.py, whisper_service.py, llm.py
-│   │   └── routers/        resume.py, career.py, interview.py (incl. WebSocket)
-│   ├── data/           jobs.csv, skills.json, skill_graph.json, faiss.index
-│   └── tests/
-├── frontend/           Flutter app (web + Android)
-├── evaluation/         labelled resumes + accuracy scripts (for the report)
-└── docs/
+â”œâ”€â”€ backend/            FastAPI + agents (Python)
+â”‚   â”œâ”€â”€ app/
+â”‚   â”‚   â”œâ”€â”€ main.py
+â”‚   â”‚   â”œâ”€â”€ orchestrator/   blackboard.py (shared state), orchestrator.py
+â”‚   â”‚   â”œâ”€â”€ agents/         resume_agent.py, career_agent.py, interview_agent.py
+â”‚   â”‚   â”œâ”€â”€ services/       pdf_parser.py, ats_scorer.py, embeddings.py, whisper_service.py, llm.py
+â”‚   â”‚   â””â”€â”€ routers/        resume.py, career.py, interview.py (incl. WebSocket)
+â”‚   â”œâ”€â”€ data/           jobs.csv, skills.json, skill_graph.json, faiss.index
+â”‚   â””â”€â”€ tests/
+â”œâ”€â”€ frontend/           Flutter app (web + Android)
+â”œâ”€â”€ evaluation/         labelled resumes + accuracy scripts (for the report)
+â””â”€â”€ docs/
 ```
 
 ---
 
 ## Week 1: Foundations + Resume Intelligence Agent
-- [ ] **Day 1**: Accounts (GitHub, Firebase, Gemini API key), git, Python venv, `flutter doctor`
-- [ ] **Day 2**: FastAPI skeleton, `/health`, Blackboard state class, Firebase Admin connection
+- [x] **Day 1**: Accounts (GitHub, Firebase, Gemini API key), git, Python venv, `flutter doctor`
+- [x] **Day 2**: FastAPI skeleton, `/health`, Blackboard state class, Firebase Admin connection
 - [ ] **Day 3**: Flutter skeleton: Firebase Auth login/signup, navigation, empty dashboard
 - [ ] **Day 4**: PDF text extraction (PyMuPDF + pdfplumber) with layout info
 - [ ] **Day 5**: spaCy pipeline: skills EntityRuler, education, experience, dates, plus Gemini JSON fallback
 - [ ] **Day 6**: ATS scorecard (sections, keyword density, formatting issues, fix suggestions)
-- [ ] **Day 7**: Flutter upload screen + ATS report UI. **Milestone 1: resume → score works end-to-end**
+- [ ] **Day 7**: Flutter upload screen + ATS report UI. **Milestone 1: resume â†’ score works end-to-end**
 
 ## Week 2: Career Guide Agent
 - [ ] **Day 8**: Job-role dataset (O*NET / Kaggle) cleaned to about 300 to 1,000 roles
 - [ ] **Day 9**: Sentence-Transformers embeddings + FAISS index + `/career/match` (top 3)
 - [ ] **Day 10**: Adaptive questionnaire (asks only for what the resume is missing)
-- [ ] **Day 11**: Skill-gap (set difference) + skill DAG (networkx topological sort) → weekly roadmap
+- [ ] **Day 11**: Skill-gap (set difference) + skill DAG (networkx topological sort) â†’ weekly roadmap
 - [ ] **Day 12**: Flutter: questionnaire + career matches screens
 - [ ] **Day 13**: Flutter: interactive roadmap (tick tasks; roadmap updates)
-- [ ] **Day 14**: Buffer / bug fixing. **Milestone 2: resume → career → roadmap**
+- [ ] **Day 14**: Buffer / bug fixing. **Milestone 2: resume â†’ career â†’ roadmap**
 
 ## Week 3: Interview Coach Agent
 - [ ] **Day 15**: Question generation from blackboard (profile + target role)
@@ -78,4 +78,4 @@ CareerPilot AI/
 - [ ] **Day 29**: README, architecture diagrams, results tables for the report
 - [ ] **Day 30**: Demo video + defense rehearsal
 
-If you fall behind, cut these first: Android APK → roadmap auto-update → Gemini fallback in parsing.
+If you fall behind, cut these first: Android APK â†’ roadmap auto-update â†’ Gemini fallback in parsing.
