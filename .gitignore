@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Secrets — NEVER commit
+.env
+*.env
+firebase-key.json
+*service-account*.json
+
+# Big generated files
+backend/data/*.index
+backend/models/
+
+# Flutter
+frontend/build/
+frontend/.dart_tool/
+frontend/.flutter-plugins*
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
