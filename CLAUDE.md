@@ -18,4 +18,4 @@ The plan lives in `ROADMAP.md`. Check which day is next and update the checkboxe
 
 ## Conventions
 - Secrets live in `backend/.env` and `backend/firebase-key.json` (both git-ignored). Never print or commit them.
-- Commit after every working step.
+- Commit after every working step. Push to GitHub (`origin main`) at the end of each roadmap day; the user approved this. Run `git pull` first if teammates may have pushed.
