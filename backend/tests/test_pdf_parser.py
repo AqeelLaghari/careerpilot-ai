@@ -54,3 +54,15 @@ def test_rejects_non_pdf():
 
 def test_spaced_multiword_heading():
     assert detect_heading("T E C H N I C A L S K I L L S") == "skills"
+
+
+@pytest.mark.parametrize("line,expected", [
+    ("PERSONAL INFORMATION", "personal"),
+    ("Career History", "experience"),
+    ("Areas of Expertise", "skills"),
+    ("Workshops & Seminars", "certifications"),
+    ("Teaching Experience", "experience"),
+    ("Professional Memberships", "volunteer"),
+])
+def test_more_domain_headings(line, expected):
+    assert detect_heading(line) == expected
