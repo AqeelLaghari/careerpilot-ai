@@ -324,7 +324,7 @@ def _llm_fill(text: str) -> dict | None:
         "Extract structured data from this resume. Use empty strings or empty lists "
         "for anything not present. Do not invent information.\n\nRESUME:\n" + text[:12000]
     )
-    return llm.generate_json(prompt, _LLMResume)
+    return llm.generate_json(prompt, _LLMResume, tier="fast")
 
 
 # -------------------------------------------------------------------- main --

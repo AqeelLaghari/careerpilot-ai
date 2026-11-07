@@ -31,6 +31,8 @@ def health():
         "status": "ok",
         "firestore_connected": blackboard.persistent,
         "gemini_key_set": llm.available(),
+        "gemini_models": llm.MODELS,
+        "gemini_usage": dict(llm.usage),
     }
 
 
