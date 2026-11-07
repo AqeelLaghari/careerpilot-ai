@@ -30,7 +30,7 @@ def health():
     return {
         "status": "ok",
         "firestore_connected": blackboard.persistent,
-        "gemini_key_set": bool(GEMINI_API_KEY),
+        "gemini_key_set": GEMINI_API_KEY.startswith("AIza"),
     }
 
 

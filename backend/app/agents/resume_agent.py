@@ -11,6 +11,7 @@ Pipeline (grows over Days 4-6):
 import time
 
 from app.orchestrator.blackboard import Blackboard
+from app.services.entity_extractor import extract_entities
 from app.services.pdf_parser import extract_pdf
 
 AGENT_NAME = "resume_agent"
@@ -22,8 +23,10 @@ class ResumeAgent:
 
     def process(self, uid: str, pdf_bytes: bytes, filename: str) -> dict:
         parsed = extract_pdf(pdf_bytes)  # raises PDFError on bad files
+        entities = extract_entities(parsed["sections"], parsed["text"])
 
         result = {
+            "entities": entities,
             "filename": filename,
             "uploaded_at": time.time(),
             "text": parsed["text"],

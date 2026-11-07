@@ -1,0 +1,379 @@
+"""Step 2 of the Resume Intelligence pipeline: sections → structured entities.
+
+spaCy pipeline = en_core_web_sm (statistical NER: PERSON, ORG, GPE, DATE)
+               + an EntityRuler holding about 450 skills / 630 spellings from data/skills.json
+Rule-based extractors handle education, experience, projects, languages
+and certifications. If the rules find too little, Gemini fills only the gaps.
+"""
+import json
+import re
+from datetime import date
+from functools import lru_cache
+
+import spacy
+from dateutil import parser as dateparser
+from pydantic import BaseModel
+
+from app.config import DATA_DIR
+from app.services import llm
+
+# Single words that are also ordinary English words or names. They only
+# count when written with the exact capitalisation from skills.json.
+CASE_SENSITIVE = {
+    "REST", "Node", "Express", "Rails", "Lambda", "Shell", "Spark", "Unity", "Swift", "Rust", "Dart",
+    "Sketch", "Chef", "Puppet", "Oracle", "Chroma", "Apache", "Excel", "Jest", "Mocha", "Cucumber",
+    "Postman", "Cypress", "Playwright", "Illustrator", "Blender", "Waterfall", "Transformers",
+    "Gemini", "Whisper", "SAS", "SAP", "DOM", "Vite", "Sales", "Kafka", "Helm", "Looker", "Prisma",
+}
+LIST_CONTEXT = {",", "/", "|", "(", ")", "and", "&", ";", ":", "•", "·"}
+BULLET_RE = re.compile(r"^\s*[•\-\*▪●◦‣–o]\s+")
+
+
+def _prep(text: str) -> str:
+    """Put spaces around separators so 'Python/Django|SQL' tokenizes cleanly."""
+    text = re.sub(r"(?<=\w)/(?=\w)", " / ", text)
+    return re.sub(r"\s*([|•·])\s*", r" \1 ", text)
+
+
+# ------------------------------------------------------------- spaCy model --
+@lru_cache(maxsize=1)
+def get_nlp():
+    nlp = spacy.load("en_core_web_sm", disable=["lemmatizer"])
+    ruler = nlp.add_pipe("entity_ruler", before="ner", config={"phrase_matcher_attr": None})
+    vocab = json.loads((DATA_DIR / "skills.json").read_text(encoding="utf-8"))
+    patterns = []
+    for category, entries in vocab.items():
+        if category.startswith("_"):
+            continue
+        for entry in entries:
+            needs_context = entry.startswith("!")
+            names = entry.lstrip("!").split("|")
+            canonical = names[0]
+            for alias in names:
+                tokens = nlp.make_doc(_prep(alias))
+                exact = needs_context or alias in CASE_SENSITIVE
+                key = "ORTH" if exact else "LOWER"
+                pattern = [{key: t.text if exact else t.lower_} for t in tokens if not t.is_space]
+                skill_id = f"{category}::{canonical}" + ("::ctx" if needs_context else "")
+                patterns.append({"label": "SKILL", "pattern": pattern, "id": skill_id})
+    ruler.add_patterns(patterns)
+    return nlp
+
+
+def _has_list_context(ent) -> bool:
+    doc = ent.doc
+    prev = doc[ent.start - 1].text if ent.start > 0 else ""
+    nxt = doc[ent.end].text if ent.end < len(doc) else ""
+    if nxt in {"&", "'s"}:  # "R&D", "C's"
+        return False
+    return prev in LIST_CONTEXT or nxt in LIST_CONTEXT
+
+
+def find_skills(text: str, in_skills_section: bool = False) -> dict[str, dict]:
+    """Return {canonical: {category, mentions}} for skills in text."""
+    found: dict[str, dict] = {}
+    for ent in get_nlp()(_prep(text)).ents:
+        if ent.label_ != "SKILL":
+            continue
+        category, canonical, *flag = ent.ent_id_.split("::")
+        if flag and not (in_skills_section or _has_list_context(ent)):
+            continue
+        item = found.setdefault(canonical, {"category": category, "mentions": 0})
+        item["mentions"] += 1
+    return found
+
+
+# ------------------------------------------------------------------- dates --
+MONTH = (r"(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?|"
+         r"Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?")
+DATE = rf"(?:{MONTH},?\s+\d{{4}}|\d{{1,2}}/\d{{4}}|\d{{4}})"
+PRESENT = r"(?:Present|Current|Currently|Now|Ongoing|Till\s+Date|To\s+Date|Date)"
+RANGE_RE = re.compile(rf"({DATE})\s*(?:–|—|-|to|until|till)\s*({DATE}|{PRESENT})", re.I)
+YEAR_RE = re.compile(r"\b(19[89]\d|20[0-4]\d)\b")
+
+
+def _to_date(s: str) -> date | None:
+    s = s.strip()
+    if re.fullmatch(PRESENT, s, re.I):
+        return date.today()
+    try:
+        if re.fullmatch(r"\d{4}", s):
+            return date(int(s), 1, 1)
+        return dateparser.parse(s, default=dateparser.parse("2000-01-01")).date()
+    except (ValueError, OverflowError):
+        return None
+
+
+def _months_between(a: date, b: date) -> int:
+    return max(0, (b.year - a.year) * 12 + (b.month - a.month) + 1)
+
+
+# --------------------------------------------------------------- education --
+DEGREE_PATTERNS = [
+    ("PhD", re.compile(r"\b(Ph\.?\s?D|Doctorate|Doctor of Philosophy)\b", re.I)),
+    ("Masters", re.compile(r"\b(MBA|M\.?Phil|MSc|M\.Sc|MSCS|MS(?=\s+(in|of|-)\b)|M\.S\.|M\.?Tech|ME(?=\s+in\b)|Master'?s?)\b")),
+    ("Bachelors", re.compile(r"\b(BSc|B\.Sc|BSCS|BSSE|BSIT|BSE|BS|B\.S\.|BE|B\.E\.|B\.?Tech|BBA|BCS|Bachelor'?s?)\b")),
+    ("Intermediate", re.compile(r"\b(F\.?Sc|FSc|ICS|I\.Com|HSSC|Intermediate|A[\s-]?Levels?)\b", re.I)),
+    ("Matriculation", re.compile(r"\b(Matric(?:ulation)?|SSC|O[\s-]?Levels?)\b", re.I)),
+]
+INSTITUTION_RE = re.compile(
+    r"((?:[A-Z][\w.&'-]*\s+){0,5}(?:University|Institute|College|School|Academy|Polytechnic)"
+    r"(?:\s+of\s+(?:[A-Z][\w.&'-]*\s?){1,4})?(?:,?\s+[A-Z][a-z]+)?)"
+    r"|\b(NUST|LUMS|IBA|FAST(?:-NUCES)?|NUCES|NED|COMSATS|GIKI|SZABIST|UET|PIEAS|KU|SSUET|PAF-KIET)\b"
+)
+FIELD_RE = re.compile(r"\b(?:of|in)\s+([A-Z][A-Za-z &]+?)(?=\s*(?:[,·|–\-(]|\bfrom\b|\bat\b|$))")
+CGPA_RE = re.compile(r"\b(?:C?GPA)\s*[:\-]?\s*([0-4]\.\d{1,2})(?:\s*/\s*4(?:\.0+)?)?", re.I)
+PERCENT_RE = re.compile(r"\b(\d{2}(?:\.\d+)?)\s*%")
+
+
+def extract_education(text: str) -> list[dict]:
+    entries: list[dict] = []
+    for line in text.splitlines():
+        clean = BULLET_RE.sub("", line).strip()
+        if not clean:
+            continue
+        level = next((lvl for lvl, rx in DEGREE_PATTERNS if rx.search(clean)), None)
+        inst = INSTITUTION_RE.search(clean)
+        if level or (inst and not entries):
+            field = FIELD_RE.search(clean)
+            years = YEAR_RE.findall(clean)
+            entries.append({
+                "degree_level": level,
+                "degree": clean.split("·")[0].split(" - ")[0].strip()[:120] if level else None,
+                "field": field.group(1).strip() if field else None,
+                "institution": (inst.group(0).strip(" ,") if inst else None),
+                "start_year": int(years[0]) if len(years) > 1 else None,
+                "end_year": int(years[-1]) if years else None,
+                "expected": bool(re.search(r"\bexpected\b|\bin progress\b|\bongoing\b", clean, re.I)),
+                "cgpa": None, "percentage": None,
+            })
+            cur = entries[-1]
+        elif entries:
+            cur = entries[-1]
+            if not cur["institution"] and inst:
+                cur["institution"] = inst.group(0).strip(" ,")
+            if not cur["end_year"] and (y := YEAR_RE.findall(clean)):
+                cur["end_year"] = int(y[-1])
+        else:
+            continue
+        if (g := CGPA_RE.search(clean)) and not cur["cgpa"]:
+            cur["cgpa"] = float(g.group(1))
+        if (p := PERCENT_RE.search(clean)) and not cur["percentage"]:
+            cur["percentage"] = float(p.group(1))
+    return entries
+
+
+# -------------------------------------------------------------- experience --
+def _split_title_company(text: str) -> tuple[str, str | None]:
+    for sep in (" at ", " @ ", " | ", " · ", " — ", " – ", " - ", ", "):
+        if sep in text:
+            a, b = text.split(sep, 1)
+            return a.strip(), b.strip()
+    return text.strip(), None
+
+
+def extract_experience(text: str) -> list[dict]:
+    """Each line containing a date range starts a new job entry."""
+    entries: list[dict] = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        is_bullet = bool(BULLET_RE.match(stripped))
+        rng = None if is_bullet else RANGE_RE.search(stripped)
+        if rng:
+            start, end = _to_date(rng.group(1)), _to_date(rng.group(2))
+            head = (stripped[:rng.start()] + stripped[rng.end():]).strip(" ,|·–-()")
+            title, company = _split_title_company(head) if head else ("", None)
+            entries.append({
+                "title": title or None, "company": company,
+                "start": rng.group(1), "end": rng.group(2),
+                "current": bool(re.fullmatch(PRESENT, rng.group(2).strip(), re.I)),
+                "months": _months_between(start, end) if start and end else None,
+                "bullets": [], "_start": start, "_end": end,
+            })
+        elif entries:
+            cur = entries[-1]
+            if is_bullet:
+                cur["bullets"].append(BULLET_RE.sub("", stripped))
+            elif not cur["bullets"] and cur["company"] is None:
+                cur["company"] = stripped.split("·")[0].strip()
+            elif not cur["bullets"] and not cur["title"]:
+                cur["title"] = stripped
+            elif cur["bullets"]:
+                cur["bullets"][-1] += " " + stripped  # wrapped bullet line
+    return entries
+
+
+def total_experience_months(entries: list[dict]) -> int:
+    """Count each calendar month once, so overlapping jobs aren't double counted."""
+    months: set[tuple[int, int]] = set()
+    for e in entries:
+        a, b = e.get("_start"), e.get("_end")
+        if not a or not b or b < a:
+            continue
+        y, m = a.year, a.month
+        while (y, m) <= (b.year, b.month):
+            months.add((y, m))
+            y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    return len(months)
+
+
+# ---------------------------------------------------------------- projects --
+def extract_projects(text: str) -> list[dict]:
+    projects: list[dict] = []
+    for line in text.splitlines():
+        s = line.strip()
+        if not s:
+            continue
+        if BULLET_RE.match(s):
+            if projects:
+                projects[-1]["description"].append(BULLET_RE.sub("", s))
+        elif not projects or projects[-1]["description"] or len(s.split()) <= 10:
+            if projects and not projects[-1]["description"] and len(s.split()) > 10:
+                projects[-1]["description"].append(s)
+                continue
+            title = YEAR_RE.sub("", s).strip(" |·–-()")
+            projects.append({"title": title[:100], "description": []})
+        else:
+            projects[-1]["description"].append(s)
+    for p in projects:
+        p["skills"] = sorted(find_skills(p["title"] + "\n" + "\n".join(p["description"])))
+    return projects
+
+
+# ------------------------------------------------------------- misc fields --
+LANGUAGES = ["English", "Urdu", "Punjabi", "Sindhi", "Pashto", "Balochi", "Saraiki", "Arabic", "French",
+             "German", "Chinese", "Mandarin", "Spanish", "Turkish", "Persian", "Hindi", "Japanese", "Korean",
+             "Italian", "Russian", "Portuguese"]
+LANG_RE = re.compile(r"\b(" + "|".join(LANGUAGES) + r")\b")
+NAME_RE = re.compile(r"^[A-Z][a-zA-Z.'-]+(?:\s+[A-Z][a-zA-Z.'-]+){1,3}$")
+PK_CITIES = ["Karachi", "Lahore", "Islamabad", "Rawalpindi", "Faisalabad", "Multan", "Peshawar", "Quetta",
+             "Hyderabad", "Sialkot", "Gujranwala", "Sukkur"]
+
+
+def extract_name_headline_location(header: str) -> tuple[str | None, str | None, str | None]:
+    lines = [l.strip() for l in header.splitlines() if l.strip()]
+    name = next((l for l in lines[:3] if NAME_RE.match(l)), None)
+    headline = None
+    if name:
+        idx = lines.index(name)
+        if idx + 1 < len(lines):
+            cand = lines[idx + 1]
+            if not re.search(r"[@\d|]|linkedin|github|http", cand, re.I) and len(cand.split()) <= 10:
+                headline = cand
+    doc = get_nlp()(header)
+    if not name:
+        name = next((e.text for e in doc.ents if e.label_ == "PERSON"), None)
+    gpes = []
+    for e in doc.ents:
+        if e.label_ == "GPE" and e.text not in gpes:
+            gpes.append(e.text)
+    location = ", ".join(gpes[:2]) or next((c for c in PK_CITIES if c in header), None)
+    return name, headline, location
+
+
+def extract_languages(sections: dict[str, str]) -> list[str]:
+    text = sections.get("languages", "")
+    text += "\n" + "\n".join(l for l in "\n".join(sections.values()).splitlines() if "language" in l.lower())
+    return sorted(set(LANG_RE.findall(text)))
+
+
+def _lines(text: str, limit: int = 15) -> list[str]:
+    return [BULLET_RE.sub("", l).strip() for l in text.splitlines() if l.strip()][:limit]
+
+
+# --------------------------------------------------------- Gemini fallback --
+class _LLMJob(BaseModel):
+    title: str
+    company: str
+    start: str
+    end: str
+    bullets: list[str]
+
+
+class _LLMEdu(BaseModel):
+    degree: str
+    field: str
+    institution: str
+    end_year: int
+
+
+class _LLMResume(BaseModel):
+    name: str
+    skills: list[str]
+    experience: list[_LLMJob]
+    education: list[_LLMEdu]
+
+
+def _llm_fill(text: str) -> dict | None:
+    prompt = (
+        "Extract structured data from this resume. Use empty strings or empty lists "
+        "for anything not present. Do not invent information.\n\nRESUME:\n" + text[:12000]
+    )
+    return llm.generate_json(prompt, _LLMResume)
+
+
+# -------------------------------------------------------------------- main --
+def extract_entities(sections: dict[str, str], full_text: str) -> dict:
+    skills: dict[str, dict] = {}
+    for sec_name, sec_text in sections.items():
+        for name, info in find_skills(sec_text, in_skills_section=(sec_name == "skills")).items():
+            item = skills.setdefault(name, {"name": name, "category": info["category"],
+                                            "mentions": 0, "sections": []})
+            item["mentions"] += info["mentions"]
+            item["sections"].append(sec_name)
+
+    name, headline, location = extract_name_headline_location(sections.get("header", ""))
+    education = extract_education(sections.get("education", ""))
+    experience = extract_experience(sections.get("experience", ""))
+    total_months = total_experience_months(experience)
+
+    # Gemini fills ONLY what the rules missed
+    llm_used: list[str] = []
+    needs = {
+        "name": not name,
+        "skills": len(skills) < 3,
+        "experience": "experience" in sections and not experience,
+        "education": "education" in sections and not education,
+    }
+    if any(needs.values()) and (data := _llm_fill(full_text)):
+        if needs["name"] and data.get("name"):
+            name, llm_used = data["name"], llm_used + ["name"]
+        if needs["skills"]:
+            for s in data.get("skills", []):
+                hit = find_skills(s, in_skills_section=True)
+                canon, info = next(iter(hit.items())) if hit else (s.strip(), {"category": "other"})
+                skills.setdefault(canon, {"name": canon, "category": info["category"],
+                                          "mentions": 1, "sections": ["llm"]})
+            llm_used.append("skills")
+        if needs["experience"] and data.get("experience"):
+            experience = [{**j, "current": bool(re.fullmatch(PRESENT, j["end"], re.I)), "months": None}
+                          for j in data["experience"]]
+            llm_used.append("experience")
+        if needs["education"] and data.get("education"):
+            education = [{"degree_level": None, "degree": e["degree"], "field": e["field"],
+                          "institution": e["institution"], "end_year": e["end_year"] or None,
+                          "start_year": None, "expected": False, "cgpa": None, "percentage": None}
+                         for e in data["education"]]
+            llm_used.append("education")
+
+    for e in experience:  # internal date objects aren't JSON/Firestore friendly
+        e.pop("_start", None)
+        e.pop("_end", None)
+
+    return {
+        "name": name,
+        "headline": headline,
+        "location": location,
+        "skills": sorted(skills.values(), key=lambda s: (-s["mentions"], s["name"])),
+        "education": education,
+        "experience": experience,
+        "total_experience_months": total_months,
+        "projects": extract_projects(sections.get("projects", "")),
+        "certifications": _lines(sections.get("certifications", "")),
+        "achievements": _lines(sections.get("achievements", "")),
+        "languages": extract_languages(sections),
+        "extraction_method": "spacy+rules" + ("+gemini" if llm_used else ""),
+        "llm_filled": llm_used,
+    }

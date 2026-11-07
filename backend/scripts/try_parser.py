@@ -21,3 +21,22 @@ print("\nHEADINGS FOUND:", result["headings_found"])
 for name, text in result["sections"].items():
     preview = text[:300] + ("..." if len(text) > 300 else "")
     print(f"\n--- [{name.upper()}] ---\n{preview}")
+
+# ---- Day 5: entities ----
+from app.services.entity_extractor import extract_entities  # noqa: E402
+
+e = extract_entities(result["sections"], result["text"])
+print("\n" + "=" * 60 + "\nENTITIES")
+print(f"Name: {e['name']}\nHeadline: {e['headline']}\nLocation: {e['location']}")
+print(f"Method: {e['extraction_method']}   Total experience: {e['total_experience_months']} months")
+print("\nSKILLS:", ", ".join(f"{s['name']}({s['mentions']})" for s in e["skills"]))
+print("\nEXPERIENCE:")
+for j in e["experience"]:
+    print(f"  - {j['title']} @ {j['company']} | {j['start']} – {j['end']} | {j['months']} months | {len(j['bullets'])} bullets")
+print("\nEDUCATION:")
+for d in e["education"]:
+    print(f"  - [{d['degree_level']}] {d['degree']} | field: {d['field']} | {d['institution']} | {d['end_year']} | CGPA {d['cgpa']}")
+print("\nPROJECTS:")
+for p in e["projects"]:
+    print(f"  - {p['title']}  →  {', '.join(p['skills'])}")
+print("\nLanguages:", e["languages"], "\nCertifications:", e["certifications"])
