@@ -40,3 +40,17 @@ print("\nPROJECTS:")
 for p in e["projects"]:
     print(f"  - {p['title']}  →  {', '.join(p['skills'])}")
 print("\nLanguages:", e["languages"], "\nCertifications:", e["certifications"])
+
+# ---- Day 6: ATS scorecard (Layer 1) ----
+from app.services.ats_scorer import score_resume  # noqa: E402
+
+ats = score_resume(result, e)
+print("\n" + "=" * 60 + f"\nATS READABILITY: {ats['readability_score']}/100  ({ats['grade']})")
+for cat in ats["categories"]:
+    print(f"\n  {cat['name']}: {cat['score']:g}/{cat['max']}")
+    for c in cat["checks"]:
+        mark = "OK " if c["passed"] else "!! "
+        print(f"    {mark}{c['label']} ({c['points']:g}/{c['max_points']:g}): {c['message']}")
+print("\nTOP FIXES:")
+for f in ats["top_fixes"]:
+    print(f"  [{f['severity']}] +{f['points_available']:g} pts  {f['fix']}")
