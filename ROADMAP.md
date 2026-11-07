@@ -40,6 +40,25 @@ CareerPilot AI/
 
 ---
 
+## CV collection checkpoints (all domains, no compromise)
+Goal: about 40 CVs in `evaluation/resumes/` covering every domain below, in many formats.
+- **By Day 7:** 10 CVs (different domains + formats) to catch parser bugs early
+- **By Day 14:** 25 CVs; every domain row has at least 1
+- **By Day 23:** 40 CVs; 25 hand-labelled for the accuracy/F1 table
+
+| Domain group | Examples |
+|---|---|
+| Software | web frontend, backend, full-stack, mobile, game dev, embedded/IoT |
+| Data & AI | data science, ML/AI, data analyst, data engineer |
+| Infra & security | DevOps ✓, cloud, networking, cybersecurity, sysadmin |
+| Quality & product | QA/testing, product/project manager, business analyst |
+| Design | UI/UX, graphic design |
+| Business | marketing/digital marketing, sales, finance/accounting, HR |
+| Other | teaching, healthcare, engineering (mech/electrical/civil), fresh grad with no experience |
+
+Formats to include: 1-column, 2-column, Canva/designed, Word export, with photo, 2+ pages, scanned image.
+Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan Bhawal, 24 categories).
+
 ## Week 1: Foundations + Resume Intelligence Agent
 - [x] **Day 1**: Accounts (GitHub, Firebase, Gemini API key), git, Python venv, `flutter doctor`
 - [x] **Day 2**: FastAPI skeleton, `/health`, Blackboard state class, Firebase Admin connection

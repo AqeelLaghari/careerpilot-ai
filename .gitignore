@@ -25,3 +25,7 @@ frontend/.flutter-plugins*
 .idea/
 Thumbs.db
 .DS_Store
+
+# Private test CVs (personal data)
+evaluation/resumes/*
+!evaluation/resumes/README.md
