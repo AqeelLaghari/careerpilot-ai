@@ -3,12 +3,13 @@ import pymupdf
 import pytest
 
 
-def _make_pdf(rows: list[tuple[float, float, str, float]]) -> bytes:
-    """rows = (x, y, text, fontsize) on one A4 page."""
+def _make_pdf(rows: list[tuple]) -> bytes:
+    """rows = (x, y, text, fontsize) or (x, y, text, fontsize, font) on one A4 page.
+    font: "helv" (regular, default) or "hebo" (bold)."""
     doc = pymupdf.open()
     page = doc.new_page(width=595, height=842)
-    for x, y, text, size in rows:
-        page.insert_text((x, y), text, fontsize=size)
+    for x, y, text, size, *font in rows:
+        page.insert_text((x, y), text, fontsize=size, fontname=font[0] if font else "helv")
     data = doc.tobytes()
     doc.close()
     return data

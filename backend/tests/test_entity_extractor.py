@@ -107,3 +107,45 @@ def test_project_wrapped_lines_not_titles():
     projects = extract_projects(text)
     assert [p["title"] for p in projects] == ["Distributed Task Manager", "E-Commerce Platform on AWS (Team Project)"]
     assert "Grafana" in projects[0]["skills"]
+
+
+# ---- fixes from the 10-CV batch test (Day 7 checkpoint) ----
+def test_experience_single_year_header():
+    text = ("Fauji Fertilizer Company (FFC) | IT Department Intern (2025)\n"
+            "• Analyzed departmental workflows and reporting systems.\n"
+            "Indus Hospital – Karachi | Volunteer Team Leader (2021)\n"
+            "• Led a 3-member team coordinating patient outreach.")
+    jobs = extract_experience(text)
+    assert len(jobs) == 2
+    assert jobs[0]["start"] == "2025" and jobs[0]["months"] is None
+    assert len(jobs[1]["bullets"]) == 1
+
+
+def test_experience_no_dates_with_wrapped_bullets():
+    text = ("National Bank of Pakistan (NBP) - IT Intern | Head Office, Karachi | 6-Week Internship\n"
+            "• Rotated through the ADC and MIS units, gaining practical\n"
+            "exposure to banking IT operations.\n"
+            "• Developed a Bank Operations Desk Portal using C# and SQL Server.")
+    jobs = extract_experience(text)
+    assert len(jobs) == 1
+    assert len(jobs[0]["bullets"]) == 2 and "exposure" in jobs[0]["bullets"][0]
+
+
+def test_experience_dates_on_next_line():
+    text = ("Software Engineer | Systems Ltd\n"
+            "Jan 2022 - Present\n"
+            "• Built payment services.")
+    jobs = extract_experience(text)
+    assert len(jobs) == 1 and jobs[0]["title"] == "Software Engineer" and jobs[0]["current"]
+
+
+def test_single_word_name():
+    from app.services.entity_extractor import extract_name_headline_location
+    name, headline, _ = extract_name_headline_location("AQEEL\nData Analytics and AI\nKarachi, Pakistan")
+    assert name == "AQEEL" and headline == "Data Analytics and AI"
+
+
+def test_non_tech_domain_skills():
+    found = find_skills("SEO, Google Ads, Bookkeeping, AutoCAD, Lesson Planning, Recruitment, Patient Care, Typography",
+                        in_skills_section=True)
+    assert {"Google Ads", "Bookkeeping", "AutoCAD", "Lesson Planning", "Recruitment", "Patient Care", "Typography"} <= set(found)

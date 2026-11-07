@@ -16,6 +16,7 @@ from pydantic import BaseModel
 
 from app.config import DATA_DIR
 from app.services import llm
+from app.services.pdf_parser import detect_heading
 
 # Single words that are also ordinary English words or names. They only
 # count when written with the exact capitalisation from skills.json.
@@ -172,8 +173,31 @@ def _split_title_company(text: str) -> tuple[str, str | None]:
     return text.strip(), None
 
 
+SINGLE_DATE_RE = re.compile(rf"\(?\s*({DATE}|{PRESENT})\s*\)?\s*$", re.I)
+_HEADER_SEPS = (" | ", " - ", " – ", " — ", " at ", " @ ")
+
+
+def _looks_like_job_header(line: str) -> bool:
+    """'Fauji Fertilizer (FFC) | IT Intern (2025)' or 'NBP - IT Intern | Karachi':
+    a short, capitalised, non-sentence line with a separator or a trailing year."""
+    return (len(line.split()) <= 20 and line[0].isupper() and not line.endswith((".", ",", ";"))
+            and (any(sep in line for sep in _HEADER_SEPS) or bool(SINGLE_DATE_RE.search(line))))
+
+
+def _new_entry(title, company, start_s, end_s, single: bool = False) -> dict:
+    start, end = (_to_date(start_s) if start_s else None), (_to_date(end_s) if end_s else None)
+    return {
+        "title": title or None, "company": company, "start": start_s, "end": end_s,
+        "current": bool(end_s and re.fullmatch(PRESENT, end_s.strip(), re.I)),
+        "months": _months_between(start, end) if start and end and not single else None,
+        "bullets": [], "_start": start, "_end": end,
+    }
+
+
 def extract_experience(text: str) -> list[dict]:
-    """Each line containing a date range starts a new job entry."""
+    """A line with a date range starts a new job entry. A short header-like line
+    ('Company | Role (2025)', 'Company - Role') also starts one when it comes
+    first or right after the previous job's bullets."""
     entries: list[dict] = []
     for line in text.splitlines():
         stripped = line.strip()
@@ -181,17 +205,23 @@ def extract_experience(text: str) -> list[dict]:
             continue
         is_bullet = bool(BULLET_RE.match(stripped))
         rng = None if is_bullet else RANGE_RE.search(stripped)
+        if (not rng and not is_bullet and (not entries or entries[-1]["bullets"])
+                and _looks_like_job_header(stripped)):
+            single = SINGLE_DATE_RE.search(stripped)
+            head = stripped[:single.start()] if single else stripped
+            title, company = _split_title_company(head.strip(" ,|·–-()"))
+            when = single.group(1) if single else None
+            entries.append(_new_entry(title, company, when, when, single=True))
+            continue
         if rng:
-            start, end = _to_date(rng.group(1)), _to_date(rng.group(2))
             head = (stripped[:rng.start()] + stripped[rng.end():]).strip(" ,|·–-()")
             title, company = _split_title_company(head) if head else ("", None)
-            entries.append({
-                "title": title or None, "company": company,
-                "start": rng.group(1), "end": rng.group(2),
-                "current": bool(re.fullmatch(PRESENT, rng.group(2).strip(), re.I)),
-                "months": _months_between(start, end) if start and end else None,
-                "bullets": [], "_start": start, "_end": end,
-            })
+            last = entries[-1] if entries else None
+            if last and not last["bullets"] and not last["start"] and not head:
+                # 'Role | Company' line, then the dates on the next line → same job
+                entries[-1] = _new_entry(last["title"], last["company"], rng.group(1), rng.group(2))
+            else:
+                entries.append(_new_entry(title, company, rng.group(1), rng.group(2)))
         elif entries:
             cur = entries[-1]
             if is_bullet:
@@ -268,6 +298,9 @@ PK_CITIES = ["Karachi", "Lahore", "Islamabad", "Rawalpindi", "Faisalabad", "Mult
 def extract_name_headline_location(header: str) -> tuple[str | None, str | None, str | None]:
     lines = [l.strip() for l in header.splitlines() if l.strip()]
     name = next((l for l in lines[:3] if NAME_RE.match(l)), None)
+    # A one-word name ("AQEEL") on the very first line
+    if not name and lines and re.fullmatch(r"[A-Z][A-Za-z'-]{2,20}", lines[0]) and not detect_heading(lines[0]):
+        name = lines[0]
     headline = None
     if name:
         idx = lines.index(name)

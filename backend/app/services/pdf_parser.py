@@ -61,7 +61,15 @@ SECTION_HEADINGS = {
     "personal": ["personal information", "personal details", "personal data", "personal profile",
                  "personal info", "contact", "contact information", "contact details"],
 }
+# Singular forms ("ACHIEVEMENT", "REFERENCE", "PROJECT") are common on templates
+SINGULARS = {"achievement": "achievements", "award": "achievements", "reference": "references",
+             "project": "projects", "certification": "certifications", "certificate": "certifications",
+             "skill": "skills", "publication": "publications", "hobby": "interests", "interest": "interests",
+             "activity": "volunteer", "key achievement": "achievements", "academic project": "projects",
+             "personal project": "projects", "work experiences": "experience", "experiences": "experience",
+             "educations": "education", "course": "certifications", "honor": "achievements", "accomplishment": "achievements"}
 _HEADING_LOOKUP = {h: canon for canon, names in SECTION_HEADINGS.items() for h in names}
+_HEADING_LOOKUP.update({k: v for k, v in SINGULARS.items() if k not in _HEADING_LOOKUP})
 # "T E C H N I C A L S K I L L S" collapses to "technicalskills", so we also look up without spaces
 _HEADING_NOSPACE = {h.replace(" ", ""): canon for h, canon in _HEADING_LOOKUP.items()}
 
@@ -117,6 +125,38 @@ def extract_contact(text: str, links: list[str]) -> dict:
 
 
 # ------------------------------------------------------------------ layout --
+ZERO_WIDTH_RE = re.compile(r"[​‌‍⁠﻿­]")
+# Word/Canva bullets often come from Symbol/Wingdings fonts as private-use characters
+BULLET_GLYPHS = "▪■●◦‣➢►❖➔✓✔∙◆◇⁃"
+_BULLET_GLYPH_RE = re.compile(f"^[{BULLET_GLYPHS}]\\s*")
+
+
+def _clean_text(text: str) -> str:
+    text = ZERO_WIDTH_RE.sub("", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    text = _BULLET_GLYPH_RE.sub("• ", text)          # odd bullet glyphs → "• "
+    return re.sub(r"(?<=\w)//(?=\w)", "/", text)     # "CI//CD" → "CI/CD" (URLs keep "https://")
+
+
+def _attach_lone_bullets(lines: list[dict]) -> list[dict]:
+    """Some PDFs draw the bullet '•' as a separate line next to its text. Glue it on."""
+    bullets = [ln for ln in lines if ln["text"] in ("•", "-", "–", "*", "o")
+               and ln["x1"] - ln["x0"] < 12]
+    if not bullets:
+        return lines
+    drop = set()
+    for b in bullets:
+        near = [ln for ln in lines if ln is not b and ln["page"] == b["page"]
+                and ln["x0"] > b["x0"] and ln["x0"] - b["x1"] < 25 and abs(ln["y0"] - b["y0"]) <= 6]
+        if near:
+            target = min(near, key=lambda ln: (abs(ln["y0"] - b["y0"]), ln["x0"]))
+            if not target["text"].startswith("•"):
+                target["text"] = "• " + target["text"]
+            target["x0"] = min(target["x0"], b["x0"])
+            drop.add(id(b))
+    return [ln for ln in lines if id(ln) not in drop]
+
+
 def _read_lines(doc) -> tuple[list[dict], int, list[str], set[str]]:
     """Every non-empty text line with page, position, size, bold."""
     lines, images, links, fonts = [], 0, [], set()
@@ -127,11 +167,12 @@ def _read_lines(doc) -> tuple[list[dict], int, list[str], set[str]]:
             if block["type"] != 0:
                 continue
             for line in block["lines"]:
-                spans = [s for s in line["spans"] if s["text"].strip()]
+                spans = [s for s in line["spans"] if ZERO_WIDTH_RE.sub("", s["text"]).strip()]
                 if not spans:
                     continue
-                text = re.sub(r"\s+", " ", "".join(s["text"] for s in line["spans"])).strip()
-                text = re.sub(r"(?<=\w)//(?=\w)", "/", text)  # "CI//CD" → "CI/CD" (URLs keep "https://")
+                text = _clean_text("".join(s["text"] for s in line["spans"]))
+                if not text:
+                    continue
                 for s in spans:
                     fonts.add(re.sub(r"[-,].*$", "", s["font"]))  # "Calibri-Bold" → "Calibri"
                 x0, y0, x1, y1 = line["bbox"]
@@ -141,19 +182,79 @@ def _read_lines(doc) -> tuple[list[dict], int, list[str], set[str]]:
                     "bold": any((s["flags"] & 16) or "bold" in s["font"].lower() for s in spans),
                     "page_width": page.rect.width,
                 })
-    return lines, images, links, fonts
+    return _attach_lone_bullets(lines), images, links, fonts
+
+
+# ----------------------------------------------------------------- columns --
+# How column detection works:
+# A "gutter" is a vertical line x = g that text does not cross. For each candidate g
+# we cut the page into horizontal bands at every line that DOES cross g (titles,
+# full-width paragraphs). A band is two-column if it has real content on both sides
+# of g. We pick the g whose two-column bands cover the most lines. This handles
+# full two-column CVs (Canva templates) and CVs where only one part is side by side
+# (e.g. EDUCATION | LANGUAGES at the bottom).
+
+def _bands(page_lines: list[dict], g: float) -> list[tuple[bool, list[dict]]]:
+    """Split lines into bands at lines crossing x=g. Returns [(is_two_column, lines)]."""
+    out, band = [], []
+    for ln in sorted(page_lines, key=lambda l: (l["y0"], l["x0"])):
+        if ln["x0"] < g - 1 and ln["x1"] > g + 1:   # crosses the gutter → separator
+            if band:
+                out.append(band)
+                band = []
+            out.append([ln])
+        else:
+            band.append(ln)
+    if band:
+        out.append(band)
+    result = []
+    for b in out:
+        # The two-column part starts where BOTH sides have text; lines above that
+        # (e.g. a normal single-column CV above an EDUCATION | LANGUAGES strip) stay single.
+        left_y = [ln["y0"] for ln in b if ln["x1"] <= g + 1]
+        right_y = [ln["y0"] for ln in b if ln["x0"] >= g - 1]
+        if left_y and right_y:
+            start = max(min(left_y), min(right_y)) - 2
+            prefix = [ln for ln in b if ln["y0"] < start]
+            if prefix:
+                result.append((False, prefix))
+                b = [ln for ln in b if ln["y0"] >= start]
+        result.append((_band_is_two_column(b, g), b))
+    return result
+
+
+def _band_is_two_column(band: list[dict], g: float) -> bool:
+    left = [ln for ln in band if ln["x1"] <= g + 1]
+    right = [ln for ln in band if ln["x0"] >= g - 1]
+    if len(left) < 3 or len(right) < 3:
+        return False
+    # Right-aligned dates/locations of a normal CV are few and short; a real column
+    # either starts with a section heading or holds a fair share of the text.
+    right_chars = sum(len(ln["text"]) for ln in right)
+    total_chars = right_chars + sum(len(ln["text"]) for ln in left)
+    has_heading = any(detect_heading(ln["text"]) for ln in right)
+    return has_heading or (len(right) >= 5 and right_chars >= 0.2 * total_chars)
+
+
+def _best_gutter(page_lines: list[dict]) -> tuple[float | None, list[tuple[bool, list[dict]]]]:
+    if len(page_lines) < 6:
+        return None, []
+    w = page_lines[0]["page_width"]
+    best, best_cover, best_bands = None, 0, []
+    for g in range(int(0.2 * w), int(0.75 * w), 3):
+        bands = _bands(page_lines, g)
+        cover = sum(len(b) for two, b in bands if two)
+        if cover > best_cover:
+            best, best_cover, best_bands = g, cover, bands
+    return best, best_bands
 
 
 def _is_two_column(page_lines: list[dict]) -> bool:
-    """Two-column if several long lines start in the right half of the page.
-    (Right-aligned dates on a normal resume are short, so they don't count.)"""
-    if not page_lines:
+    """True if most of the page is laid out in two columns."""
+    g, bands = _best_gutter(page_lines)
+    if g is None:
         return False
-    w = page_lines[0]["page_width"]
-    long_right = [ln for ln in page_lines if ln["x0"] > 0.38 * w and (ln["x1"] - ln["x0"]) > 0.22 * w]
-    long_left_narrow = [ln for ln in page_lines if ln["x0"] < 0.3 * w and ln["x1"] < 0.62 * w
-                        and (ln["x1"] - ln["x0"]) > 0.12 * w]
-    return len(long_right) >= 5 and len(long_left_narrow) >= 5
+    return sum(len(b) for two, b in bands if two) >= 0.4 * len(page_lines)
 
 
 def _merge_rows(lines: list[dict]) -> list[dict]:
@@ -172,29 +273,58 @@ def _merge_rows(lines: list[dict]) -> list[dict]:
 
 
 def _reading_order(lines: list[dict]) -> tuple[list[dict], int]:
-    """Put lines in human reading order. Returns (ordered lines, max columns)."""
-    ordered, max_cols = [], 1
+    """Put lines in human reading order. Returns (ordered lines, columns: 1 or 2)."""
+    ordered, two_col_lines = [], 0
     for pno in sorted({ln["page"] for ln in lines}):
         page_lines = [ln for ln in lines if ln["page"] == pno]
-        if _is_two_column(page_lines):
-            max_cols = 2
-            split = 0.38 * page_lines[0]["page_width"]
-            left = [ln for ln in page_lines if ln["x0"] < split]
-            right = [ln for ln in page_lines if ln["x0"] >= split]
-            ordered += _merge_rows(left) + _merge_rows(right)
-        else:
+        g, bands = _best_gutter(page_lines)
+        if g is None:
             ordered += _merge_rows(page_lines)
+            continue
+        two_col_lines += sum(len(b) for two, b in bands if two)
+        pending: list[dict] = []   # consecutive single-column lines, merged into rows together
+        for two, band in bands:
+            if two:
+                ordered += _merge_rows(pending)
+                pending = []
+                ordered += _merge_rows([ln for ln in band if ln["x1"] <= g + 1])   # left column
+                ordered += _merge_rows([ln for ln in band if ln["x1"] > g + 1])    # right column
+            else:
+                pending += band
+        ordered += _merge_rows(pending)
+    # Report "2 columns" (an ATS risk) only if a big part of the CV is side by side,
+    # not for one small EDUCATION | LANGUAGES strip at the bottom.
+    max_cols = 2 if lines and two_col_lines >= 0.5 * len(lines) else 1
     return ordered, max_cols
+
+
+def _is_styled(ln: dict, body_size: float) -> bool:
+    """Headings usually stand out: bold, bigger, ALL CAPS or ending with ':'."""
+    if "size" not in ln:          # pdfplumber fallback lines carry no style info
+        return True
+    letters = re.sub(r"[^A-Za-z]", "", ln["text"])
+    return (ln["bold"] or ln["size"] >= body_size + 1 or ln["text"].rstrip().endswith(":")
+            or (len(letters) >= 3 and letters.isupper()))
 
 
 def split_sections(lines: list[dict]) -> tuple[dict[str, str], list[str]]:
     """Group lines under the section headings. Text before the first heading
-    goes to 'header' (usually name + contact). Returns (sections, headings found)."""
+    goes to 'header' (usually name + contact). Returns (sections, headings found).
+
+    If the CV styles its headings (bold/bigger/caps), a plain line such as
+    'Technical skills' inside a skills list is NOT treated as a heading."""
+    sizes = [ln["size"] for ln in lines if "size" in ln]
+    body = statistics.median(sizes) if sizes else 0
+    candidates = [ln for ln in lines if detect_heading(ln["text"])]
+    styled_only = sum(_is_styled(ln, body) for ln in candidates) >= 2
+
     sections: dict[str, list[str]] = {"header": []}
     found: list[str] = []
     current = "header"
     for ln in lines:
         canon = detect_heading(ln["text"])
+        if canon and styled_only and not _is_styled(ln, body):
+            canon = None
         if canon:
             current = canon
             found.append(ln["text"])
