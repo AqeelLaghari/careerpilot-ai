@@ -20,6 +20,14 @@ Tick each box when it's done and committed to git.
 
 ---
 
+## ATS design: hybrid, 3 layers (decided 8 Nov 2026)
+1. **Rules (format/structure)**: how real ATS parsers behave: headings, tables, images, scanned, contact, action verbs, metrics, length. Explainable point deductions.
+2. **Data-driven keywords**: required skills per role LEARNED from real job postings (TF-IDF / frequency), not hand-written. Advice like "Power BI appears in 52% of Data Analyst postings".
+3. **Semantic (Sentence-BERT)**: meaning-based match, so "trained prediction models" ≈ "Machine Learning".
+
+Scores shown: ATS readability (Layer 1, on upload) → Role match (Layers 2+3, after choosing a target role) → optional job-description match.
+Validation (Day 23): Spearman correlation with 2–3 human expert ratings on about 20 CVs of mixed quality, plus a before/after fix test.
+
 ## Folder structure
 
 ```
@@ -65,12 +73,12 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - [x] **Day 3**: Flutter skeleton: Firebase Auth login/signup, navigation, empty dashboard
 - [x] **Day 4**: PDF text extraction (PyMuPDF + pdfplumber) with layout info
 - [x] **Day 5**: spaCy pipeline: skills EntityRuler, education, experience, dates, plus Gemini JSON fallback
-- [ ] **Day 6**: ATS scorecard (sections, keyword density, formatting issues, fix suggestions)
+- [ ] **Day 6**: ATS scorecard, Layer 1 (rule-based readability: headings, tables/images, scanned, contact, action verbs, metrics, length) + slots for role-keyword score
 - [ ] **Day 7**: Flutter upload screen + ATS report UI. **Milestone 1: resume â†’ score works end-to-end**
 
 ## Week 2: Career Guide Agent
-- [ ] **Day 8**: Job-role dataset (O*NET / Kaggle) cleaned to about 300 to 1,000 roles
-- [ ] **Day 9**: Sentence-Transformers embeddings + FAISS index + `/career/match` (top 3)
+- [ ] **Day 8**: Job-POSTINGS dataset (Kaggle LinkedIn Job Postings, 100k+, all industries) → group by role → TF-IDF skill importance per role (ATS Layer 2); flag unknown skills for dictionary growth
+- [ ] **Day 9**: Sentence-Transformers embeddings + FAISS index + `/career/match` (top 3); role match score (Layer 2 keywords + Layer 3 semantic) added to the ATS report; optional paste-a-job-description match
 - [ ] **Day 10**: Adaptive questionnaire (asks only for what the resume is missing)
 - [ ] **Day 11**: Skill-gap (set difference) + skill DAG (networkx topological sort) â†’ weekly roadmap
 - [ ] **Day 12**: Flutter: questionnaire + career matches screens

@@ -13,6 +13,7 @@ The plan lives in `ROADMAP.md`. Check which day is next and update the checkboxe
 - NLP: PyMuPDF, pdfplumber, spaCy (`en_core_web_sm` + EntityRuler skills), Gemini free tier as LLM
 - Matching: sentence-transformers `all-MiniLM-L6-v2` + FAISS (IndexFlatIP on normalized vectors = cosine)
 - Roadmap: networkx DAG + topological sort
+- ATS: HYBRID, 3 layers (rules for format + keywords learned from job postings via TF-IDF + SBERT semantic match). See ROADMAP.md. Never hand-write per-role keyword lists.
 - Interview: WebSocket, faster-whisper (`base` model, CPU int8), MediaPipe Face Landmarker on web via JS interop
 - Zero budget: free tiers only. Never add paid services.
 
