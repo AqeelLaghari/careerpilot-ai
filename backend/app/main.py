@@ -6,8 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth import current_uid
 from app.config import GEMINI_API_KEY
-from app.orchestrator.blackboard import SECTIONS, Blackboard
-from app.services.firebase import init_firestore
+from app.deps import blackboard
+from app.orchestrator.blackboard import SECTIONS
+from app.routers import resume
 
 logging.basicConfig(level=logging.INFO)
 
@@ -21,7 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-blackboard = Blackboard(db=init_firestore())
+app.include_router(resume.router)
 
 
 @app.get("/health")
@@ -39,7 +40,7 @@ def me(uid: str = Depends(current_uid)):
     return {"uid": uid, "state": blackboard.read(uid)}
 
 
-# --- Temporary test endpoints (replaced by real agents + login on Day 3+) ---
+# --- Temporary test endpoints (removed before deployment, Day 25) ---
 
 @app.get("/debug/state/{uid}")
 def debug_read(uid: str):
