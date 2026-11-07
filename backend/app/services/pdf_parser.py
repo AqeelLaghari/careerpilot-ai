@@ -117,6 +117,7 @@ def _read_lines(doc) -> tuple[list[dict], int, list[str], set[str]]:
                 if not spans:
                     continue
                 text = re.sub(r"\s+", " ", "".join(s["text"] for s in line["spans"])).strip()
+                text = re.sub(r"(?<=\w)//(?=\w)", "/", text)  # "CI//CD" → "CI/CD" (URLs keep "https://")
                 for s in spans:
                     fonts.add(re.sub(r"[-,].*$", "", s["font"]))  # "Calibri-Bold" → "Calibri"
                 x0, y0, x1, y1 = line["bbox"]
