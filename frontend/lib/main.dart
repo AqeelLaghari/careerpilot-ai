@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'firebase_options.dart';
 import 'screens/home_shell.dart';
 import 'screens/login_screen.dart';
+import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,10 +21,7 @@ class CareerPilotApp extends StatelessWidget {
     return MaterialApp(
       title: 'CareerPilot AI',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF1E3A8A),
-        useMaterial3: true,
-      ),
+      theme: buildTheme(),
       // Shows the login screen when logged out and the app when logged in.
       // It switches automatically on login/logout.
       home: StreamBuilder<User?>(

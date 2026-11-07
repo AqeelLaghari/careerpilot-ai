@@ -31,6 +31,23 @@ class ApiClient {
     return _decode(res);
   }
 
+  /// Upload a file (e.g. a resume PDF) as multipart form data.
+  Future<Map<String, dynamic>> uploadFile(String path, List<int> bytes, String filename) async {
+    final req = http.MultipartRequest('POST', Uri.parse('$apiBaseUrl$path'));
+    final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+    if (token != null) req.headers['Authorization'] = 'Bearer $token';
+    req.files.add(http.MultipartFile.fromBytes('file', bytes, filename: filename));
+    final streamed = await req.send();
+    return _decode(await http.Response.fromStream(streamed));
+  }
+
+  /// GET that returns null on 404 (e.g. "no resume uploaded yet").
+  Future<Map<String, dynamic>?> getOrNull(String path) async {
+    final res = await http.get(Uri.parse('$apiBaseUrl$path'), headers: await _headers());
+    if (res.statusCode == 404) return null;
+    return _decode(res);
+  }
+
   Map<String, dynamic> _decode(http.Response res) {
     final data = res.body.isEmpty ? <String, dynamic>{} : jsonDecode(res.body);
     if (res.statusCode >= 400) {

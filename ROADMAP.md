@@ -95,7 +95,7 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - [ ] **Day 21**: Interview screen + report. **Milestone 3: full mock interview**
 
 ## Week 4: Integration, evaluation, deployment
-- [ ] **Day 22**: Orchestrator synthesis; dashboard shows everything, live refresh
+- [ ] **Day 22**: Orchestrator synthesis; dashboard shows everything, live refresh; ATS score history across uploads; AI bullet rewriter button (Gemini fast tier, on click only)
 - [ ] **Day 23**: Evaluation: parsing F1 on 25 labelled resumes; FAISS latency; WebSocket latency
 - [ ] **Day 24**: Automated tests (pytest) + error handling
 - [ ] **Day 25**: Deploy backend to Hugging Face Spaces
