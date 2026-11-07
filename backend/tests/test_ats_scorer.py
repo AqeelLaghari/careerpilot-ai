@@ -74,3 +74,10 @@ def test_action_verb_detection():
     assert _starts_with_action_verb("Successfully led a team of 5")
     assert not _starts_with_action_verb("Responsible for the database")
     assert not _starts_with_action_verb("I worked on APIs")
+
+
+def test_ing_forms_of_action_verbs():
+    assert _starts_with_action_verb("Supporting learners in bridging the gap")
+    assert _starts_with_action_verb("Managing a team of 4 engineers")
+    assert _starts_with_action_verb("Designing weekly sessions on CI/CD")
+    assert not _starts_with_action_verb("Everything about the cloud")

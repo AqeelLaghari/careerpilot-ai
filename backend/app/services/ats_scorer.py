@@ -76,13 +76,22 @@ def _category(cid: str, name: str, checks: list[dict]) -> dict:
     }
 
 
+def _is_action_verb(word: str) -> bool:
+    if word in ACTION_VERBS:
+        return True
+    if word.endswith("ing") and len(word) > 5:  # Supporting → supported, Managing → managed
+        stem = word[:-3]
+        return any(f in ACTION_VERBS for f in (stem + "ed", stem + "d", stem + "ied", stem[:-1] + "ed"))
+    return False
+
+
 def _starts_with_action_verb(bullet: str) -> bool:
     words = re.findall(r"[A-Za-z]+", bullet.lower())[:2]
     if not words:
         return False
     if words[0] in ADVERBS and len(words) > 1:
-        return words[1] in ACTION_VERBS
-    return words[0] in ACTION_VERBS
+        return _is_action_verb(words[1])
+    return _is_action_verb(words[0])
 
 
 def _collect_bullets(entities: dict) -> list[str]:
@@ -106,7 +115,7 @@ def _parseability(layout: dict) -> list[dict]:
 
     cols = layout["columns"]
     checks.append(_check(
-        "single_column", "Single-column layout", 5 if cols == 1 else 2, 5,
+        "single_column", "Single-column layout", 5 if cols == 1 else 1, 5,
         "Single-column layout: the safest choice for ATS parsing." if cols == 1
         else "Two-column layout detected. Many ATS parsers read across columns and mix up your text.",
         "Use a single-column layout, or keep the second column only for short items like contact details."))
@@ -120,7 +129,7 @@ def _parseability(layout: dict) -> list[dict]:
 
     imgs = layout["images"]
     checks.append(_check(
-        "no_images", "No images or graphics", 3 if imgs == 0 else 2 if imgs == 1 else 0, 3,
+        "no_images", "No images or graphics", 3 if imgs == 0 else 1 if imgs == 1 else 0, 3,
         "No images found." if imgs == 0
         else f"{imgs} image(s) found (photo, icons or charts). An ATS ignores images, and any text inside them is lost.",
         "Remove the photo, icons and skill-level bars. Write everything as plain text."))
@@ -212,16 +221,16 @@ def _content(entities: dict) -> list[dict]:
     weak = [b for b in bullets if not _starts_with_action_verb(b)]
     ratio = 1 - len(weak) / n
     weak_examples = [b for b in weak if b.lower().startswith(WEAK_STARTS)] or weak
-    example = f" For example: \"{weak_examples[0][:80]}\"" if weak_examples else ""
+    example = (" Rewrite these: " + " | ".join(f'"{b[:70]}…"' for b in weak_examples[:3])) if weak_examples else ""
     checks.append(_check(
-        "action_verbs", "Bullets start with action verbs", 8 * min(1, ratio / 0.7), 8,
+        "action_verbs", "Bullets start with action verbs", 8 * min(1, ratio / 0.9), 8,
         f"{n - len(weak)} of {n} bullets start with a strong action verb.",
         f"Start every bullet with a verb like Built, Led, Automated or Reduced.{example}"))
 
     quantified = [b for b in bullets if NUMBER_RE.search(b)]
     q_ratio = len(quantified) / n
     checks.append(_check(
-        "quantified", "Achievements are quantified", 7 * min(1, q_ratio / 0.4), 7,
+        "quantified", "Achievements are quantified", 7 * min(1, q_ratio / 0.6), 7,
         f"{len(quantified)} of {n} bullets include numbers or measurable results.",
         "Add numbers that show impact, e.g. 'cut deployment time by 40%' or 'trained 30 students'."))
 

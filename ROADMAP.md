@@ -73,7 +73,7 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - [x] **Day 3**: Flutter skeleton: Firebase Auth login/signup, navigation, empty dashboard
 - [x] **Day 4**: PDF text extraction (PyMuPDF + pdfplumber) with layout info
 - [x] **Day 5**: spaCy pipeline: skills EntityRuler, education, experience, dates, plus Gemini JSON fallback
-- [ ] **Day 6**: ATS scorecard, Layer 1 (rule-based readability: headings, tables/images, scanned, contact, action verbs, metrics, length) + slots for role-keyword score
+- [x] **Day 6**: ATS scorecard, Layer 1 (rule-based readability: headings, tables/images, scanned, contact, action verbs, metrics, length) + slots for role-keyword score
 - [ ] **Day 7**: Flutter upload screen + ATS report UI. **Milestone 1: resume â†’ score works end-to-end**
 
 ## Week 2: Career Guide Agent
