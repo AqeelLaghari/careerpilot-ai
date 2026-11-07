@@ -15,6 +15,7 @@ The plan lives in `ROADMAP.md`. Check which day is next and update the checkboxe
 - Roadmap: networkx DAG + topological sort
 - ATS: HYBRID, 3 layers (rules for format + keywords learned from job postings via TF-IDF + SBERT semantic match). See ROADMAP.md. Never hand-write per-role keyword lists.
 - Interview: WebSocket, faster-whisper (`base` model, CPU int8), MediaPipe Face Landmarker on web via JS interop
+- LLM calls ONLY via `app/services/llm.py`: tier="fast" (Flash-Lite) for simple/frequent tasks, tier="smart" (Flash) only for interview grading/final feedback. Batch requests, store results on the Blackboard, and always have a rule-based fallback when it returns None.
 - Zero budget: free tiers only. Never add paid services.
 
 ## Conventions
