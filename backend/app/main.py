@@ -5,7 +5,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth import current_uid
-from app.config import GEMINI_API_KEY
+from app.services import llm
 from app.deps import blackboard
 from app.orchestrator.blackboard import SECTIONS
 from app.routers import resume
@@ -30,7 +30,7 @@ def health():
     return {
         "status": "ok",
         "firestore_connected": blackboard.persistent,
-        "gemini_key_set": GEMINI_API_KEY.startswith("AIza"),
+        "gemini_key_set": llm.available(),
     }
 
 

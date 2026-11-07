@@ -48,6 +48,8 @@ SECTION_HEADINGS = {
     "references": ["references"],
 }
 _HEADING_LOOKUP = {h: canon for canon, names in SECTION_HEADINGS.items() for h in names}
+# "T E C H N I C A L S K I L L S" collapses to "technicalskills", so we also look up without spaces
+_HEADING_NOSPACE = {h.replace(" ", ""): canon for h, canon in _HEADING_LOOKUP.items()}
 
 
 def _normalize_heading(text: str) -> str:
@@ -68,7 +70,7 @@ def detect_heading(text: str) -> str | None:
     norm = _normalize_heading(text)
     if len(norm.split()) > 6:
         return None
-    return _HEADING_LOOKUP.get(norm)
+    return _HEADING_LOOKUP.get(norm) or _HEADING_NOSPACE.get(norm.replace(" ", ""))
 
 
 # ----------------------------------------------------------------- contact --

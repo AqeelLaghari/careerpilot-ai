@@ -8,6 +8,6 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BACKEND_DIR / ".env")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 FIREBASE_KEY_PATH = BACKEND_DIR / os.getenv("FIREBASE_KEY_PATH", "firebase-key.json")
 DATA_DIR = BACKEND_DIR / "data"

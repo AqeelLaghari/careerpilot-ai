@@ -50,3 +50,7 @@ def test_detect_heading(line, expected):
 def test_rejects_non_pdf():
     with pytest.raises(PDFError):
         extract_pdf(b"hello, I am not a pdf")
+
+
+def test_spaced_multiword_heading():
+    assert detect_heading("T E C H N I C A L S K I L L S") == "skills"

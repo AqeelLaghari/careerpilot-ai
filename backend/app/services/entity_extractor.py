@@ -220,6 +220,21 @@ def total_experience_months(entries: list[dict]) -> int:
 
 
 # ---------------------------------------------------------------- projects --
+def _looks_like_title(line: str) -> bool:
+    """Project titles are short, start with a capital/digit and aren't sentences.
+    Wrapped bullet text ('+ Grafana monitoring.', 'response-time trends…') is not."""
+    return (len(line.split()) <= 12 and (line[0].isupper() or line[0].isdigit())
+            and not line.rstrip().endswith((".", ",", ";")))
+
+
+def _clean_title(line: str) -> str:
+    title = re.sub(r"\(?\s*\b(19|20)\d{2}\b\s*\)?", " ", line)  # drop years like "2026" / "(2026)"
+    title = re.sub(r"\s+", " ", title).strip(" |·–-")
+    if title.count("(") > title.count(")"):
+        title += ")"
+    return title[:100]
+
+
 def extract_projects(text: str) -> list[dict]:
     projects: list[dict] = []
     for line in text.splitlines():
@@ -229,12 +244,10 @@ def extract_projects(text: str) -> list[dict]:
         if BULLET_RE.match(s):
             if projects:
                 projects[-1]["description"].append(BULLET_RE.sub("", s))
-        elif not projects or projects[-1]["description"] or len(s.split()) <= 10:
-            if projects and not projects[-1]["description"] and len(s.split()) > 10:
-                projects[-1]["description"].append(s)
-                continue
-            title = YEAR_RE.sub("", s).strip(" |·–-()")
-            projects.append({"title": title[:100], "description": []})
+        elif not projects or _looks_like_title(s):
+            projects.append({"title": _clean_title(s), "description": []})
+        elif projects[-1]["description"]:
+            projects[-1]["description"][-1] += " " + s  # wrapped line of the previous bullet
         else:
             projects[-1]["description"].append(s)
     for p in projects:

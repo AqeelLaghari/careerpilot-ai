@@ -15,7 +15,7 @@ _client = None
 
 
 def available() -> bool:
-    return GEMINI_API_KEY.startswith("AIza")
+    return bool(GEMINI_API_KEY) and "paste" not in GEMINI_API_KEY.lower()
 
 
 def _get_client():

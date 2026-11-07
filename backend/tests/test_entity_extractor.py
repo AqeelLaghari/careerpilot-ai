@@ -92,3 +92,18 @@ def test_full_entities_no_llm(monkeypatch):
     assert e["languages"] == ["English", "Urdu"]
     assert e["total_experience_months"] == 6
     assert e["extraction_method"] == "spacy+rules"
+
+
+def test_project_wrapped_lines_not_titles():
+    from app.services.entity_extractor import extract_projects
+    text = (
+        "Distributed Task Manager  2026\n"
+        "•  3 microservices, Nginx LB, RabbitMQ. GitHub Actions + Trivy CI/CD in <90s. Prometheus\n"
+        "+ Grafana monitoring.\n"
+        "E-Commerce Platform on AWS (Team Project)  2026\n"
+        "•  Built with Node.js and PostgreSQL, no\n"
+        "response-time trends & auto-generated suggestions.\n"
+    )
+    projects = extract_projects(text)
+    assert [p["title"] for p in projects] == ["Distributed Task Manager", "E-Commerce Platform on AWS (Team Project)"]
+    assert "Grafana" in projects[0]["skills"]
