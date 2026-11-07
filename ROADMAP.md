@@ -44,8 +44,8 @@ CareerPilot AI/
 - [x] **Day 1**: Accounts (GitHub, Firebase, Gemini API key), git, Python venv, `flutter doctor`
 - [x] **Day 2**: FastAPI skeleton, `/health`, Blackboard state class, Firebase Admin connection
 - [x] **Day 3**: Flutter skeleton: Firebase Auth login/signup, navigation, empty dashboard
-- [ ] **Day 4**: PDF text extraction (PyMuPDF + pdfplumber) with layout info
-- [ ] **Day 5**: spaCy pipeline: skills EntityRuler, education, experience, dates, plus Gemini JSON fallback
+- [x] **Day 4**: PDF text extraction (PyMuPDF + pdfplumber) with layout info
+- [x] **Day 5**: spaCy pipeline: skills EntityRuler, education, experience, dates, plus Gemini JSON fallback
 - [ ] **Day 6**: ATS scorecard (sections, keyword density, formatting issues, fix suggestions)
 - [ ] **Day 7**: Flutter upload screen + ATS report UI. **Milestone 1: resume â†’ score works end-to-end**
 
