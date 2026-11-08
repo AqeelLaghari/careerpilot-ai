@@ -1,0 +1,80 @@
+"""Market model (ATS Layer 2): build from a tiny fake postings CSV, then query it."""
+import importlib.util
+from pathlib import Path
+
+import pandas as pd
+import pytest
+
+from app.services import market_model
+from app.services.market_model import normalize_title
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def _load_build_script():
+    spec = importlib.util.spec_from_file_location("build_market_model", ROOT / "scripts" / "build_market_model.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+@pytest.mark.parametrize("raw,expected", [
+    ("Sr. Software Engineer II - Backend (Remote)", "Software Engineer"),
+    ("Senior DevOps Engineer, Cloud Platform", "Devops Engineer"),
+    ("Registered Nurse - ICU Night Shift", "Registered Nurse"),
+    ("Junior Data Analyst | Hybrid", "Data Analyst"),
+])
+def test_normalize_title(raw, expected):
+    assert normalize_title(raw) == expected
+
+
+@pytest.fixture
+def built_model(tmp_path, monkeypatch):
+    """Build a model from 3 fake roles x 12 postings in a temp folder."""
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    rows = []
+    for i in range(12):
+        rows.append(("Senior DevOps Engineer", "We need Docker, Kubernetes, Terraform, AWS, Linux and Jenkins. "
+                     f"Good communication. Ref {i}.", 1_700_000_000_000 + i))
+        rows.append(("Data Analyst", "Strong SQL, Python, Tableau, Power BI, Excel and statistics skills. "
+                     f"Good communication. Ref {i}.", 1_700_000_000_000 + i))
+        rows.append(("Registered Nurse", "Patient Care, CPR, BLS certification, Vital Signs, Infection Control, "
+                     f"Medical Terminology. Good communication. Ref {i}.", 1_700_000_000_000 + i))
+    pd.DataFrame(rows, columns=["title", "description", "listed_time"]).to_csv(raw / "postings.csv", index=False)
+
+    script = _load_build_script()
+    monkeypatch.setattr(script, "RAW_DIR", raw)
+    monkeypatch.setattr(script, "MODEL_PATH", tmp_path / "market_model.json")
+    monkeypatch.setattr(script, "CANDIDATES_PATH", tmp_path / "market_candidates.json")
+    monkeypatch.setattr(market_model, "MODEL_PATH", tmp_path / "market_model.json")
+    market_model.load_model.cache_clear()
+    model = script.build(limit=None, min_postings=10, half_life_days=365, top_k=40)
+    yield model
+    market_model.load_model.cache_clear()
+
+
+def test_build_learns_roles_and_skills(built_model):
+    roles = built_model["roles"]
+    assert set(roles) == {"Devops Engineer", "Data Analyst", "Registered Nurse"}
+    devops = [s["name"] for s in roles["Devops Engineer"]["skills"]]
+    assert {"Docker", "Kubernetes", "Terraform"} <= set(devops)
+    assert roles["Registered Nurse"]["category"] == "healthcare"
+
+
+def test_idf_lowers_skills_every_role_has(built_model):
+    """'Communication' appears in ALL roles, so it must weigh less than role-specific skills."""
+    skills = {s["name"]: s["weight"] for s in built_model["roles"]["Data Analyst"]["skills"]}
+    assert skills["Communication"] < skills["Tableau"]
+
+
+def test_find_role_and_coverage(built_model):
+    assert market_model.find_role("devops engineer (remote)") == "Devops Engineer"
+    assert market_model.find_role("Junior Data Analyst") == "Data Analyst"
+    cov = market_model.keyword_coverage(["Docker", "Kubernetes", "Python"], "DevOps Engineer")
+    assert 0 < cov["score"] < 100
+    assert "Docker" in cov["matched"] and "Terraform" in [m["name"] for m in cov["missing"]]
+
+
+def test_unknown_role_returns_none(built_model):
+    assert market_model.keyword_coverage(["Docker"], "Astronaut") is None

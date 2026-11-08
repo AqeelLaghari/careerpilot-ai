@@ -84,6 +84,21 @@ def find_skills(text: str, in_skills_section: bool = False) -> dict[str, dict]:
     return found
 
 
+def find_skills_batch(texts, batch_size: int = 64):
+    """Fast version for thousands of job postings: runs ONLY the skill ruler
+    (no tagger/parser/NER). Yields one {canonical: category} dict per text."""
+    nlp = get_nlp()
+    with nlp.select_pipes(enable=["entity_ruler"]):
+        for doc in nlp.pipe((_prep(t) for t in texts), batch_size=batch_size):
+            found = {}
+            for ent in doc.ents:
+                category, canonical, *flag = ent.ent_id_.split("::")
+                if flag and not _has_list_context(ent):
+                    continue
+                found[canonical] = category
+            yield found
+
+
 # ------------------------------------------------------------------- dates --
 MONTH = (r"(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?|"
          r"Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?")
