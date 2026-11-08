@@ -30,13 +30,13 @@ Validation (Day 23): Spearman correlation with 2–3 human expert ratings on abo
 
 ## Live market learning (decided 8 Nov 2026)
 Job-market data goes stale, so the app keeps learning from fresh job postings while it runs, with no code change or redeploy.
-- **Source:** free remote-job APIs (see Live jobs below). Never scrape LinkedIn, Indeed or Rozee.
+- **Training sources = ALL jobs (any location, remote or on-site):** the Kaggle dataset + every posting from the remote-job APIs (including US/EU-only ones, which users never see but still teach skills) + normal jobs from JSearch (`country=pk` and others, free key) and Careerjet (`en_PK`), so the model also learns Pakistani market skills. Never scrape LinkedIn, Indeed or Rozee.
 - **Collect:** every fetched posting is saved (deduplicated) in Firestore.
 - **Learn weekly:** terms that are frequent in recent postings but missing from the skill list become candidates (15+ postings, blocklist for words like "Urgent"/"Hybrid"). Gemini fast tier confirms them and assigns a category in ONE batched call. Approved skills go to Firestore and are hot-reloaded into the skill detector. `skills.json` stays the base list.
 - **Trigger:** on a request, if the last update is more than 7 days old, run it in the background (works on free hosting that sleeps).
 - **Re-weight:** role keyword weights and trending/declining skills are recomputed, newer postings weighted more.
 - **Oversight:** an admin list of learned skills; any wrong skill can be removed.
-- **Live jobs = REMOTE jobs a Pakistani can apply to (decided 8 Nov 2026):** sources Himalayas (has candidate-location restrictions + worldwide filter; check its terms on display first), Remotive, Jobicy, RemoteOK (all free, no key; link back/attribution required), optional JSearch `remote_jobs_only`. Keep only jobs open to Worldwide/Anywhere/Asia/APAC/Pakistan; dedupe; match % (skills + SBERT); "Open worldwide" badge; Apply → original posting; cache a few hours. Every fetched posting also feeds skill learning. Day 14 starts by counting Pakistan-eligible jobs per API and confirming terms.
+- **Live jobs = REMOTE jobs a Pakistani can apply to (decided 8 Nov 2026):** sources Himalayas (has candidate-location restrictions + worldwide filter; check its terms on display first), Remotive, Jobicy, RemoteOK (all free, no key; link back/attribution required), optional JSearch `remote_jobs_only`. Keep only jobs open to Worldwide/Anywhere/Asia/APAC/Pakistan; dedupe; match % (skills + SBERT); "Open worldwide" badge; Apply → original posting; cache a few hours. Users see ONLY these remote jobs; every fetched posting (eligible or not) also feeds skill learning. Day 14 starts by counting Pakistan-eligible jobs per API and confirming terms.
 
 ## Folder structure
 
