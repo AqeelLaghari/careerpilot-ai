@@ -84,14 +84,14 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - [x] **Day 4**: PDF text extraction (PyMuPDF + pdfplumber) with layout info
 - [x] **Day 5**: spaCy pipeline: skills EntityRuler, education, experience, dates, plus Gemini JSON fallback
 - [x] **Day 6**: ATS scorecard, Layer 1 (rule-based readability: headings, tables/images, scanned, contact, action verbs, metrics, length) + slots for role-keyword score
-- [ ] **Day 7**: Flutter upload screen + ATS report UI. **Milestone 1: resume → score works end-to-end**
+- [x] **Day 7**: Flutter upload screen + ATS report UI. **Milestone 1: resume → score works end-to-end**
 
 ## Week 2: Career Guide Agent
 - [ ] **Day 8**: Job-POSTINGS dataset (Kaggle LinkedIn Job Postings, 100k+, all industries) → group by role → TF-IDF skill importance per role (ATS Layer 2). Built as a re-runnable `build_market_model.py` (any postings in → new weights out), newer postings weighted more, "market data updated: <date>, N postings" stamp; flag unknown skills for dictionary growth
 - [ ] **Day 9**: Sentence-Transformers embeddings + FAISS index + `/career/match` (top 3); role match score (Layer 2 keywords + Layer 3 semantic) added to the ATS report; optional paste-a-job-description match
 - [ ] **Day 10**: Adaptive questionnaire (asks only for what the resume is missing)
 - [ ] **Day 11**: Skill-gap (set difference) + skill DAG (networkx topological sort) → weekly roadmap
-- [ ] **Day 12**: Flutter: questionnaire + career matches screens
+- [ ] **Day 12**: Flutter: questionnaire + career matches screens; Android smoke test (Firebase Android config, backend address from phone, file picker, permissions)
 - [ ] **Day 13**: Flutter: interactive roadmap (tick tasks; roadmap updates)
 - [ ] **Day 14**: Self-learning market model (see "Live market learning" above): job API client + save postings to Firestore + new-skill discovery (Gemini fast, weekly batch) + skills stored in Firestore and hot-reloaded + trending skills. If the API covers Pakistan well → also the Jobs tab (live listings, match %, Apply). **Milestone 2: resume → career → roadmap**
 
