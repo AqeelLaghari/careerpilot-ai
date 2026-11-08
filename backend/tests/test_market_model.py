@@ -20,9 +20,14 @@ def _load_build_script():
 
 @pytest.mark.parametrize("raw,expected", [
     ("Sr. Software Engineer II - Backend (Remote)", "Software Engineer"),
-    ("Senior DevOps Engineer, Cloud Platform", "Devops Engineer"),
+    ("Senior DevOps Engineer, Cloud Platform", "DevOps Engineer"),
     ("Registered Nurse - ICU Night Shift", "Registered Nurse"),
     ("Junior Data Analyst | Hybrid", "Data Analyst"),
+    ("Senior UX Designer", "UX Designer"),
+    ("Back-End Developer", "Backend Developer"),
+    ("Front End Engineer (React)", "Frontend Engineer"),
+    ("Full-Stack Developer", "Full Stack Developer"),
+    ("HR Business Partner", "HR Business Partner"),
 ])
 def test_normalize_title(raw, expected):
     assert normalize_title(raw) == expected
@@ -56,8 +61,8 @@ def built_model(tmp_path, monkeypatch):
 
 def test_build_learns_roles_and_skills(built_model):
     roles = built_model["roles"]
-    assert set(roles) == {"Devops Engineer", "Data Analyst", "Registered Nurse"}
-    devops = [s["name"] for s in roles["Devops Engineer"]["skills"]]
+    assert set(roles) == {"DevOps Engineer", "Data Analyst", "Registered Nurse"}
+    devops = [s["name"] for s in roles["DevOps Engineer"]["skills"]]
     assert {"Docker", "Kubernetes", "Terraform"} <= set(devops)
     assert roles["Registered Nurse"]["category"] == "healthcare"
 
@@ -69,7 +74,7 @@ def test_idf_lowers_skills_every_role_has(built_model):
 
 
 def test_find_role_and_coverage(built_model):
-    assert market_model.find_role("devops engineer (remote)") == "Devops Engineer"
+    assert market_model.find_role("devops engineer (remote)") == "DevOps Engineer"
     assert market_model.find_role("Junior Data Analyst") == "Data Analyst"
     cov = market_model.keyword_coverage(["Docker", "Kubernetes", "Python"], "DevOps Engineer")
     assert 0 < cov["score"] < 100
@@ -78,3 +83,16 @@ def test_find_role_and_coverage(built_model):
 
 def test_unknown_role_returns_none(built_model):
     assert market_model.keyword_coverage(["Docker"], "Astronaut") is None
+
+
+def test_market_endpoints(built_model):
+    from fastapi.testclient import TestClient
+    from app.main import app
+    client = TestClient(app)
+    info = client.get("/market/info").json()
+    assert info["roles"] == 3 and info["postings_used"] == 36
+    roles = client.get("/market/roles", params={"q": "nurse"}).json()
+    assert roles[0]["role"] == "Registered Nurse"
+    prof = client.get("/market/roles/devops engineer").json()
+    assert prof["role"] == "DevOps Engineer" and prof["skills"][0]["weight"] == 1.0
+    assert client.get("/market/roles/astronaut").status_code == 404

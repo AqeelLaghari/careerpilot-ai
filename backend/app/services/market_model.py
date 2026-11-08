@@ -31,14 +31,25 @@ _NOISE = {
 }
 
 
+# Written in capitals (or special case) after title-casing
+_ACRONYMS = {"ux": "UX", "ui": "UI", "ui/ux": "UI/UX", "ux/ui": "UX/UI", "hr": "HR", "it": "IT", "qa": "QA",
+             "ai": "AI", "ml": "ML", "bi": "BI", "seo": "SEO", "sql": "SQL", "aws": "AWS", "rn": "RN",
+             "lpn": "LPN", "cna": "CNA", "hvac": "HVAC", "plc": "PLC", "erp": "ERP", "crm": "CRM", "ios": "iOS",
+             "and": "and", "of": "of", "for": "for", "in": "in", "devops": "DevOps", "fullstack": "Full Stack", "backend": "Backend", "frontend": "Frontend", "cad": "CAD", "ehs": "EHS", "hse": "HSE", "cdl": "CDL", "sap": "SAP", "net": ".NET"}
+
+
 def normalize_title(title: str) -> str:
     """'Sr. Software Engineer II - Backend (Remote)' → 'Software Engineer'."""
     t = str(title or "").lower()
     t = re.sub(r"\(.*?\)|\[.*?\]", " ", t)                 # drop (Remote), [Contract]
     t = re.split(r"\s[-–—|:]\s|,|\s/\s", t)[0]             # keep the part before ' - ', ',', ' | '
+    # Same word, different spelling: "Back-End" / "Back End" → "backend"
+    t = re.sub(r"\bback[\s-]?end\b", "backend", t)
+    t = re.sub(r"\bfront[\s-]?end\b", "frontend", t)
+    t = re.sub(r"\bfull[\s-]?stack\b", "fullstack", t)
     t = re.sub(r"[^a-z0-9+#/&. -]", " ", t).replace(".", " ")
     words = [w for w in t.split() if w not in _NOISE and not w.isdigit()]
-    return " ".join(words).title().replace("Ui/Ux", "UI/UX").replace("Hr ", "HR ").strip()
+    return " ".join(_ACRONYMS.get(w, w.capitalize()) for w in words).strip()
 
 
 @lru_cache(maxsize=1)

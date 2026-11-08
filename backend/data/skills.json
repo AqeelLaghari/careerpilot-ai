@@ -68,7 +68,7 @@
   ],
   "web_backend": [
     "Node.js|NodeJS|Node",
-    "Express.js|Express|ExpressJS",
+    "Express.js|ExpressJS|Express JS",
     "NestJS",
     "Django",
     "Flask",
@@ -385,7 +385,9 @@
     "Design Patterns",
     "Software Architecture",
     "Multithreading|Concurrency",
-    "Compilers"
+    "Compilers",
+    "CompTIA|CompTIA A+|CompTIA Network+|CompTIA Security+",
+    "VoIP"
   ],
   "embedded_iot": [
     "Embedded Systems",
@@ -466,7 +468,7 @@
     "Risk Management",
     "PMP",
     "Business Analysis",
-    "Technical Writing|Documentation",
+    "Technical Writing",
     "Sprint Planning",
     "Waterfall",
     "Software Testing",
@@ -494,7 +496,10 @@
     "Market Research",
     "E-commerce|Ecommerce",
     "Shopify",
-    "HubSpot"
+    "HubSpot",
+    "Microsoft SharePoint|SharePoint",
+    "Oracle NetSuite|NetSuite",
+    "PeopleSoft"
   ],
   "soft_skills": [
     "Communication|Communication Skills|Verbal Communication|Written Communication",
@@ -508,7 +513,7 @@
     "Attention to Detail",
     "Public Speaking|Presentation Skills",
     "Mentoring|Mentorship",
-    "Teaching|Training",
+    "Teaching",
     "Negotiation",
     "Decision Making",
     "Analytical Skills|Analytical Thinking",
@@ -602,7 +607,8 @@
     "!CMA",
     "Variance Analysis",
     "Financial Statements",
-    "Risk Assessment"
+    "Risk Assessment",
+    "FinTech"
   ],
   "human_resources": [
     "Recruitment|Recruiting|Talent Acquisition",
@@ -612,7 +618,7 @@
     "Compensation and Benefits|Compensation & Benefits",
     "HR Policies",
     "Training and Development|Learning and Development",
-    "Human Resource Management|HRM|Human Resources",
+    "Human Resource Management|HRM",
     "HRIS",
     "Workday",
     "BambooHR",
@@ -652,7 +658,8 @@
     "Public Health",
     "Pharmacovigilance",
     "Good Clinical Practice",
-    "HIPAA"
+    "HIPAA",
+    "ServSafe"
   ],
   "engineering_core": [
     "AutoCAD",
@@ -703,7 +710,8 @@
     "Renewable Energy",
     "Solar PV|Solar Energy",
     "Health and Safety|HSE|OSHA",
-    "NEBOSH"
+    "NEBOSH",
+    "MicroStation"
   ],
   "education_teaching": [
     "Lesson Planning",

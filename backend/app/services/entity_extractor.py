@@ -21,7 +21,7 @@ from app.services.pdf_parser import detect_heading
 # Single words that are also ordinary English words or names. They only
 # count when written with the exact capitalisation from skills.json.
 CASE_SENSITIVE = {
-    "REST", "Node", "Express", "Rails", "Lambda", "Shell", "Spark", "Unity", "Swift", "Rust", "Dart",
+    "REST", "Node", "Rails", "Lambda", "Shell", "Spark", "Unity", "Swift", "Rust", "Dart",
     "Sketch", "Chef", "Puppet", "Oracle", "Chroma", "Apache", "Excel", "Jest", "Mocha", "Cucumber",
     "Postman", "Cypress", "Playwright", "Illustrator", "Blender", "Waterfall", "Transformers",
     "Gemini", "Whisper", "SAS", "SAP", "DOM", "Vite", "Sales", "Kafka", "Helm", "Looker", "Prisma",
@@ -84,19 +84,43 @@ def find_skills(text: str, in_skills_section: bool = False) -> dict[str, dict]:
     return found
 
 
-def find_skills_batch(texts, batch_size: int = 64):
-    """Fast version for thousands of job postings: runs ONLY the skill ruler
-    (no tagger/parser/NER). Yields one {canonical: category} dict per text."""
+@lru_cache(maxsize=1)
+def _phrase_matchers():
+    """Same skills as the EntityRuler, but as spaCy PhraseMatchers (one case-insensitive,
+    one exact-case). Much faster for exact phrases; used for bulk job postings."""
+    from spacy.matcher import PhraseMatcher
     nlp = get_nlp()
-    with nlp.select_pipes(enable=["entity_ruler"]):
-        for doc in nlp.pipe((_prep(t) for t in texts), batch_size=batch_size):
-            found = {}
-            for ent in doc.ents:
-                category, canonical, *flag = ent.ent_id_.split("::")
-                if flag and not _has_list_context(ent):
-                    continue
-                found[canonical] = category
-            yield found
+    lower, exact = PhraseMatcher(nlp.vocab, attr="LOWER"), PhraseMatcher(nlp.vocab, attr="ORTH")
+    vocab = json.loads((DATA_DIR / "skills.json").read_text(encoding="utf-8"))
+    for category, entries in vocab.items():
+        if category.startswith("_"):
+            continue
+        for entry in entries:
+            needs_context = entry.startswith("!")
+            names = entry.lstrip("!").split("|")
+            skill_id = f"{category}::{names[0]}" + ("::ctx" if needs_context else "")
+            for alias in names:
+                target = exact if (needs_context or alias in CASE_SENSITIVE) else lower
+                target.add(skill_id, [nlp.make_doc(_prep(alias))])
+    return nlp, lower, exact
+
+
+def find_skills_batch(texts, batch_size: int = 256):
+    """Fast version for thousands of job postings: tokenizer + PhraseMatcher only
+    (no tagger/parser/NER). Yields one {canonical: category} dict per text."""
+    from spacy.util import filter_spans
+    nlp, lower, exact = _phrase_matchers()
+    for doc in nlp.tokenizer.pipe((_prep(t) for t in texts), batch_size=batch_size):
+        matches = list(lower(doc)) + list(exact(doc))
+        spans = [doc[s:e] for _, s, e in matches]
+        ids = {(s, e): nlp.vocab.strings[m] for m, s, e in matches}
+        found = {}
+        for span in filter_spans(spans):      # longest match wins, like the EntityRuler
+            category, canonical, *flag = ids[(span.start, span.end)].split("::")
+            if flag and not _has_list_context(span):
+                continue
+            found[canonical] = category
+        yield found
 
 
 # ------------------------------------------------------------------- dates --
