@@ -190,3 +190,77 @@ class SkillGroups extends StatelessWidget {
     ]);
   }
 }
+
+/// ATS Layer 2 + 3: how well the resume fits a role (best-fit or the user's target).
+class RoleMatchCard extends StatelessWidget {
+  const RoleMatchCard({super.key, required this.match});
+  final Map<String, dynamic>? match;
+
+  Widget _bar(BuildContext context, String label, num value, String hint) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Expanded(child: Text(label)),
+            Text('${value.round()}%', style: const TextStyle(fontWeight: FontWeight.w600)),
+          ]),
+          const SizedBox(height: 4),
+          LinearProgressIndicator(
+            value: value / 100,
+            minHeight: 6,
+            borderRadius: BorderRadius.circular(3),
+            color: AppColors.forScore(value),
+            backgroundColor: Colors.grey.shade200,
+          ),
+          Text(hint, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        ]),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final m = match;
+    if (m == null) {
+      return const SectionCard(
+        title: 'Role match',
+        icon: Icons.track_changes,
+        child: Text('Role matching is not available right now.'),
+      );
+    }
+    final score = m['score'] as num;
+    final missing = (m['missing_skills'] as List).cast<String>();
+    final matched = (m['matched_skills'] as List).cast<String>();
+    return SectionCard(
+      title: 'Role match',
+      icon: Icons.track_changes,
+      trailing: Text('${score.round()}%',
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.forScore(score))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(m['role'] as String, style: Theme.of(context).textTheme.titleLarge),
+        Text(
+          '${m['basis'] == 'target role' ? 'Your target role' : 'Your best-fit role'} · '
+          'learned from ${m['postings_analysed']} job postings',
+          style: const TextStyle(color: Colors.grey),
+        ),
+        const SizedBox(height: 12),
+        _bar(context, 'Keyword match', m['keyword'] as num, 'Top skills employers ask for in this role'),
+        _bar(context, 'Meaning match', m['semantic'] as num, 'How close your profile is in meaning (AI)'),
+        if (missing.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          const Text('Skills to add (if you have them):', style: TextStyle(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          Wrap(spacing: 6, runSpacing: 6, children: [
+            for (final s in missing)
+              Chip(
+                label: Text(s, style: const TextStyle(fontSize: 12)),
+                avatar: const Icon(Icons.add, size: 16),
+                visualDensity: VisualDensity.compact,
+              ),
+          ]),
+        ],
+        if (matched.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text('Already showing: ${matched.join(', ')}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        ],
+      ]),
+    );
+  }
+}

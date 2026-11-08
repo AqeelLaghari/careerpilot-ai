@@ -35,7 +35,7 @@ _NOISE = {
 _ACRONYMS = {"ux": "UX", "ui": "UI", "ui/ux": "UI/UX", "ux/ui": "UX/UI", "hr": "HR", "it": "IT", "qa": "QA",
              "ai": "AI", "ml": "ML", "bi": "BI", "seo": "SEO", "sql": "SQL", "aws": "AWS", "rn": "RN",
              "lpn": "LPN", "cna": "CNA", "hvac": "HVAC", "plc": "PLC", "erp": "ERP", "crm": "CRM", "ios": "iOS",
-             "and": "and", "of": "of", "for": "for", "in": "in", "devops": "DevOps", "fullstack": "Full Stack", "backend": "Backend", "frontend": "Frontend", "cad": "CAD", "ehs": "EHS", "hse": "HSE", "cdl": "CDL", "sap": "SAP", "net": ".NET"}
+             "and": "and", "of": "of", "for": "for", "in": "in", "devops": "DevOps", "fullstack": "Full Stack", "backend": "Backend", "frontend": "Frontend", "cad": "CAD", "ehs": "EHS", "hse": "HSE", "cdl": "CDL", "sap": "SAP", "net": ".NET", "dotnet": ".NET"}
 
 
 def normalize_title(title: str) -> str:

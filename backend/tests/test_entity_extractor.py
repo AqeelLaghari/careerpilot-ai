@@ -149,3 +149,12 @@ def test_non_tech_domain_skills():
     found = find_skills("SEO, Google Ads, Bookkeeping, AutoCAD, Lesson Planning, Recruitment, Patient Care, Typography",
                         in_skills_section=True)
     assert {"Google Ads", "Bookkeeping", "AutoCAD", "Lesson Planning", "Recruitment", "Patient Care", "Typography"} <= set(found)
+
+
+def test_company_first_title_second_is_swapped():
+    from app.services.entity_extractor import _split_title_company
+    assert _split_title_company("Fauji Fertilizer Company (FFC) | IT Department Intern") == \
+        ("IT Department Intern", "Fauji Fertilizer Company (FFC)")
+    assert _split_title_company("Indus Hospital – Karachi | Volunteer Team Leader")[0] == "Volunteer Team Leader"
+    # normal order is kept
+    assert _split_title_company("Backend Intern | Systems Ltd") == ("Backend Intern", "Systems Ltd")

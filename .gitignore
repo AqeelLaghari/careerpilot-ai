@@ -13,6 +13,7 @@ firebase-key.json
 
 # Big generated files
 backend/data/*.index
+backend/data/role_index.json
 backend/models/
 backend/data/raw/
 

@@ -204,11 +204,25 @@ def extract_education(text: str) -> list[dict]:
 
 
 # -------------------------------------------------------------- experience --
+ORG_WORDS_RE = re.compile(
+    r"\b(company|ltd|limited|inc|llc|corp|corporation|pvt|private|group|bank|hospital|university|"
+    r"college|institute|school|technologies|technology|solutions|systems|services|consulting|labs|"
+    r"agency|foundation|organization|organisation|ministry|authority|enterprises|industries)\b|\([A-Z]{2,6}\)", re.I)
+ROLE_WORDS_RE = re.compile(
+    r"\b(intern|internship|engineer|developer|manager|analyst|leader|lead|officer|designer|assistant|"
+    r"consultant|specialist|associate|executive|coordinator|administrator|architect|scientist|"
+    r"technician|teacher|lecturer|nurse|accountant|volunteer|trainee|director|head|supervisor)\b", re.I)
+
+
 def _split_title_company(text: str) -> tuple[str, str | None]:
     for sep in (" at ", " @ ", " | ", " · ", " — ", " – ", " - ", ", "):
         if sep in text:
-            a, b = text.split(sep, 1)
-            return a.strip(), b.strip()
+            a, b = (x.strip() for x in text.split(sep, 1))
+            # "Fauji Fertilizer Company (FFC) | IT Intern" → title first, company second
+            if sep not in (" at ", " @ ") and ORG_WORDS_RE.search(a) and ROLE_WORDS_RE.search(b) \
+                    and not ROLE_WORDS_RE.search(a):
+                a, b = b, a
+            return a, b
     return text.strip(), None
 
 

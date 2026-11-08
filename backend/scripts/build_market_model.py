@@ -40,7 +40,7 @@ COMPANY_COLS = ["company_name", "company", "employer", "company_id"]
 GENERIC_TITLES = {"Manager", "Director", "Engineer", "Associate", "Specialist", "Consultant", "Analyst",
                   "Coordinator", "Supervisor", "Assistant", "Representative", "Technician", "Intern",
                   "Administrator", "Officer", "Executive", "Advisor", "Lead", "Partner", "Agent", "Operator",
-                  "Worker", "Professional", "Clerk", "Developer", "Owner", "President", "Vice President", "Team Member"}
+                  "Worker", "Professional", "Clerk", "Developer", "Technical", "Owner", "President", "Vice President", "Team Member"}
 TIME_COLS = ["listed_time", "original_listed_time", "post_date", "posted_date", "date_posted", "first_seen"]
 TITLE_WORD_RE = re.compile(r"\b[A-Z][a-z]+\b")
 CAMEL_PART_RE = re.compile(r"[A-Z][a-z0-9]*|[a-z0-9]+")

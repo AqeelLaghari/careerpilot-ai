@@ -59,3 +59,32 @@ def two_column_pdf() -> bytes:
         (260, 260, "Graduated with distinction and a CGPA of 3.7", 10),
     ]
     return _make_pdf(left + right)
+
+
+# ---- no real SBERT model in tests: a tiny deterministic bag-of-words embedder ----
+import re as _re
+import zlib as _zlib
+
+import numpy as _np
+
+
+def fake_embed(texts):
+    out = _np.zeros((len(texts), 384), dtype="float32")
+    for i, t in enumerate(texts):
+        for w in _re.findall(r"[a-z0-9+#.]+", t.lower()):
+            out[i, _zlib.crc32(w.encode()) % 384] += 1.0
+        n = _np.linalg.norm(out[i])
+        if n:
+            out[i] /= n
+    return out
+
+
+@pytest.fixture(autouse=True)
+def _no_real_embeddings(monkeypatch, tmp_path):
+    from app.services import career_matcher, embeddings
+    monkeypatch.setattr(embeddings, "embed", fake_embed)
+    monkeypatch.setattr(career_matcher, "INDEX_PATH", tmp_path / "role_index.index")
+    monkeypatch.setattr(career_matcher, "META_PATH", tmp_path / "role_index.json")
+    career_matcher._role_index.cache_clear()
+    yield
+    career_matcher._role_index.cache_clear()

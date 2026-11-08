@@ -118,6 +118,7 @@ class _ResumeScreenState extends State<ResumeScreen> {
 
     final left = [
       _scoreCard(ats, r['filename'] as String? ?? ''),
+      RoleMatchCard(match: ats['role_match'] as Map<String, dynamic>?),
       SectionCard(
         title: 'Top fixes',
         icon: Icons.build_circle_outlined,
@@ -182,7 +183,7 @@ class _ResumeScreenState extends State<ResumeScreen> {
                   Text(filename, style: const TextStyle(color: Colors.grey)),
                   const SizedBox(height: 8),
                   const Text('How easily applicant tracking systems can read your resume. '
-                      'The role match score appears once you choose a target career.'),
+                      'See below how well it matches a role.'),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     onPressed: _pickAndUpload,
