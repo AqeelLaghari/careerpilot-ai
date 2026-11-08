@@ -1,4 +1,4 @@
-﻿# CareerPilot AI â€” 30-Day Build Roadmap
+﻿# CareerPilot AI — 30-Day Build Roadmap
 
 Start: Sun 8 Nov 2026 Â· Target finish: Mon 7 Dec 2026
 Budget: Claude Pro ($20) + free tiers only (Firebase Spark, Gemini API free tier, Hugging Face Spaces).
@@ -28,22 +28,32 @@ Tick each box when it's done and committed to git.
 Scores shown: ATS readability (Layer 1, on upload) → Role match (Layers 2+3, after choosing a target role) → optional job-description match.
 Validation (Day 23): Spearman correlation with 2–3 human expert ratings on about 20 CVs of mixed quality, plus a before/after fix test.
 
+## Live market learning (decided 8 Nov 2026)
+Job-market data goes stale, so the app keeps learning from fresh job postings while it runs, with no code change or redeploy.
+- **Source:** a free job API (first choice JSearch with `country=pk`, then Careerjet `en_PK`, Remotive for remote jobs). Never scrape LinkedIn, Indeed or Rozee.
+- **Collect:** every fetched posting is saved (deduplicated) in Firestore.
+- **Learn weekly:** terms that are frequent in recent postings but missing from the skill list become candidates (15+ postings, blocklist for words like "Urgent"/"Hybrid"). Gemini fast tier confirms them and assigns a category in ONE batched call. Approved skills go to Firestore and are hot-reloaded into the skill detector. `skills.json` stays the base list.
+- **Trigger:** on a request, if the last update is more than 7 days old, run it in the background (works on free hosting that sleeps).
+- **Re-weight:** role keyword weights and trending/declining skills are recomputed, newer postings weighted more.
+- **Oversight:** an admin list of learned skills; any wrong skill can be removed.
+- **Live jobs (conditional):** if the API returns enough Pakistani jobs (test "Software Engineer, Karachi" first), the same postings power a Jobs tab: match % (skills + SBERT), missing skills, Apply → original posting, results cached for a few hours. If coverage is weak, the API is used only for learning.
+
 ## Folder structure
 
 ```
 CareerPilot AI/
-â”œâ”€â”€ backend/            FastAPI + agents (Python)
-â”‚   â”œâ”€â”€ app/
-â”‚   â”‚   â”œâ”€â”€ main.py
-â”‚   â”‚   â”œâ”€â”€ orchestrator/   blackboard.py (shared state), orchestrator.py
-â”‚   â”‚   â”œâ”€â”€ agents/         resume_agent.py, career_agent.py, interview_agent.py
-â”‚   â”‚   â”œâ”€â”€ services/       pdf_parser.py, ats_scorer.py, embeddings.py, whisper_service.py, llm.py
-â”‚   â”‚   â””â”€â”€ routers/        resume.py, career.py, interview.py (incl. WebSocket)
-â”‚   â”œâ”€â”€ data/           jobs.csv, skills.json, skill_graph.json, faiss.index
-â”‚   â””â”€â”€ tests/
-â”œâ”€â”€ frontend/           Flutter app (web + Android)
-â”œâ”€â”€ evaluation/         labelled resumes + accuracy scripts (for the report)
-â””â”€â”€ docs/
+├── backend/            FastAPI + agents (Python)
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── orchestrator/   blackboard.py (shared state), orchestrator.py
+│   │   ├── agents/         resume_agent.py, career_agent.py, interview_agent.py
+│   │   ├── services/       pdf_parser.py, ats_scorer.py, embeddings.py, whisper_service.py, llm.py
+│   │   └── routers/        resume.py, career.py, interview.py (incl. WebSocket)
+│   ├── data/           jobs.csv, skills.json, skill_graph.json, faiss.index
+│   └── tests/
+├── frontend/           Flutter app (web + Android)
+├── evaluation/         labelled resumes + accuracy scripts (for the report)
+└── docs/
 ```
 
 ---
@@ -74,16 +84,16 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - [x] **Day 4**: PDF text extraction (PyMuPDF + pdfplumber) with layout info
 - [x] **Day 5**: spaCy pipeline: skills EntityRuler, education, experience, dates, plus Gemini JSON fallback
 - [x] **Day 6**: ATS scorecard, Layer 1 (rule-based readability: headings, tables/images, scanned, contact, action verbs, metrics, length) + slots for role-keyword score
-- [ ] **Day 7**: Flutter upload screen + ATS report UI. **Milestone 1: resume â†’ score works end-to-end**
+- [ ] **Day 7**: Flutter upload screen + ATS report UI. **Milestone 1: resume → score works end-to-end**
 
 ## Week 2: Career Guide Agent
-- [ ] **Day 8**: Job-POSTINGS dataset (Kaggle LinkedIn Job Postings, 100k+, all industries) → group by role → TF-IDF skill importance per role (ATS Layer 2); flag unknown skills for dictionary growth
+- [ ] **Day 8**: Job-POSTINGS dataset (Kaggle LinkedIn Job Postings, 100k+, all industries) → group by role → TF-IDF skill importance per role (ATS Layer 2). Built as a re-runnable `build_market_model.py` (any postings in → new weights out), newer postings weighted more, "market data updated: <date>, N postings" stamp; flag unknown skills for dictionary growth
 - [ ] **Day 9**: Sentence-Transformers embeddings + FAISS index + `/career/match` (top 3); role match score (Layer 2 keywords + Layer 3 semantic) added to the ATS report; optional paste-a-job-description match
 - [ ] **Day 10**: Adaptive questionnaire (asks only for what the resume is missing)
-- [ ] **Day 11**: Skill-gap (set difference) + skill DAG (networkx topological sort) â†’ weekly roadmap
+- [ ] **Day 11**: Skill-gap (set difference) + skill DAG (networkx topological sort) → weekly roadmap
 - [ ] **Day 12**: Flutter: questionnaire + career matches screens
 - [ ] **Day 13**: Flutter: interactive roadmap (tick tasks; roadmap updates)
-- [ ] **Day 14**: Buffer / bug fixing. **Milestone 2: resume â†’ career â†’ roadmap**
+- [ ] **Day 14**: Self-learning market model (see "Live market learning" above): job API client + save postings to Firestore + new-skill discovery (Gemini fast, weekly batch) + skills stored in Firestore and hot-reloaded + trending skills. If the API covers Pakistan well → also the Jobs tab (live listings, match %, Apply). **Milestone 2: resume → career → roadmap**
 
 ## Week 3: Interview Coach Agent
 - [ ] **Day 15**: Question generation from blackboard (profile + target role)
@@ -97,7 +107,7 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 ## Week 4: Integration, evaluation, deployment
 - [ ] **Day 22**: Orchestrator synthesis; dashboard shows everything, live refresh; ATS score history across uploads; AI bullet rewriter button (Gemini fast tier, on click only)
 - [ ] **Day 23**: Evaluation: parsing F1 on 25 labelled resumes; FAISS latency; WebSocket latency
-- [ ] **Day 24**: Automated tests (pytest) + error handling
+- [ ] **Day 24**: Automated tests (pytest) + error handling + buffer / bug fixing
 - [ ] **Day 25**: Deploy backend to Hugging Face Spaces
 - [ ] **Day 26**: Deploy web to Firebase Hosting; build Android APK
 - [ ] **Day 27**: Pilot test with 5 to 10 classmates (Google Form feedback)
@@ -105,4 +115,4 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - [ ] **Day 29**: README, architecture diagrams, results tables for the report
 - [ ] **Day 30**: Demo video + defense rehearsal
 
-If you fall behind, cut these first: Android APK â†’ roadmap auto-update â†’ Gemini fallback in parsing.
+If you fall behind, cut these first: Android APK → roadmap auto-update → Gemini fallback in parsing.
