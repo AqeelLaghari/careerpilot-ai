@@ -30,13 +30,13 @@ Validation (Day 23): Spearman correlation with 2–3 human expert ratings on abo
 
 ## Live market learning (decided 8 Nov 2026)
 Job-market data goes stale, so the app keeps learning from fresh job postings while it runs, with no code change or redeploy.
-- **Source:** a free job API (first choice JSearch with `country=pk`, then Careerjet `en_PK`, Remotive for remote jobs). Never scrape LinkedIn, Indeed or Rozee.
+- **Source:** free remote-job APIs (see Live jobs below). Never scrape LinkedIn, Indeed or Rozee.
 - **Collect:** every fetched posting is saved (deduplicated) in Firestore.
 - **Learn weekly:** terms that are frequent in recent postings but missing from the skill list become candidates (15+ postings, blocklist for words like "Urgent"/"Hybrid"). Gemini fast tier confirms them and assigns a category in ONE batched call. Approved skills go to Firestore and are hot-reloaded into the skill detector. `skills.json` stays the base list.
 - **Trigger:** on a request, if the last update is more than 7 days old, run it in the background (works on free hosting that sleeps).
 - **Re-weight:** role keyword weights and trending/declining skills are recomputed, newer postings weighted more.
 - **Oversight:** an admin list of learned skills; any wrong skill can be removed.
-- **Live jobs (conditional):** if the API returns enough Pakistani jobs (test "Software Engineer, Karachi" first), the same postings power a Jobs tab: match % (skills + SBERT), missing skills, Apply → original posting, results cached for a few hours. If coverage is weak, the API is used only for learning.
+- **Live jobs = REMOTE jobs a Pakistani can apply to (decided 8 Nov 2026):** sources Himalayas (has candidate-location restrictions + worldwide filter; check its terms on display first), Remotive, Jobicy, RemoteOK (all free, no key; link back/attribution required), optional JSearch `remote_jobs_only`. Keep only jobs open to Worldwide/Anywhere/Asia/APAC/Pakistan; dedupe; match % (skills + SBERT); "Open worldwide" badge; Apply → original posting; cache a few hours. Every fetched posting also feeds skill learning. Day 14 starts by counting Pakistan-eligible jobs per API and confirming terms.
 
 ## Folder structure
 
@@ -93,7 +93,7 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - [ ] **Day 11**: Skill-gap (set difference) + skill DAG (networkx topological sort) → weekly roadmap
 - [ ] **Day 12**: Flutter: questionnaire + career matches screens; Android smoke test (Firebase Android config, backend address from phone, file picker, permissions)
 - [ ] **Day 13**: Flutter: interactive roadmap (tick tasks; roadmap updates)
-- [ ] **Day 14**: Self-learning market model (see "Live market learning" above): job API client + save postings to Firestore + new-skill discovery (Gemini fast, weekly batch) + skills stored in Firestore and hot-reloaded + trending skills. If the API covers Pakistan well → also the Jobs tab (live listings, match %, Apply). **Milestone 2: resume → career → roadmap**
+- [ ] **Day 14**: Self-learning market model + live REMOTE jobs (see "Live market learning" above): remote-job API clients (Himalayas, Remotive, Jobicy, RemoteOK) + Pakistan-eligibility filter + save postings to Firestore + new-skill discovery (Gemini fast, weekly batch) + skills in Firestore, hot-reloaded + trending skills + Jobs tab (match %, Apply). **Milestone 2: resume → career → roadmap**
 
 ## Week 3: Interview Coach Agent
 - [ ] **Day 15**: Question generation from blackboard (profile + target role)
