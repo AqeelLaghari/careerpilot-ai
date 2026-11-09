@@ -236,12 +236,14 @@ class _RoleSearchDialogState extends State<RoleSearchDialog> {
       );
 }
 
-/// Roadmap summary (the full interactive roadmap screen comes on Day 13).
+/// Roadmap summary + progress; "Open roadmap" goes to the interactive week-by-week screen.
 class RoadmapSummaryCard extends StatelessWidget {
-  const RoadmapSummaryCard({super.key, required this.roadmap, required this.building, required this.onBuild});
+  const RoadmapSummaryCard(
+      {super.key, required this.roadmap, required this.building, required this.onBuild, required this.onOpen});
   final Map<String, dynamic>? roadmap;
   final bool building;
   final VoidCallback onBuild;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -266,6 +268,7 @@ class RoadmapSummaryCard extends StatelessWidget {
       );
     }
     final s = r['summary'] as Map<String, dynamic>;
+    final p = r['progress'] as Map<String, dynamic>?;
     final skills = (r['skills'] as List).cast<Map<String, dynamic>>();
     final later = (r['later'] as List? ?? []).cast<Map<String, dynamic>>();
     return SectionCard(
@@ -278,6 +281,18 @@ class RoadmapSummaryCard extends StatelessWidget {
           _stat('${skills.length}', 'skills'),
         ]),
         const SizedBox(height: 10),
+        if (p != null) ...[
+          LinearProgressIndicator(
+            value: (p['percent'] as num) / 100,
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(4),
+            color: p['status'] == 'behind' ? AppColors.bad : AppColors.good,
+            backgroundColor: Colors.grey.shade200,
+          ),
+          const SizedBox(height: 4),
+          Text('${p['percent']}% done · ${p['message']}', style: const TextStyle(fontSize: 12)),
+          const SizedBox(height: 8),
+        ],
         Text(s['message'] as String),
         const SizedBox(height: 12),
         const Text('Learning order', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -300,12 +315,15 @@ class RoadmapSummaryCard extends StatelessWidget {
               style: const TextStyle(fontSize: 12, color: Colors.grey)),
         ],
         const SizedBox(height: 12),
-        Row(children: [
-          const Expanded(
-            child: Text('Full week-by-week view with tasks: coming next.',
-                style: TextStyle(fontSize: 12, color: Colors.grey)),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          FilledButton.icon(onPressed: onOpen, icon: const Icon(Icons.checklist), label: const Text('Open roadmap')),
+          OutlinedButton.icon(
+            onPressed: building ? null : onBuild,
+            icon: building
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.autorenew),
+            label: const Text('Re-plan'),
           ),
-          button,
         ]),
       ]),
     );

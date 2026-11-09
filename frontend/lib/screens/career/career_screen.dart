@@ -5,6 +5,7 @@ import '../../theme.dart';
 import '../resume/resume_widgets.dart';
 import 'career_widgets.dart';
 import 'questionnaire_screen.dart';
+import 'roadmap_screen.dart';
 
 /// Career Guide: questionnaire → best-fit careers → target role → roadmap summary → JD match.
 class CareerScreen extends StatefulWidget {
@@ -94,6 +95,12 @@ class _CareerScreenState extends State<CareerScreen> {
     }
   }
 
+  Future<void> _openRoadmap() async {
+    final changed = await Navigator.push<bool>(
+        context, MaterialPageRoute(builder: (_) => RoadmapScreen(initial: _roadmap!)));
+    if (changed == true) _load(); // finished skills change your matches
+  }
+
   void _snack(String msg) {
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
@@ -155,7 +162,8 @@ class _CareerScreenState extends State<CareerScreen> {
       ),
     ];
     final right = <Widget>[
-      RoadmapSummaryCard(roadmap: _roadmap, building: _buildingRoadmap, onBuild: _buildRoadmap),
+      RoadmapSummaryCard(
+          roadmap: _roadmap, building: _buildingRoadmap, onBuild: _buildRoadmap, onOpen: _openRoadmap),
       const JobDescriptionCard(),
     ];
 
