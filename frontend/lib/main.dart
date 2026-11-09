@@ -9,7 +9,7 @@ import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: webFirebaseOptions);
+  await Firebase.initializeApp(options: currentFirebaseOptions);
   runApp(const CareerPilotApp());
 }
 

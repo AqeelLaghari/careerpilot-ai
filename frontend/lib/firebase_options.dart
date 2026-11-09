@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 
 /// Firebase settings for the WEB app.
 /// Fill these in from: Firebase console → Project settings → General →
@@ -12,3 +13,18 @@ const FirebaseOptions webFirebaseOptions = FirebaseOptions(
   messagingSenderId: '585905018184',
   appId: '1:585905018184:web:34cb7bec3222bad8ba8f7d',
 );
+
+/// Firebase settings for the ANDROID app (package com.careerpilot.careerpilot).
+/// Values come from android/app/google-services.json (Firebase console → Project
+/// settings → Your apps → Android app). Also public by design.
+const FirebaseOptions androidFirebaseOptions = FirebaseOptions(
+  apiKey: 'ANDROID_API_KEY',
+  appId: 'ANDROID_APP_ID',
+  messagingSenderId: '585905018184',
+  projectId: 'careerpilot-ai-762bb',
+  storageBucket: 'careerpilot-ai-762bb.firebasestorage.app',
+);
+
+/// The right settings for the platform the app is running on.
+FirebaseOptions get currentFirebaseOptions =>
+    !kIsWeb && defaultTargetPlatform == TargetPlatform.android ? androidFirebaseOptions : webFirebaseOptions;

@@ -31,6 +31,18 @@ class ApiClient {
     return _decode(res);
   }
 
+  /// GET for endpoints that return a JSON list (e.g. /market/roles).
+  Future<List<dynamic>> getList(String path) async {
+    final res = await http.get(Uri.parse('$apiBaseUrl$path'), headers: await _headers());
+    if (res.statusCode >= 400) _decode(res);
+    return jsonDecode(res.body) as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> delete(String path) async {
+    final res = await http.delete(Uri.parse('$apiBaseUrl$path'), headers: await _headers());
+    return _decode(res);
+  }
+
   /// Upload a file (e.g. a resume PDF) as multipart form data.
   Future<Map<String, dynamic>> uploadFile(String path, List<int> bytes, String filename) async {
     final req = http.MultipartRequest('POST', Uri.parse('$apiBaseUrl$path'));

@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import 'career/career_screen.dart';
 import 'dashboard_screen.dart';
 import 'resume/resume_screen.dart';
 
@@ -15,11 +16,11 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _tab = 0;
 
-  // Placeholders are replaced with real screens on Days 12 and 21.
+  // The Interview placeholder is replaced with the real screen on Day 21.
   final _pages = const [
     DashboardScreen(),
     ResumeScreen(),
-    _ComingSoon('Career Guide', Icons.explore, 'Day 12'),
+    CareerScreen(),
     _ComingSoon('Interview Coach', Icons.videocam, 'Day 21'),
   ];
 

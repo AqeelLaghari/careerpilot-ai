@@ -1,6 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Talk to the backend -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="careerpilot"
+        android:label="CareerPilot AI"
+        android:usesCleartextTraffic="true"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
