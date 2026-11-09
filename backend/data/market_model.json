@@ -1,6 +1,6 @@
 {
  "version": "market-v1",
- "built_at": "2026-11-08T23:30:29+00:00",
+ "built_at": "2026-11-09T01:36:41+00:00",
  "sources": [
   "postings.csv"
  ],
@@ -75520,5 +75520,378 @@
     }
    ]
   }
- }
+ },
+ "prerequisites": [
+  {
+   "before": "Nursing",
+   "after": "ACLS",
+   "p_before_given_after": 0.753,
+   "p_after_given_before": 0.098,
+   "postings_together": 372
+  },
+  {
+   "before": "Patient Care",
+   "after": "ACLS",
+   "p_before_given_after": 0.7,
+   "p_after_given_before": 0.096,
+   "postings_together": 346
+  },
+  {
+   "before": "AWS",
+   "after": "AWS EC2",
+   "p_before_given_after": 0.973,
+   "p_after_given_before": 0.101,
+   "postings_together": 109
+  },
+  {
+   "before": "AWS",
+   "after": "AWS Lambda",
+   "p_before_given_after": 0.95,
+   "p_after_given_before": 0.123,
+   "postings_together": 133
+  },
+  {
+   "before": "AWS",
+   "after": "AWS S3",
+   "p_before_given_after": 0.925,
+   "p_after_given_before": 0.125,
+   "postings_together": 136
+  },
+  {
+   "before": "CI/CD",
+   "after": "Ansible",
+   "p_before_given_after": 0.526,
+   "p_after_given_before": 0.122,
+   "postings_together": 82
+  },
+  {
+   "before": "Monitoring",
+   "after": "Ansible",
+   "p_before_given_after": 0.519,
+   "p_after_given_before": 0.026,
+   "postings_together": 81
+  },
+  {
+   "before": "Microsoft Azure",
+   "after": "Azure DevOps",
+   "p_before_given_after": 0.555,
+   "p_after_given_before": 0.085,
+   "postings_together": 76
+  },
+  {
+   "before": "Python",
+   "after": "Bash",
+   "p_before_given_after": 0.769,
+   "p_after_given_before": 0.142,
+   "postings_together": 196
+  },
+  {
+   "before": "Python",
+   "after": "C++",
+   "p_before_given_after": 0.507,
+   "p_after_given_before": 0.123,
+   "postings_together": 170
+  },
+  {
+   "before": "Sales",
+   "after": "CRM",
+   "p_before_given_after": 0.555,
+   "p_after_given_before": 0.14,
+   "postings_together": 634
+  },
+  {
+   "before": "Computer Networking",
+   "after": "Cisco",
+   "p_before_given_after": 0.525,
+   "p_after_given_before": 0.088,
+   "postings_together": 115
+  },
+  {
+   "before": "AWS",
+   "after": "Cloud Computing",
+   "p_before_given_after": 0.602,
+   "p_after_given_before": 0.106,
+   "postings_together": 115
+  },
+  {
+   "before": "Agile",
+   "after": "Confluence",
+   "p_before_given_after": 0.663,
+   "p_after_given_before": 0.068,
+   "postings_together": 138
+  },
+  {
+   "before": "CI/CD",
+   "after": "Containerization",
+   "p_before_given_after": 0.628,
+   "p_after_given_before": 0.153,
+   "postings_together": 103
+  },
+  {
+   "before": "Computer Networking",
+   "after": "DNS",
+   "p_before_given_after": 0.609,
+   "p_after_given_before": 0.062,
+   "postings_together": 81
+  },
+  {
+   "before": "Reporting",
+   "after": "Dashboards",
+   "p_before_given_after": 0.509,
+   "p_after_given_before": 0.044,
+   "postings_together": 226
+  },
+  {
+   "before": "Data Analysis",
+   "after": "Data Visualization",
+   "p_before_given_after": 0.596,
+   "p_after_given_before": 0.113,
+   "postings_together": 130
+  },
+  {
+   "before": "Machine Learning",
+   "after": "Deep Learning",
+   "p_before_given_after": 0.787,
+   "p_after_given_before": 0.127,
+   "postings_together": 85
+  },
+  {
+   "before": "Recruitment",
+   "after": "Employee Relations",
+   "p_before_given_after": 0.6,
+   "p_after_given_before": 0.057,
+   "postings_together": 216
+  },
+  {
+   "before": "UI/UX",
+   "after": "Figma",
+   "p_before_given_after": 0.662,
+   "p_after_given_before": 0.17,
+   "postings_together": 86
+  },
+  {
+   "before": "Accounting",
+   "after": "Financial Analysis",
+   "p_before_given_after": 0.824,
+   "p_after_given_before": 0.111,
+   "postings_together": 375
+  },
+  {
+   "before": "CPR",
+   "after": "First Aid",
+   "p_before_given_after": 0.61,
+   "p_after_given_before": 0.118,
+   "postings_together": 205
+  },
+  {
+   "before": "Artificial Intelligence",
+   "after": "Generative AI",
+   "p_before_given_after": 0.688,
+   "p_after_given_before": 0.08,
+   "postings_together": 75
+  },
+  {
+   "before": "Employee Relations",
+   "after": "HR Policies",
+   "p_before_given_after": 0.683,
+   "p_after_given_before": 0.197,
+   "postings_together": 71
+  },
+  {
+   "before": "Recruitment",
+   "after": "HR Policies",
+   "p_before_given_after": 0.683,
+   "p_after_given_before": 0.019,
+   "postings_together": 71
+  },
+  {
+   "before": "Recruitment",
+   "after": "HRIS",
+   "p_before_given_after": 0.559,
+   "p_after_given_before": 0.03,
+   "postings_together": 113
+  },
+  {
+   "before": "CRM",
+   "after": "HubSpot",
+   "p_before_given_after": 0.549,
+   "p_after_given_before": 0.049,
+   "postings_together": 56
+  },
+  {
+   "before": "Sales",
+   "after": "HubSpot",
+   "p_before_given_after": 0.529,
+   "p_after_given_before": 0.012,
+   "postings_together": 54
+  },
+  {
+   "before": "Nursing",
+   "after": "Infection Control",
+   "p_before_given_after": 0.661,
+   "p_after_given_before": 0.083,
+   "postings_together": 314
+  },
+  {
+   "before": "CI/CD",
+   "after": "Infrastructure as Code",
+   "p_before_given_after": 0.562,
+   "p_after_given_before": 0.141,
+   "postings_together": 95
+  },
+  {
+   "before": "Agile",
+   "after": "Jira",
+   "p_before_given_after": 0.667,
+   "p_after_given_before": 0.169,
+   "postings_together": 341
+  },
+  {
+   "before": "Agile",
+   "after": "Kanban",
+   "p_before_given_after": 0.727,
+   "p_after_given_before": 0.046,
+   "postings_together": 93
+  },
+  {
+   "before": "Scrum",
+   "after": "Kanban",
+   "p_before_given_after": 0.617,
+   "p_after_given_before": 0.138,
+   "postings_together": 79
+  },
+  {
+   "before": "Artificial Intelligence",
+   "after": "Large Language Models",
+   "p_before_given_after": 0.699,
+   "p_after_given_before": 0.085,
+   "postings_together": 79
+  },
+  {
+   "before": "Litigation",
+   "after": "Legal Research",
+   "p_before_given_after": 0.673,
+   "p_after_given_before": 0.224,
+   "postings_together": 107
+  },
+  {
+   "before": "Patient Care",
+   "after": "Medical Terminology",
+   "p_before_given_after": 0.59,
+   "p_after_given_before": 0.054,
+   "postings_together": 194
+  },
+  {
+   "before": "Machine Learning",
+   "after": "Natural Language Processing",
+   "p_before_given_after": 0.757,
+   "p_after_given_before": 0.117,
+   "postings_together": 78
+  },
+  {
+   "before": "Accounting",
+   "after": "Oracle NetSuite",
+   "p_before_given_after": 0.793,
+   "p_after_given_before": 0.039,
+   "postings_together": 130
+  },
+  {
+   "before": "Project Management",
+   "after": "PMP",
+   "p_before_given_after": 0.84,
+   "p_after_given_before": 0.098,
+   "postings_together": 278
+  },
+  {
+   "before": "Patient Care",
+   "after": "Phlebotomy",
+   "p_before_given_after": 0.673,
+   "p_after_given_before": 0.063,
+   "postings_together": 230
+  },
+  {
+   "before": "Microsoft Excel",
+   "after": "Pivot Tables",
+   "p_before_given_after": 0.947,
+   "p_after_given_before": 0.049,
+   "postings_together": 213
+  },
+  {
+   "before": "Accounting",
+   "after": "QuickBooks",
+   "p_before_given_after": 0.874,
+   "p_after_given_before": 0.062,
+   "postings_together": 209
+  },
+  {
+   "before": "Python",
+   "after": "Scala",
+   "p_before_given_after": 0.856,
+   "p_after_given_before": 0.091,
+   "postings_together": 125
+  },
+  {
+   "before": "Java",
+   "after": "Scala",
+   "p_before_given_after": 0.651,
+   "p_after_given_before": 0.097,
+   "postings_together": 95
+  },
+  {
+   "before": "SQL",
+   "after": "Scala",
+   "p_before_given_after": 0.637,
+   "p_after_given_before": 0.069,
+   "postings_together": 93
+  },
+  {
+   "before": "Agile",
+   "after": "Scrum",
+   "p_before_given_after": 0.876,
+   "p_after_given_before": 0.248,
+   "postings_together": 502
+  },
+  {
+   "before": "Agile",
+   "after": "Software Development Life Cycle",
+   "p_before_given_after": 0.533,
+   "p_after_given_before": 0.084,
+   "postings_together": 170
+  },
+  {
+   "before": "Recruitment",
+   "after": "Succession Planning",
+   "p_before_given_after": 0.541,
+   "p_after_given_before": 0.015,
+   "postings_together": 59
+  },
+  {
+   "before": "Computer Networking",
+   "after": "TCP/IP",
+   "p_before_given_after": 0.63,
+   "p_after_given_before": 0.066,
+   "postings_together": 87
+  },
+  {
+   "before": "Patient Care",
+   "after": "Vital Signs",
+   "p_before_given_after": 0.656,
+   "p_after_given_before": 0.089,
+   "postings_together": 321
+  },
+  {
+   "before": "Nursing",
+   "after": "Vital Signs",
+   "p_before_given_after": 0.566,
+   "p_after_given_before": 0.073,
+   "postings_together": 277
+  },
+  {
+   "before": "UI/UX",
+   "after": "Wireframing",
+   "p_before_given_after": 0.697,
+   "p_after_given_before": 0.15,
+   "postings_together": 76
+  }
+ ]
 }

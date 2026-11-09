@@ -1,7 +1,7 @@
 """Career Guide Agent (CGA).
 
 Reads:  the "resume" section of the Blackboard (written by the Resume Agent)
-Writes: the "questionnaire" and "career" sections of the Blackboard
+Writes: the "questionnaire", "career" and "roadmap" sections of the Blackboard
 
 It never calls the Resume Agent directly; it only reads what that agent
 left on the Blackboard (Blackboard pattern).
@@ -10,12 +10,14 @@ Grows over Days 9-11:
     Day 9:  best-fit careers (SBERT + FAISS + learned keywords)
     Day 10: adaptive questionnaire (asks only what the resume is missing);
             its answers enrich the profile used for career matching
-    Day 11: skill gap + learning roadmap
+    Day 11: skill gap (set difference) + prerequisite DAG (networkx topological
+            sort) -> weekly learning roadmap
 """
 import time
 
 from app.orchestrator.blackboard import Blackboard
 from app.services import career_matcher
+from app.services import roadmap as rm
 from app.services import questionnaire as qn
 
 AGENT_NAME = "career_agent"
@@ -71,6 +73,25 @@ class CareerAgent:
     def jd_match(self, uid: str, job_description: str) -> dict:
         profile, _ = self._profile(uid)
         return career_matcher.jd_match(profile, job_description)
+
+    # ------------------------------------------------------------- roadmap --
+    def build_roadmap(self, uid: str, role: str | None = None) -> dict | None:
+        """Roadmap for `role`, else the target role, else the best-fit role."""
+        profile, answers = self._profile(uid)
+        if not role:
+            career = self.bb.read_section(uid, "career") or {}
+            role = career.get("target_role")
+            if not role:
+                matches = career.get("matches") or (self.match(uid) or {}).get("matches")
+                role = matches[0]["role"] if matches else None
+        if not role:
+            return None
+        plan = rm.build_roadmap(profile, role, answers)
+        if plan is None:
+            return None
+        plan["generated_at"] = time.time()
+        self.bb.write(uid, "roadmap", plan, agent=AGENT_NAME)
+        return plan
 
     # ------------------------------------------------------- questionnaire --
     def _career_for_questions(self, uid: str) -> dict:

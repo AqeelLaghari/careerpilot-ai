@@ -12,15 +12,15 @@
   "postings": 313
  },
  {
+  "term": "SchedulesWeekly",
+  "postings": 233
+ },
+ {
   "term": "PeopleTask",
   "postings": 233
  },
  {
   "term": "VarietyPaid",
-  "postings": 233
- },
- {
-  "term": "SchedulesWeekly",
   "postings": 233
  },
  {
@@ -128,11 +128,7 @@
   "postings": 48
  },
  {
-  "term": "AttireFlexible",
-  "postings": 48
- },
- {
-  "term": "OffClosed",
+  "term": "RestaurantTaking",
   "postings": 48
  },
  {
@@ -140,15 +136,11 @@
   "postings": 48
  },
  {
-  "term": "SchedulingPerkspot",
+  "term": "EnthusiasticHard",
   "postings": 48
  },
  {
-  "term": "RestaurantTaking",
-  "postings": 48
- },
- {
-  "term": "DayDiscounted",
+  "term": "OffClosed",
   "postings": 48
  },
  {
@@ -156,11 +148,19 @@
   "postings": 48
  },
  {
+  "term": "AttireFlexible",
+  "postings": 48
+ },
+ {
   "term": "PharmacyBenefits",
   "postings": 48
  },
  {
-  "term": "EnthusiasticHard",
+  "term": "DayDiscounted",
+  "postings": 48
+ },
+ {
+  "term": "SchedulingPerkspot",
   "postings": 48
  },
  {
@@ -192,11 +192,11 @@
   "postings": 40
  },
  {
-  "term": "DiscloserDow",
+  "term": "WorkSustainability",
   "postings": 40
  },
  {
-  "term": "WorkSustainability",
+  "term": "DiscloserDow",
   "postings": 40
  },
  {
@@ -216,11 +216,11 @@
   "postings": 38
  },
  {
-  "term": "MatrixCare",
+  "term": "ChartEasy",
   "postings": 37
  },
  {
-  "term": "ChartEasy",
+  "term": "MatrixCare",
   "postings": 37
  },
  {
@@ -244,11 +244,11 @@
   "postings": 36
  },
  {
-  "term": "MatchEarn",
+  "term": "PackagesGuaranteed",
   "postings": 35
  },
  {
-  "term": "PackagesGuaranteed",
+  "term": "MatchEarn",
   "postings": 35
  },
  {
@@ -360,11 +360,7 @@
   "postings": 26
  },
  {
-  "term": "LoyaltyFollow",
-  "postings": 26
- },
- {
-  "term": "PersuasivenessManaging",
+  "term": "TrustBuilding",
   "postings": 26
  },
  {
@@ -372,7 +368,11 @@
   "postings": 26
  },
  {
-  "term": "TrustBuilding",
+  "term": "PersuasivenessManaging",
+  "postings": 26
+ },
+ {
+  "term": "LoyaltyFollow",
   "postings": 26
  },
  {
@@ -432,11 +432,11 @@
   "postings": 23
  },
  {
-  "term": "YouDecide",
+  "term": "AssociateRelations",
   "postings": 23
  },
  {
-  "term": "AssociateRelations",
+  "term": "YouDecide",
   "postings": 23
  },
  {
@@ -480,11 +480,11 @@
   "postings": 21
  },
  {
-  "term": "CoursesFlexible",
+  "term": "AssistanceContinuing",
   "postings": 21
  },
  {
-  "term": "AssistanceContinuing",
+  "term": "CoursesFlexible",
   "postings": 21
  },
  {

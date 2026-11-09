@@ -19,3 +19,4 @@ python-dateutil==2.*
 pandas==2.*
 sentence-transformers>=3,<6
 faiss-cpu>=1.8
+networkx>=3

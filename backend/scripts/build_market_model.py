@@ -8,6 +8,7 @@ Input : any CSV(s) of job postings under data/raw/ with a title and a descriptio
         column (column names are detected automatically). Re-run it whenever new
         postings are added; the model is rebuilt from scratch, no code changes.
 Output: data/market_model.json       roles → learned skill weights (used by the app)
+                                     + skill prerequisites learned from co-occurrence
         data/market_candidates.json  frequent tech-looking terms that are NOT in
                                      skills.json yet (to grow the dictionary)
 """
@@ -18,6 +19,7 @@ import re
 import sys
 import time
 from collections import Counter, defaultdict
+from itertools import combinations
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -126,6 +128,35 @@ def known_aliases() -> set[str]:
             for e in entries for a in e.lstrip("!").split("|")}
 
 
+def learn_prerequisites(skill_n: Counter, pair_n: Counter, categories: dict | None = None,
+                        min_postings: int = 100, min_given: float = 0.5, min_ratio: float = 3.0,
+                        per_skill: int = 3) -> list[dict]:
+    """Learn "A comes before B" from postings, with no hand-written rules.
+
+    If most postings that ask for B also ask for A, but few postings that ask for A
+    ask for B, then A is the broader foundation and B builds on it:
+        P(A|B) = n(A,B)/n(B) >= min_given      e.g. 0.9 of Django postings mention Python
+        P(A|B) >= min_ratio * P(B|A)           but only 0.1 of Python postings mention Django
+    A and B must be in the same skill area (category): otherwise skills that appear in
+    almost every posting (Agile, Patient Care) would look like prerequisites of everything.
+    Only the strongest `per_skill` foundations of each skill are kept."""
+    by_after = defaultdict(list)
+    for (x, y), n_xy in pair_n.items():
+        for a, b in ((x, y), (y, x)):
+            if skill_n[b] < min_postings or skill_n[a] < min_postings:
+                continue
+            if categories is not None and categories.get(a) != categories.get(b):
+                continue
+            p_a_b, p_b_a = n_xy / skill_n[b], n_xy / skill_n[a]
+            if p_a_b >= min_given and p_a_b >= min_ratio * p_b_a:
+                by_after[b].append({"before": a, "after": b, "p_before_given_after": round(p_a_b, 3),
+                                    "p_after_given_before": round(p_b_a, 3), "postings_together": n_xy})
+    edges = []
+    for b, lst in by_after.items():
+        edges += sorted(lst, key=lambda e: -e["p_before_given_after"])[:per_skill]
+    return sorted(edges, key=lambda e: (e["after"], -e["p_before_given_after"]))
+
+
 def build(limit: int | None, min_postings: int, half_life_days: float, top_k: int) -> dict:
     t0 = time.time()
     files = find_posting_files()
@@ -159,6 +190,7 @@ def build(limit: int | None, min_postings: int, half_life_days: float, top_k: in
     skill_n = defaultdict(Counter)
     categories = {}
     aliases, term_df, title_words = known_aliases(), Counter(), Counter()
+    hard_n, pair_n = Counter(), Counter()     # for learned prerequisites (hard skills only)
     for i, found in enumerate(find_skills_batch(texts)):
         role, w = df.at[i, "role"], df.at[i, "w"]
         role_w[role] += w
@@ -166,6 +198,10 @@ def build(limit: int | None, min_postings: int, half_life_days: float, top_k: in
             skill_w[role][skill] += w
             skill_n[role][skill] += 1
             categories[skill] = cat
+        hard = sorted(s for s, c in found.items() if c != "soft_skills")
+        hard_n.update(hard)
+        if len(hard) <= 40:
+            pair_n.update(combinations(hard, 2))
         term_df.update({t for t in TECH_TERM_RE.findall(texts[i]) if t.lower() not in aliases})
         title_words.update(set(TITLE_WORD_RE.findall(texts[i])))
         if (i + 1) % 5000 == 0:
@@ -210,11 +246,16 @@ def build(limit: int | None, min_postings: int, half_life_days: float, top_k: in
         "half_life_days": half_life_days,
         "min_postings_per_role": min_postings,
         "roles": dict(sorted(out_roles.items(), key=lambda kv: -kv[1]["postings"])),
+        "prerequisites": learn_prerequisites(hard_n, pair_n, categories),
     }
+    # Raw counts kept locally (git-ignored) so prerequisite thresholds can be re-tuned without a re-scan
+    (RAW_DIR / "cooccurrence.json").write_text(json.dumps(
+        {"skill_n": hard_n, "pairs": [[a, b, n] for (a, b), n in pair_n.items() if n >= 20]}), encoding="utf-8")
     MODEL_PATH.write_text(json.dumps(model, indent=1, ensure_ascii=False), encoding="utf-8")
     CANDIDATES_PATH.write_text(json.dumps(candidates, indent=1, ensure_ascii=False), encoding="utf-8")
     print(f"\nDone in {time.time() - t0:.0f}s: {len(out_roles):,} roles saved "
           f"({dropped} dropped: <5 known skills). Data {model['data_from']} → {model['data_to']}")
+    print(f"Learned {len(model['prerequisites'])} skill prerequisites from co-occurrence")
     print(f"Saved {MODEL_PATH.name} ({MODEL_PATH.stat().st_size / 1e6:.1f} MB) and "
           f"{CANDIDATES_PATH.name} ({len(candidates)} unknown-term candidates)")
     return model
