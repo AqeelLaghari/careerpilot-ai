@@ -218,6 +218,14 @@ def _split_title_company(text: str) -> tuple[str, str | None]:
     for sep in (" at ", " @ ", " | ", " · ", " — ", " – ", " - ", ", "):
         if sep in text:
             a, b = (x.strip() for x in text.split(sep, 1))
+            if sep not in (" at ", " @ "):
+                # "National Bank of Pakistan (NBP) - IT Intern | Karachi": the org/role pair is inside `a`
+                for inner in (" — ", " – ", " - "):
+                    if inner in a:
+                        a1, a2 = (x.strip() for x in a.split(inner, 1))
+                        if ORG_WORDS_RE.search(a1) and ROLE_WORDS_RE.search(a2) and not ROLE_WORDS_RE.search(a1):
+                            return a2, a1
+                        break
             # "Fauji Fertilizer Company (FFC) | IT Intern" → title first, company second
             if sep not in (" at ", " @ ") and ORG_WORDS_RE.search(a) and ROLE_WORDS_RE.search(b) \
                     and not ROLE_WORDS_RE.search(a):

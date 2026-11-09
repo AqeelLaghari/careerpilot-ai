@@ -156,5 +156,9 @@ def test_company_first_title_second_is_swapped():
     assert _split_title_company("Fauji Fertilizer Company (FFC) | IT Department Intern") == \
         ("IT Department Intern", "Fauji Fertilizer Company (FFC)")
     assert _split_title_company("Indus Hospital – Karachi | Volunteer Team Leader")[0] == "Volunteer Team Leader"
+    # "Org - Role | place": the pair hides before the first " | "
+    assert _split_title_company("National Bank of Pakistan (NBP) - IT Intern | Head Office, Karachi") == \
+        ("IT Intern", "National Bank of Pakistan (NBP)")
     # normal order is kept
     assert _split_title_company("Backend Intern | Systems Ltd") == ("Backend Intern", "Systems Ltd")
+    assert _split_title_company("Software Engineer - Backend | Systems Ltd")[0] == "Software Engineer - Backend"

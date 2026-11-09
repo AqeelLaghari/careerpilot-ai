@@ -33,6 +33,10 @@ W_SEMANTIC, W_KEYWORD = 0.6, 0.4
 JD_W_SEMANTIC, JD_W_KEYWORD = 0.4, 0.6
 # Roles in a field the user said they're interested in (questionnaire) get a small boost
 INTEREST_BONUS = 10
+# Two roles whose vectors are this similar are the same career for the user. Measured (Day 12):
+# BI Developer~BI Analyst 0.93, Marketing Director~Manager 0.90 (same); Data Scientist~ML
+# Engineer 0.78, DevOps~SRE 0.69 (different careers, both kept).
+DUP_COS = 0.88
 
 
 def _family(role: str) -> frozenset:
@@ -55,10 +59,18 @@ def role_text(name: str, profile: dict) -> str:
     return f"{name}. Key skills: {skills}."
 
 
+EVIDENCE_SECTIONS = {"skills", "projects", "experience", "questionnaire"}
+
+
 def resume_text(entities: dict) -> str:
-    """A short 'profile sentence' in the same shape as role_text, so the two compare fairly."""
+    """A short 'profile sentence' in the same shape as role_text, so the two compare fairly.
+    Skills are ranked by EVIDENCE first (listed / used in projects / used in jobs), then by
+    mentions, so a word that only appears in a degree name ("BS Software Engineering") or the
+    summary doesn't steer the match. 15 skills, like role_text: more blurs the meaning (Day 12 test)."""
     titles = [j["title"] for j in entities.get("experience", []) if j.get("title")][:4]
-    skills = [s["name"] for s in sorted(entities.get("skills", []), key=lambda s: -s.get("mentions", 1))][:25]
+    ranked = sorted(entities.get("skills", []),
+                    key=lambda s: (-len(EVIDENCE_SECTIONS & set(s.get("sections", []))), -s.get("mentions", 1)))
+    skills = [s["name"] for s in ranked][:15]
     parts = [entities.get("headline") or ""]
     if titles:
         parts.append("Job titles: " + ", ".join(titles) + ".")
@@ -136,13 +148,21 @@ def match_careers(entities: dict, top_k: int = 5, candidates: int = 30,
             "missing_skills": [m["name"] for m in kw["missing"]][:8],
         })
     results.sort(key=lambda r: -r["score"])
-    unique, seen = [], set()
-    for r in results:                      # skip near-duplicates of a better-ranked role
+    # Show DIFFERENT careers: skip a role that is a near-copy of a better-ranked one, by name
+    # ("Full Stack Developer" / "Engineer") or by meaning (role vectors with cosine >= DUP_COS)
+    pos = {n: i for i, n in enumerate(names)}
+    unique, seen, picked = [], set(), []
+    for r in results:
         fam = _family(r["role"])
-        if fam not in seen:
-            seen.add(fam)
-            unique.append(r)
-    return unique[:top_k]
+        vec = index.reconstruct(pos[r["role"]])
+        if fam in seen or any(float(np.dot(vec, p)) >= DUP_COS for p in picked):
+            continue
+        seen.add(fam)
+        picked.append(vec)
+        unique.append(r)
+        if len(unique) == top_k:
+            break
+    return unique
 
 
 def role_match(entities: dict, role: str) -> dict | None:

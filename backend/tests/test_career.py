@@ -66,3 +66,17 @@ def test_career_endpoints(built_model, monkeypatch):  # noqa: F811
         assert client.post("/career/jd-match", json={"job_description": "short"}).status_code == 422
     finally:
         app.dependency_overrides.clear()
+
+
+def test_resume_text_prefers_skills_with_evidence():
+    cv = {"headline": None, "experience": [], "projects": [], "skills": [
+        {"name": "Software Engineering", "mentions": 5, "sections": ["header", "education"]},   # degree name only
+        {"name": "PyTorch", "mentions": 2, "sections": ["skills", "projects"]},
+    ]}
+    t = career_matcher.resume_text(cv)
+    assert t.index("PyTorch") < t.index("Software Engineering")
+
+
+def test_near_duplicate_roles_are_merged(built_model, monkeypatch):  # noqa: F811
+    monkeypatch.setattr(career_matcher, "DUP_COS", -1.0)   # everything counts as a duplicate
+    assert len(career_matcher.match_careers(DEVOPS_CV, top_k=3)) == 1

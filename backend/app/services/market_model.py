@@ -28,6 +28,7 @@ _NOISE = {
     "contract", "contractor", "temporary", "temp", "part-time", "full-time", "part", "full", "time",
     "per", "diem", "prn", "night", "shift", "nights", "days", "weekend", "weekends", "experienced",
     "new", "grad", "graduate", "urgent", "hiring", "immediate", "opening", "w2", "only", "travel", "the", "a",
+    "intern", "interns", "internship", "summer", "co-op", "coop",
 }
 
 

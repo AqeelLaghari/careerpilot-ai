@@ -1,19 +1,15 @@
 [
  {
   "term": "LinkedIn",
-  "postings": 1159
+  "postings": 1167
  },
  {
   "term": "TikTok",
-  "postings": 345
+  "postings": 355
  },
  {
   "term": "PandoLogic",
   "postings": 313
- },
- {
-  "term": "SchedulesWeekly",
-  "postings": 233
  },
  {
   "term": "PeopleTask",
@@ -21,6 +17,10 @@
  },
  {
   "term": "VarietyPaid",
+  "postings": 233
+ },
+ {
+  "term": "SchedulesWeekly",
   "postings": 233
  },
  {
@@ -32,12 +32,12 @@
   "postings": 204
  },
  {
-  "term": "TravelNurseSource",
-  "postings": 183
+  "term": "YouTube",
+  "postings": 184
  },
  {
-  "term": "YouTube",
-  "postings": 176
+  "term": "TravelNurseSource",
+  "postings": 183
  },
  {
   "term": "DaVita",
@@ -80,15 +80,15 @@
   "postings": 69
  },
  {
+  "term": "youtu.be",
+  "postings": 68
+ },
+ {
   "term": "JobID",
   "postings": 68
  },
  {
   "term": "ClearlyRated",
-  "postings": 66
- },
- {
-  "term": "youtu.be",
   "postings": 66
  },
  {
@@ -105,7 +105,7 @@
  },
  {
   "term": "RecruitingAccommodation",
-  "postings": 56
+  "postings": 57
  },
  {
   "term": "McLean",
@@ -121,14 +121,10 @@
  },
  {
   "term": "ManpowerGroup",
-  "postings": 49
+  "postings": 50
  },
  {
   "term": "JazzHR",
-  "postings": 48
- },
- {
-  "term": "RestaurantTaking",
   "postings": 48
  },
  {
@@ -140,15 +136,11 @@
   "postings": 48
  },
  {
-  "term": "OffClosed",
-  "postings": 48
- },
- {
-  "term": "DentalVisionSupplemental",
-  "postings": 48
- },
- {
   "term": "AttireFlexible",
+  "postings": 48
+ },
+ {
+  "term": "SchedulingPerkspot",
   "postings": 48
  },
  {
@@ -160,7 +152,15 @@
   "postings": 48
  },
  {
-  "term": "SchedulingPerkspot",
+  "term": "DentalVisionSupplemental",
+  "postings": 48
+ },
+ {
+  "term": "OffClosed",
+  "postings": 48
+ },
+ {
+  "term": "RestaurantTaking",
   "postings": 48
  },
  {
@@ -188,7 +188,7 @@
   "postings": 42
  },
  {
-  "term": "IndicesEthisphere",
+  "term": "CompaniesCDP",
   "postings": 40
  },
  {
@@ -200,7 +200,7 @@
   "postings": 40
  },
  {
-  "term": "CompaniesCDP",
+  "term": "IndicesEthisphere",
   "postings": 40
  },
  {
@@ -244,11 +244,11 @@
   "postings": 36
  },
  {
-  "term": "PackagesGuaranteed",
+  "term": "MatchEarn",
   "postings": 35
  },
  {
-  "term": "MatchEarn",
+  "term": "PackagesGuaranteed",
   "postings": 35
  },
  {
@@ -296,11 +296,11 @@
   "postings": 30
  },
  {
-  "term": "FocusAdaptability",
+  "term": "QualityProductivityDependabilityCustomer",
   "postings": 30
  },
  {
-  "term": "QualityProductivityDependabilityCustomer",
+  "term": "FocusAdaptability",
   "postings": 30
  },
  {
@@ -360,19 +360,19 @@
   "postings": 26
  },
  {
-  "term": "TrustBuilding",
-  "postings": 26
- },
- {
   "term": "WorkAdaptabilityCommunication",
   "postings": 26
  },
  {
-  "term": "PersuasivenessManaging",
+  "term": "TrustBuilding",
   "postings": 26
  },
  {
   "term": "LoyaltyFollow",
+  "postings": 26
+ },
+ {
+  "term": "PersuasivenessManaging",
   "postings": 26
  },
  {
@@ -424,11 +424,11 @@
   "postings": 24
  },
  {
-  "term": "OptionsRetirement",
-  "postings": 23
+  "term": "shorturl.at",
+  "postings": 24
  },
  {
-  "term": "shorturl.at",
+  "term": "OptionsRetirement",
   "postings": 23
  },
  {
@@ -480,11 +480,11 @@
   "postings": 21
  },
  {
-  "term": "AssistanceContinuing",
+  "term": "CoursesFlexible",
   "postings": 21
  },
  {
-  "term": "CoursesFlexible",
+  "term": "AssistanceContinuing",
   "postings": 21
  },
  {
