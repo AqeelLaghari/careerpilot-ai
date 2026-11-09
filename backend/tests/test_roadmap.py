@@ -97,3 +97,72 @@ def test_roadmap_endpoints(built_model, monkeypatch):  # noqa: F811
         assert client.post("/roadmap").status_code == 200          # no role: best-fit role
     finally:
         app.dependency_overrides.clear()
+
+
+# ------------------------------------------------------------- Day 13 --
+def _plan():
+    items = [{"name": "Docker", "hours": 10, "project": "x"}, {"name": "Kubernetes", "hours": 10, "project": "y"}]
+    return {"role": "DevOps Engineer", "skills": items, "weeks": rm.schedule(items, 8), "started_at": 1_000_000}
+
+
+def test_ticking_completes_a_skill_and_unticking_reopens_it():
+    plan = _plan()
+    docker = [t["id"] for w in plan["weeks"] for t in w["tasks"] if t["skill"] == "Docker"]
+    for tid in docker[:-1]:
+        assert rm.set_task(plan, tid, True) is None
+    assert rm.set_task(plan, docker[-1], True) == "Docker"
+    assert [c["name"] for c in plan["completed_skills"]] == ["Docker"]
+    rm.set_task(plan, docker[0], False)
+    assert plan["completed_skills"] == []
+    with pytest.raises(KeyError):
+        rm.set_task(plan, "nope", True)
+
+
+def test_progress_status():
+    plan = _plan()
+    week = 7 * 24 * 3600
+    assert rm.progress(plan, now=plan["started_at"] + 10)["status"] == "on_track"
+    late = rm.progress(plan, now=plan["started_at"] + 2 * week + 10)       # week 3, nothing done
+    assert late["status"] == "behind" and late["expected_week"] == 3 and late["percent"] == 0
+    for w in plan["weeks"]:
+        for t in w["tasks"]:
+            t["done"] = True
+    done = rm.progress(plan, now=plan["started_at"] + 10)
+    assert done["status"] == "done" and done["percent"] == 100 and done["current_week"] is None
+
+
+def test_carry_over_keeps_ticks():
+    old = _plan()
+    first = old["weeks"][0]["tasks"][0]["id"]
+    rm.set_task(old, first, True)
+    old["completed_skills"] = [{"name": "Git", "completed_at": 1}]
+    new = rm.carry_over(old, _plan() | {"started_at": 2_000_000})
+    assert new["weeks"][0]["tasks"][0]["done"] and new["started_at"] == 1_000_000
+    assert new["completed_skills"][0]["name"] == "Git"
+
+
+def test_completed_skill_improves_match(built_model, monkeypatch):  # noqa: F811
+    from app.auth import current_uid
+    from app.orchestrator.blackboard import Blackboard
+    from app.routers import career
+    bb = Blackboard(db=None)
+    bb.write("u1", "resume", {"entities": CV}, agent="resume_agent")
+    monkeypatch.setattr(career.agent, "bb", bb)
+    app.dependency_overrides[current_uid] = lambda: "u1"
+    try:
+        client = TestClient(app)
+        client.post("/career/target", json={"role": "devops engineer"})
+        plan = client.post("/roadmap").json()
+        assert "progress" in plan
+        skill = plan["skills"][0]["name"]
+        ids = [t["id"] for w in plan["weeks"] for t in w["tasks"] if t["skill"] == skill]
+        for tid in ids:
+            r = client.post(f"/roadmap/tasks/{tid}", json={"done": True}).json()
+        assert r["skill_completed"] == skill
+        assert r["progress"]["skills_completed"] == 1
+        assert client.post("/roadmap/tasks/zzz", json={"done": True}).status_code == 404
+        rebuilt = client.post("/roadmap").json()                 # learned skill isn't planned again
+        assert skill not in [s["name"] for s in rebuilt["skills"]]
+        assert rebuilt["completed_skills"][0]["name"] == skill
+    finally:
+        app.dependency_overrides.clear()

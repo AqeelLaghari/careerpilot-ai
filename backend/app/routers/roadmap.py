@@ -25,9 +25,28 @@ def build(body: RoadmapIn | None = None, uid: str = Depends(current_uid)):
     return plan
 
 
+class TaskIn(BaseModel):
+    done: bool
+
+
 @router.get("")
 def get(uid: str = Depends(current_uid)):
-    plan = agent.bb.read_section(uid, "roadmap")
+    """The roadmap with live progress (on track / behind)."""
+    plan = agent.get_roadmap(uid)
+    if plan is None:
+        raise HTTPException(404, "No roadmap yet")
+    return plan
+
+
+@router.post("/tasks/{task_id}")
+def tick(task_id: str, body: TaskIn, uid: str = Depends(current_uid)):
+    """Tick or untick a task. Finishing a skill's last task marks the skill as learned."""
+    try:
+        plan = agent.update_task(uid, task_id, body.done)
+    except KeyError:
+        raise HTTPException(404, f"No task '{task_id}' in your roadmap")
+    except NoResumeError as e:
+        raise HTTPException(404, str(e))
     if plan is None:
         raise HTTPException(404, "No roadmap yet")
     return plan

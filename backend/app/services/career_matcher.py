@@ -59,7 +59,7 @@ def role_text(name: str, profile: dict) -> str:
     return f"{name}. Key skills: {skills}."
 
 
-EVIDENCE_SECTIONS = {"skills", "projects", "experience", "questionnaire"}
+EVIDENCE_SECTIONS = {"skills", "projects", "experience", "questionnaire", "roadmap"}
 
 
 def resume_text(entities: dict) -> str:

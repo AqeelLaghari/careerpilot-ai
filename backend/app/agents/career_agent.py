@@ -42,9 +42,16 @@ class CareerAgent:
         return (self.bb.read_section(uid, "questionnaire") or {}).get("answers", {})
 
     def _profile(self, uid: str) -> tuple[dict, dict]:
-        """Resume entities enriched with questionnaire answers, plus the raw answers."""
+        """Resume entities enriched with questionnaire answers and skills completed on the
+        roadmap (Day 13), plus the raw answers."""
         answers = self._answers(uid)
-        return qn.profile_entities(self._entities(uid), answers), answers
+        profile = qn.profile_entities(self._entities(uid), answers)
+        learned = (self.bb.read_section(uid, "roadmap") or {}).get("completed_skills", [])
+        have = {s["name"].lower() for s in profile.get("skills", [])}
+        profile["skills"] = list(profile.get("skills", [])) + [
+            {"name": c["name"], "category": "roadmap", "mentions": 1, "sections": ["roadmap"],
+             "learned_on_roadmap": True} for c in learned if c["name"].lower() not in have]
+        return profile, answers
 
     # ------------------------------------------------------------ matching --
     def match(self, uid: str) -> dict | None:
@@ -89,9 +96,35 @@ class CareerAgent:
         plan = rm.build_roadmap(profile, role, answers)
         if plan is None:
             return None
-        plan["generated_at"] = time.time()
+        plan["generated_at"] = plan["started_at"] = time.time()
+        plan = rm.carry_over(self.bb.read_section(uid, "roadmap"), plan)
         self.bb.write(uid, "roadmap", plan, agent=AGENT_NAME)
-        return plan
+        return plan | {"progress": rm.progress(plan)}
+
+    def get_roadmap(self, uid: str) -> dict | None:
+        plan = self.bb.read_section(uid, "roadmap")
+        return plan | {"progress": rm.progress(plan)} if plan else None
+
+    def update_task(self, uid: str, task_id: str, done: bool) -> dict | None:
+        """Tick/untick a task. When a skill's last task is ticked, the skill counts as
+        learned: it joins the career profile and the target-role match is refreshed."""
+        plan = self.bb.read_section(uid, "roadmap")
+        if not plan:
+            return None
+        before = {c["name"] for c in plan.get("completed_skills", [])}
+        completed = rm.set_task(plan, task_id, done)          # KeyError if unknown task
+        self.bb.write(uid, "roadmap", plan, agent=AGENT_NAME)
+        after = {c["name"] for c in plan.get("completed_skills", [])}
+        match_change = None
+        if before != after:                                    # a skill was completed or reopened
+            career = self.bb.read_section(uid, "career") or {}
+            target = career.get("target_role")
+            if target:                                         # refresh the stored target match
+                old = (career.get("target_match") or {}).get("score")
+                new = (((self.set_target(uid, target) or {}).get("target_match")) or {}).get("score")
+                if old is not None and new is not None:
+                    match_change = {"role": target, "before": old, "after": new}
+        return plan | {"progress": rm.progress(plan), "skill_completed": completed, "match_change": match_change}
 
     # ------------------------------------------------------- questionnaire --
     def _career_for_questions(self, uid: str) -> dict:

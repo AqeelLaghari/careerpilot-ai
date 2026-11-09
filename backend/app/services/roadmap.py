@@ -22,6 +22,7 @@ without it a rule-based template is used.
 import json
 import logging
 import math
+import time
 from functools import lru_cache
 from urllib.parse import quote_plus
 
@@ -319,3 +320,78 @@ def build_roadmap(profile: dict, role: str, answers: dict | None = None, top_n: 
         "prerequisite_edges": used_edges,
         "ideas_by": "gemini" if ideas else "template",
     }
+
+
+# ------------------------------------------------------ progress (Day 13) --
+WEEK_SECONDS = 7 * 24 * 3600
+
+
+def _tasks(plan: dict):
+    for w in plan.get("weeks", []):
+        yield from w["tasks"]
+
+
+def set_task(plan: dict, task_id: str, done: bool) -> str | None:
+    """Tick/untick one task. Returns the skill name if this tick COMPLETED a skill
+    (all its tasks done). Raises KeyError for an unknown task id."""
+    task = next((t for t in _tasks(plan) if t["id"] == task_id), None)
+    if task is None:
+        raise KeyError(task_id)
+    task["done"] = bool(done)
+    task["done_at"] = time.time() if done else None
+    skill = task["skill"]
+    completed = plan.setdefault("completed_skills", [])
+    names = [c["name"] for c in completed]
+    all_done = all(t["done"] for t in _tasks(plan) if t["skill"] == skill)
+    if all_done and skill not in names:
+        completed.append({"name": skill, "completed_at": time.time()})
+        return skill
+    if not all_done and skill in names:                 # unticked: no longer complete
+        plan["completed_skills"] = [c for c in completed if c["name"] != skill]
+    return None
+
+
+def progress(plan: dict, now: float | None = None) -> dict:
+    """How far along the user is, and whether they're on schedule.
+    expected week = weeks since the plan started; current week = first week with open tasks."""
+    now = now or time.time()
+    tasks = list(_tasks(plan))
+    hours = sum(t["hours"] for t in tasks) or 1
+    hours_done = sum(t["hours"] for t in tasks if t["done"])
+    weeks = plan.get("weeks", [])
+    current = next((w["week"] for w in weeks if not all(t["done"] for t in w["tasks"])), None)
+    started = plan.get("started_at") or plan.get("generated_at") or now
+    expected = min(len(weeks), int((now - started) // WEEK_SECONDS) + 1) if weeks else 0
+    # hours that should be done by now = all weeks before the expected one
+    hours_due = sum(w["hours"] for w in weeks if w["week"] < expected)
+    if current is None:
+        status, message = "done", "Plan complete. Great work! Rebuild it to get your next skills."
+    elif hours_done + 1e-9 >= hours_due + (weeks[expected - 1]["hours"] if expected else 0):
+        status, message = "ahead", "You're ahead of schedule."
+    elif hours_done + 1e-9 >= hours_due:
+        status, message = "on_track", f"On track: you're in week {expected}."
+    else:
+        behind = hours_due - hours_done
+        status, message = "behind", (f"About {round(behind)} h behind schedule. Catch up this week, "
+                                     f"or re-plan to spread the rest over the remaining time.")
+    skills_total = len(plan.get("skills", []))
+    return {"tasks_total": len(tasks), "tasks_done": sum(t["done"] for t in tasks),
+            "hours_total": round(hours, 1), "hours_done": round(hours_done, 1),
+            "percent": round(100 * hours_done / hours), "current_week": current, "expected_week": expected,
+            "skills_total": skills_total, "skills_completed": len(plan.get("completed_skills", [])),
+            "status": status, "message": message}
+
+
+def carry_over(old: dict | None, new: dict) -> dict:
+    """When a plan is rebuilt, keep ticks on tasks that still exist, the history of
+    completed skills and (same role) the start date."""
+    if not old:
+        return new
+    done = {t["id"]: t for t in _tasks(old) if t["done"]}
+    for t in _tasks(new):
+        if t["id"] in done:
+            t["done"], t["done_at"] = True, done[t["id"]].get("done_at")
+    new["completed_skills"] = list(old.get("completed_skills", []))
+    if old.get("role") == new.get("role") and old.get("started_at"):
+        new["started_at"] = old["started_at"]
+    return new
