@@ -18,8 +18,8 @@ const FirebaseOptions webFirebaseOptions = FirebaseOptions(
 /// Values come from android/app/google-services.json (Firebase console → Project
 /// settings → Your apps → Android app). Also public by design.
 const FirebaseOptions androidFirebaseOptions = FirebaseOptions(
-  apiKey: 'ANDROID_API_KEY',
-  appId: 'ANDROID_APP_ID',
+  apiKey: 'AIzaSyCgWUpGuMImMekBC4HMZ3meTYPf4uSVLvE',
+  appId: '1:585905018184:android:635172760e6ed961ba8f7d',
   messagingSenderId: '585905018184',
   projectId: 'careerpilot-ai-762bb',
   storageBucket: 'careerpilot-ai-762bb.firebasestorage.app',
