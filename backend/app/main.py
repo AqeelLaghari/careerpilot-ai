@@ -15,13 +15,21 @@ from app.routers import career, market, questionnaire, resume, roadmap
 logging.basicConfig(level=logging.INFO)
 
 def _warm_up():
-    """Load the SBERT model + role index in the background, so the first
-    user request doesn't wait ~10 s for them."""
+    """Load the SBERT model, role index and spaCy in the background at startup, so the
+    first user request doesn't wait 20-60 s for them (the role index is cached on disk,
+    so loading it alone never loaded the SBERT model itself)."""
+    log = logging.getLogger(__name__)
     try:
-        from app.services import career_matcher
+        import time
+        t = time.time()
+        from app.services import career_matcher, embeddings
+        from app.services.entity_extractor import get_nlp
         career_matcher.role_index()
+        embeddings.embed(["warm up"])
+        get_nlp()
+        log.info("Warm-up done in %.0f s: AI models ready", time.time() - t)
     except Exception:
-        logging.getLogger(__name__).exception("Warm-up failed (matching will retry on first use)")
+        log.exception("Warm-up failed (matching will retry on first use)")
 
 
 @asynccontextmanager

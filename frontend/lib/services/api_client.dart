@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,6 +10,13 @@ import '../config.dart';
 /// Every request carries the user's Firebase login token, so the backend
 /// knows who is asking.
 class ApiClient {
+  /// Never spin forever: after this the screen shows an error with "Try again".
+  static const timeout = Duration(seconds: 60);
+
+  Future<http.Response> _send(Future<http.Response> request) => request.timeout(timeout,
+      onTimeout: () => throw Exception('The server is taking too long. If it was just started, '
+          'it may still be loading its AI models (up to a minute). Please try again.'));
+
   Future<Map<String, String>> _headers() async {
     final token = await FirebaseAuth.instance.currentUser?.getIdToken();
     return {
@@ -18,28 +26,28 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> get(String path) async {
-    final res = await http.get(Uri.parse('$apiBaseUrl$path'), headers: await _headers());
+    final res = await _send(http.get(Uri.parse('$apiBaseUrl$path'), headers: await _headers()));
     return _decode(res);
   }
 
   Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body) async {
-    final res = await http.post(
+    final res = await _send(http.post(
       Uri.parse('$apiBaseUrl$path'),
       headers: await _headers(),
       body: jsonEncode(body),
-    );
+    ));
     return _decode(res);
   }
 
   /// GET for endpoints that return a JSON list (e.g. /market/roles).
   Future<List<dynamic>> getList(String path) async {
-    final res = await http.get(Uri.parse('$apiBaseUrl$path'), headers: await _headers());
+    final res = await _send(http.get(Uri.parse('$apiBaseUrl$path'), headers: await _headers()));
     if (res.statusCode >= 400) _decode(res);
     return jsonDecode(res.body) as List<dynamic>;
   }
 
   Future<Map<String, dynamic>> delete(String path) async {
-    final res = await http.delete(Uri.parse('$apiBaseUrl$path'), headers: await _headers());
+    final res = await _send(http.delete(Uri.parse('$apiBaseUrl$path'), headers: await _headers()));
     return _decode(res);
   }
 
@@ -49,13 +57,13 @@ class ApiClient {
     final token = await FirebaseAuth.instance.currentUser?.getIdToken();
     if (token != null) req.headers['Authorization'] = 'Bearer $token';
     req.files.add(http.MultipartFile.fromBytes('file', bytes, filename: filename));
-    final streamed = await req.send();
+    final streamed = await req.send().timeout(const Duration(seconds: 120));
     return _decode(await http.Response.fromStream(streamed));
   }
 
   /// GET that returns null on 404 (e.g. "no resume uploaded yet").
   Future<Map<String, dynamic>?> getOrNull(String path) async {
-    final res = await http.get(Uri.parse('$apiBaseUrl$path'), headers: await _headers());
+    final res = await _send(http.get(Uri.parse('$apiBaseUrl$path'), headers: await _headers()));
     if (res.statusCode == 404) return null;
     return _decode(res);
   }
