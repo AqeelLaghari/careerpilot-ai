@@ -31,6 +31,8 @@ COS_LOW, COS_HIGH = 0.40, 0.85
 W_SEMANTIC, W_KEYWORD = 0.6, 0.4
 # A pasted job description lists the employer's skills explicitly, so keywords weigh more there
 JD_W_SEMANTIC, JD_W_KEYWORD = 0.4, 0.6
+# Roles in a field the user said they're interested in (questionnaire) get a small boost
+INTEREST_BONUS = 10
 
 
 def _family(role: str) -> frozenset:
@@ -103,25 +105,32 @@ def _skills_of(entities: dict) -> list[str]:
     return [s["name"] for s in entities.get("skills", [])]
 
 
-def match_careers(entities: dict, top_k: int = 5, candidates: int = 30) -> list[dict] | None:
-    """Best-fit careers for a resume. None if the market model isn't built."""
+def match_careers(entities: dict, top_k: int = 5, candidates: int = 30,
+                  interests: set[str] | None = None) -> list[dict] | None:
+    """Best-fit careers for a resume. None if the market model isn't built.
+    interests = role categories the user picked in the questionnaire: those roles get
+    INTEREST_BONUS points, and all roles are scored so roles in those fields can appear
+    even when the CV is too short to point to them."""
     index, names = role_index()
     if index is None:
         return None
     query = embeddings.embed([resume_text(entities)])[0]
     skills = _skills_of(entities)
+    roles = market_model.load_model()["roles"]
     results = []
-    for row, cos in embeddings.search(index, query, candidates):
+    for row, cos in embeddings.search(index, query, len(names) if interests else candidates):
         name = names[row]
         kw = market_model.keyword_coverage(skills, name)
         sem = semantic_score(cos)
+        bonus = INTEREST_BONUS if interests and roles[name].get("category") in interests else 0
         results.append({
             "role": name,
-            "score": combine(sem, kw["score"]),
+            "score": min(100, combine(sem, kw["score"]) + bonus),
+            "interest_match": bool(bonus),
             "semantic": sem,
             "keyword": kw["score"],
             "cosine": round(cos, 3),
-            "category": market_model.load_model()["roles"][name].get("category"),
+            "category": roles[name].get("category"),
             "postings_analysed": kw["postings_analysed"],
             "matched_skills": kw["matched"],
             "missing_skills": [m["name"] for m in kw["missing"]][:8],

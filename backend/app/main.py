@@ -10,7 +10,7 @@ from app.auth import current_uid
 from app.services import llm
 from app.deps import blackboard
 from app.orchestrator.blackboard import SECTIONS
-from app.routers import career, market, resume
+from app.routers import career, market, questionnaire, resume
 
 logging.basicConfig(level=logging.INFO)
 
@@ -43,6 +43,7 @@ app.add_middleware(
 app.include_router(resume.router)
 app.include_router(market.router)
 app.include_router(career.router)
+app.include_router(questionnaire.router)
 
 
 

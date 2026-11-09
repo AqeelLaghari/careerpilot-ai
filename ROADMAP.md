@@ -89,7 +89,7 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 ## Week 2: Career Guide Agent
 - [x] **Day 8**: Job-POSTINGS dataset (Kaggle LinkedIn Job Postings, 100k+, all industries) → group by role → TF-IDF skill importance per role (ATS Layer 2). Built as a re-runnable `build_market_model.py` (any postings in → new weights out), newer postings weighted more, "market data updated: <date>, N postings" stamp; flag unknown skills for dictionary growth
 - [x] **Day 9**: Sentence-Transformers embeddings + FAISS index + `/career/match` (top 3); role match score (Layer 2 keywords + Layer 3 semantic) added to the ATS report; optional paste-a-job-description match
-- [ ] **Day 10**: Adaptive questionnaire (asks only for what the resume is missing)
+- [x] **Day 10**: Adaptive questionnaire (asks only for what the resume is missing)
 - [ ] **Day 11**: Skill-gap (set difference) + skill DAG (networkx topological sort) → weekly roadmap
 - [ ] **Day 12**: Flutter: questionnaire + career matches screens; Android smoke test (Firebase Android config, backend address from phone, file picker, permissions)
 - [ ] **Day 13**: Flutter: interactive roadmap (tick tasks; roadmap updates)
