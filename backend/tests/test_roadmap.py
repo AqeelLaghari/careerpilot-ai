@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.services import llm, market_model
+from app.services import learning_resources, llm, market_model
 from app.services import roadmap as rm
 from tests.test_market_model import built_model  # noqa: F401  (fixture)
 
@@ -16,6 +16,8 @@ CV = {"skills": [{"name": n, "mentions": 2, "sections": ["skills"]} for n in ["A
 @pytest.fixture(autouse=True)
 def _no_gemini(monkeypatch):
     monkeypatch.setattr(llm, "generate_json", lambda *a, **k: None)
+    monkeypatch.setattr(learning_resources, "videos_for", lambda skills: {})     # no network in tests
+    monkeypatch.setattr(learning_resources, "check_urls", lambda urls: [False] * len(urls))
     rm._graph.cache_clear()
     yield
     rm._graph.cache_clear()
@@ -166,3 +168,23 @@ def test_completed_skill_improves_match(built_model, monkeypatch):  # noqa: F811
         assert rebuilt["completed_skills"][0]["name"] == skill
     finally:
         app.dependency_overrides.clear()
+
+
+def test_specific_links_replace_search_links():
+    vids = [{"type": "video", "title": "Docker in 1 hour", "channel": "X", "url": "https://www.youtube.com/watch?v=abc"}]
+    links = rm.resources("Docker", "video", vids, "https://docs.docker.com/")
+    assert links[0]["url"].endswith("watch?v=abc")
+    assert {"type": "reading", "title": "Docker official documentation", "url": "https://docs.docker.com/"} in links
+    fallback = rm.resources("Docker", "reading")
+    assert fallback[0]["type"] == "reading" and "google.com/search" in fallback[0]["url"]
+
+
+def test_gemini_docs_link_used_only_if_it_opens(built_model, monkeypatch):  # noqa: F811
+    monkeypatch.setattr(llm, "generate_json", lambda *a, **k: {"ideas": [
+        {"skill": "Docker", "project": "Containerise an app", "tip": "t", "docs_url": "https://docs.docker.com/"},
+        {"skill": "Kubernetes", "project": "Deploy it", "tip": "t", "docs_url": "https://made-up.example/k8s"}]})
+    monkeypatch.setattr(learning_resources, "check_urls", lambda urls: [u == "https://docs.docker.com/" for u in urls])
+    plan = rm.build_roadmap(CV, "devops engineer", {})
+    by = {s["name"]: s for s in plan["skills"]}
+    assert any(r["url"] == "https://docs.docker.com/" for r in by["Docker"]["resources"])
+    assert not any("made-up" in r["url"] for r in by["Kubernetes"]["resources"])

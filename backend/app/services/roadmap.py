@@ -30,7 +30,7 @@ import networkx as nx
 from pydantic import BaseModel
 
 from app.config import DATA_DIR
-from app.services import llm, market_model
+from app.services import learning_resources, llm, market_model
 
 log = logging.getLogger(__name__)
 
@@ -209,23 +209,29 @@ def _slug(s: str) -> str:
 
 
 # -------------------------------------------------------------- resources --
-def resources(skill: str, style: str | None) -> list[dict]:
-    """Free search links (never break, work for any of the 693 skills, no hand-written URLs)."""
+def resources(skill: str, style: str | None, videos: list[dict] | None = None,
+              docs_url: str | None = None) -> list[dict]:
+    """Learning links for a skill, preferred learning style first.
+    Specific links when we have them (real YouTube videos, checked official docs);
+    otherwise free search links, which never break and work for any skill."""
     q = quote_plus
+    video_links = videos or [{"type": "video", "title": f"{skill} full course (YouTube search)",
+                              "url": f"https://www.youtube.com/results?search_query={q(skill + ' full course for beginners')}"}]
+    reading = ({"type": "reading", "title": f"{skill} official documentation", "url": docs_url} if docs_url else
+               {"type": "reading", "title": f"{skill} tutorials and official docs (search)",
+                "url": f"https://www.google.com/search?q={q(skill + ' tutorial official documentation')}"})
     links = {
-        "video": {"type": "video", "title": f"{skill} full course (YouTube)",
-                  "url": f"https://www.youtube.com/results?search_query={q(skill + ' full course for beginners')}"},
-        "reading": {"type": "reading", "title": f"{skill} tutorials and official docs",
-                    "url": f"https://www.google.com/search?q={q(skill + ' tutorial official documentation')}"},
-        "course": {"type": "course", "title": f"Free {skill} courses (Coursera, audit for free)",
-                   "url": f"https://www.coursera.org/search?query={q(skill)}"},
-        "projects": {"type": "projects", "title": f"{skill} beginner project ideas",
-                     "url": f"https://www.google.com/search?q={q(skill + ' beginner project ideas')}"},
+        "video": video_links,
+        "reading": [reading],
+        "course": [{"type": "course", "title": f"Free {skill} courses (Coursera, audit for free)",
+                    "url": f"https://www.coursera.org/search?query={q(skill)}"}],
+        "projects": [{"type": "projects", "title": f"{skill} beginner project ideas",
+                      "url": f"https://www.google.com/search?q={q(skill + ' beginner project ideas')}"}],
     }
     first = {"video": "video", "reading": "reading", "projects": "projects"}.get(style or "", None)
     order = [first] if first else []
     order += [k for k in ("video", "reading", "course", "projects") if k not in order]
-    return [links[k] for k in order]
+    return [link for k in order for link in links[k]]
 
 
 # --------------------------------------------------- Gemini project ideas --
@@ -233,6 +239,7 @@ class _Idea(BaseModel):
     skill: str
     project: str
     tip: str
+    docs_url: str      # official documentation / learning page; verified before use
 
 
 class _Ideas(BaseModel):
@@ -245,7 +252,11 @@ def project_ideas(role: str, skills: list[str]) -> dict[str, dict]:
         return {}
     prompt = (f"A learner is preparing for a '{role}' job. For each skill below, suggest ONE small, concrete "
               f"portfolio mini-project (max 14 words, starts with a verb) that a {role} would do, and ONE "
-              f"practical learning tip (max 20 words). Skills: {', '.join(skills)}")
+              f"practical learning tip (max 20 words), and docs_url: the URL of the OFFICIAL documentation "
+              f"only if the skill is a specific tool, language, framework, product or certification "
+              f"(e.g. Tableau, Python, Docker, PMP). For general concepts or activities (e.g. Statistics, "
+              f"Reporting, Data Analysis, Recruitment) docs_url must be an empty string. https only. "
+              f"Skills: {', '.join(skills)}")
     out = llm.generate_json(prompt, _Ideas, tier="fast")
     if not out:
         return {}
@@ -279,12 +290,16 @@ def build_roadmap(profile: dict, role: str, answers: dict | None = None, top_n: 
         i["weight"] = round(i["weight"], 3)
     items, later = fit_to_budget(gap, all_items, g, budget_hours=goal_weeks * hours_pw)
 
-    ideas = project_ideas(role_name, [i["name"] for i in items])     # one Gemini call for the plan
-    for i in items:
+    names = [i["name"] for i in items]
+    ideas = project_ideas(role_name, names)                          # one Gemini call for the plan
+    videos = learning_resources.videos_for(names)                     # cached YouTube searches
+    docs = [(ideas.get(n) or {}).get("docs_url") or None for n in names]
+    docs_ok = learning_resources.check_urls(docs)                     # drop links that don't open
+    for i, doc, ok in zip(items, docs, docs_ok):
         idea = ideas.get(i["name"]) or {}
         i["project"] = (idea.get("project") or _fallback_project(i["name"], role_name)).rstrip(".")
         i["tip"] = idea.get("tip")
-        i["resources"] = resources(i["name"], style)
+        i["resources"] = resources(i["name"], style, videos.get(i["name"]), doc if ok else None)
 
     weeks = schedule(items, hours_pw)
     total = sum(i["hours"] for i in items)

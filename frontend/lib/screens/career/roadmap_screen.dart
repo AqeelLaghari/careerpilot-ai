@@ -282,8 +282,18 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
             Text('Project: ${s['project']}', style: const TextStyle(fontWeight: FontWeight.w600)),
             if (s['tip'] != null) ...[const SizedBox(height: 4), Text('Tip: ${s['tip']}')],
             const SizedBox(height: 8),
+            // Real videos (from YouTube) as a list with channel names; other links as chips
+            for (final v in (s['resources'] as List).cast<Map<String, dynamic>>().where((r) => r['channel'] != null))
+              ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.play_circle_fill, color: Colors.red),
+                title: Text(v['title'] as String, maxLines: 2, overflow: TextOverflow.ellipsis),
+                subtitle: Text('YouTube · ${v['channel']}'),
+                onTap: () => _open(v['url'] as String),
+              ),
             Wrap(spacing: 8, runSpacing: 8, children: [
-              for (final r in (s['resources'] as List).cast<Map<String, dynamic>>())
+              for (final r in (s['resources'] as List).cast<Map<String, dynamic>>().where((r) => r['channel'] == null))
                 ActionChip(
                   avatar: Icon(
                       switch (r['type']) {
