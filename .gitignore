@@ -34,3 +34,5 @@ evaluation/resumes/*
 
 # Firebase Android config (values are copied into firebase_options.dart)
 frontend/android/app/google-services.json
+frontend/android/build/
+frontend/android/.gradle/
