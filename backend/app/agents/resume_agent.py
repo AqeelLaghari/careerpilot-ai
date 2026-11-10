@@ -8,17 +8,23 @@ Pipeline (grows over Days 4-6):
     Day 5: entities: skills, education, experience  (spaCy NER)
     Day 6: ATS scorecard                            (ats_scorer)
     Day 9: role match in the ATS report             (Layer 2 keywords + Layer 3 SBERT)
+
+Each resume carries a `person_key` (a short hash of the email, else the name; never the
+raw value) so the Career Agent can tell a new version of the same CV from a different
+person's CV and start fresh for the latter.
 """
 import logging
 import time
 
 from app.orchestrator.blackboard import Blackboard
 from app.services import career_matcher
+from app.services.person import person_key, resume_person_key
 from app.services.ats_scorer import score_resume
 from app.services.entity_extractor import extract_entities
 from app.services.pdf_parser import extract_pdf
 
 AGENT_NAME = "resume_agent"
+BETTER_FIT_GAP = 25          # points: suggest the best-fit role when the target is this far behind
 log = logging.getLogger(__name__)
 
 
@@ -30,12 +36,16 @@ class ResumeAgent:
         parsed = extract_pdf(pdf_bytes)  # raises PDFError on bad files
         entities = extract_entities(parsed["sections"], parsed["text"])
         ats = score_resume(parsed, entities)
-        ats["role_match"] = self._role_match(uid, entities)
+        key = person_key(parsed["contact"], entities)
+        old_key = resume_person_key(self.bb.read_section(uid, "resume"))
+        same_person = not (key and old_key and key != old_key)
+        ats["role_match"] = self._role_match(uid, entities, use_target=same_person)
 
         result = {
             "entities": entities,
             "ats": ats,
             "filename": filename,
+            "person_key": key,
             "uploaded_at": time.time(),
             "text": parsed["text"],
             "sections": parsed["sections"],
@@ -46,18 +56,23 @@ class ResumeAgent:
         self.bb.write(uid, "resume", result, agent=AGENT_NAME)
         return result
 
-    def _role_match(self, uid: str, entities: dict) -> dict | None:
+    def _role_match(self, uid: str, entities: dict, use_target: bool = True) -> dict | None:
         """Against the user's target role if they chose one (read from the Blackboard,
         written by the Career Agent), otherwise against their best-fit role.
+        The target is ignored for a different person's CV (it was chosen for the old one).
+        If the CV fits another role much better than the target, that role is suggested.
         Never breaks the upload: returns None if matching is unavailable."""
         try:
-            target = (self.bb.read_section(uid, "career") or {}).get("target_role")
+            best = career_matcher.match_careers(entities, top_k=1)
+            best = best[0] if best else None
+            target = (self.bb.read_section(uid, "career") or {}).get("target_role") if use_target else None
             if target:
                 rm = career_matcher.role_match(entities, target)
                 if rm:
+                    if best and best["role"] != rm["role"] and best["score"] - rm["score"] >= BETTER_FIT_GAP:
+                        rm["better_fit"] = {"role": best["role"], "score": best["score"]}
                     return rm | {"basis": "target role"}
-            best = career_matcher.match_careers(entities, top_k=1)
-            return best[0] | {"basis": "best-fit role"} if best else None
+            return best | {"basis": "best-fit role"} if best else None
         except Exception:
             log.exception("Role match failed; ATS report continues without it")
             return None

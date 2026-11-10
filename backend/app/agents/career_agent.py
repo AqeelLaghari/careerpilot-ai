@@ -19,8 +19,10 @@ from app.orchestrator.blackboard import Blackboard
 from app.services import career_matcher
 from app.services import roadmap as rm
 from app.services import questionnaire as qn
+from app.services.person import resume_person_key
 
 AGENT_NAME = "career_agent"
+RESET_GAP = 40      # old data without a person key: reset if the target is this far behind the best fit
 
 
 class NoResumeError(LookupError):
@@ -36,7 +38,36 @@ class CareerAgent:
         resume = self.bb.read_section(uid, "resume")
         if not resume:
             raise NoResumeError("Upload a resume first")
+        self._sync_person(uid, resume)
         return resume["entities"]
+
+    def _sync_person(self, uid: str, resume: dict):
+        """If the uploaded CV belongs to a different person than the one the career data was
+        built for, start fresh: the old target role, answers and roadmap belong to someone else.
+        A new version of the same person's CV keeps everything."""
+        key = resume_person_key(resume)
+        if not key:
+            return
+        career = self.bb.read_section(uid, "career") or {}
+        old = career.get("person_key")
+        if old == key:
+            return
+        if old is None and not career.get("target_role"):
+            career["person_key"] = key                 # first time: just remember who this is
+            self.bb.write(uid, "career", career, agent=AGENT_NAME)
+            return
+        if old is None:                                # data saved before keys existed: check the target fit
+            target = career.get("target_role")
+            best = career_matcher.match_careers(resume["entities"], top_k=1) or []
+            tm = career_matcher.role_match(resume["entities"], target)
+            if not (best and tm and best[0]["score"] - tm["score"] >= RESET_GAP):
+                career["person_key"] = key
+                self.bb.write(uid, "career", career, agent=AGENT_NAME)
+                return
+        self.bb.write(uid, "career", {"person_key": key, "reset_at": time.time()}, agent=AGENT_NAME)
+        self.bb.write(uid, "questionnaire", {"answers": {}, "completed": False, "updated_at": time.time()},
+                      agent=AGENT_NAME)
+        self.bb.write(uid, "roadmap", None, agent=AGENT_NAME)
 
     def _answers(self, uid: str) -> dict:
         return (self.bb.read_section(uid, "questionnaire") or {}).get("answers", {})
@@ -102,6 +133,9 @@ class CareerAgent:
         return plan | {"progress": rm.progress(plan)}
 
     def get_roadmap(self, uid: str) -> dict | None:
+        resume = self.bb.read_section(uid, "resume")
+        if resume:
+            self._sync_person(uid, resume)
         plan = self.bb.read_section(uid, "roadmap")
         return plan | {"progress": rm.progress(plan)} if plan else None
 

@@ -240,6 +240,23 @@ class RoleMatchCard extends StatelessWidget {
           'learned from ${m['postings_analysed']} job postings',
           style: const TextStyle(color: Colors.grey),
         ),
+        if (m['better_fit'] is Map) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+                color: AppColors.brand.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+            child: Row(children: [
+              const Icon(Icons.lightbulb_outline, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('This CV fits ${m['better_fit']['role']} better '
+                    '(${(m['better_fit']['score'] as num).round()}%). '
+                    'You can change your target role in the Career tab.'),
+              ),
+            ]),
+          ),
+        ],
         const SizedBox(height: 12),
         _bar(context, 'Keyword match', m['keyword'] as num, 'Top skills employers ask for in this role'),
         _bar(context, 'Meaning match', m['semantic'] as num, 'How close your profile is in meaning (AI)'),

@@ -80,3 +80,59 @@ def test_resume_text_prefers_skills_with_evidence():
 def test_near_duplicate_roles_are_merged(built_model, monkeypatch):  # noqa: F811
     monkeypatch.setattr(career_matcher, "DUP_COS", -1.0)   # everything counts as a duplicate
     assert len(career_matcher.match_careers(DEVOPS_CV, top_k=3)) == 1
+
+
+# ---------------------------------------------- new CV of a different person --
+def _agent_with(resume):
+    from app.agents.career_agent import CareerAgent
+    from app.orchestrator.blackboard import Blackboard
+    bb = Blackboard(db=None)
+    bb.write("u1", "resume", resume, agent="resume_agent")
+    return CareerAgent(bb), bb
+
+
+def test_person_key_is_a_hash_and_ignores_case():
+    from app.services.person import person_key
+    k = person_key({"email": "A.B@Mail.com"}, {})
+    assert k == person_key({"email": "a.b@mail.com"}, {"name": "Someone"}) and "@" not in k and len(k) == 16
+    assert person_key({}, {"name": "Ali  Khan"}) == person_key(None, {"name": "ali khan"})
+    assert person_key({}, {}) is None
+
+
+def test_different_persons_cv_starts_fresh(built_model):  # noqa: F811
+    agent, bb = _agent_with({"entities": NURSE_CV, "contact": {"email": "nurse@x.com"}})
+    agent.set_target("u1", "registered nurse")
+    bb.write("u1", "questionnaire", {"answers": {"timeline": {"value": "3m"}}}, agent="career_agent")
+    bb.write("u1", "roadmap", {"role": "Registered Nurse", "weeks": []}, agent="career_agent")
+    assert bb.read_section("u1", "career")["target_role"] == "Registered Nurse"
+
+    bb.write("u1", "resume", {"entities": NURSE_CV, "contact": {"email": "NURSE@x.com"}}, agent="resume_agent")
+    agent.match("u1")                                           # same person, new version: kept
+    assert bb.read_section("u1", "career")["target_role"] == "Registered Nurse"
+
+    bb.write("u1", "resume", {"entities": DEVOPS_CV, "contact": {"email": "dev@y.com"}}, agent="resume_agent")
+    career = agent.match("u1")                                  # different person: fresh start
+    assert "target_role" not in career and career["matches"][0]["role"] == "DevOps Engineer"
+    assert bb.read_section("u1", "questionnaire")["answers"] == {}
+    assert agent.get_roadmap("u1") is None
+
+
+def test_old_data_without_key_resets_only_on_a_poor_target_fit(built_model):  # noqa: F811
+    agent, bb = _agent_with({"entities": DEVOPS_CV, "contact": {"email": "dev@y.com"}})
+    bb.write("u1", "career", {"target_role": "Registered Nurse"}, agent="career_agent")   # stale, no key
+    assert "target_role" not in agent.match("u1")
+    bb.write("u1", "career", {"target_role": "DevOps Engineer"}, agent="career_agent")
+    bb.write("u1", "resume", {"entities": DEVOPS_CV, "contact": {"email": "dev2@y.com"}}, agent="resume_agent")
+    bb.write("u1", "career", {"target_role": "DevOps Engineer"}, agent="career_agent")    # good fit, no key
+    assert agent.match("u1")["target_role"] == "DevOps Engineer"
+
+
+def test_resume_role_match_ignores_old_target_and_suggests_better_fit(built_model):  # noqa: F811
+    from app.agents.resume_agent import ResumeAgent
+    from app.orchestrator.blackboard import Blackboard
+    bb = Blackboard(db=None)
+    bb.write("u1", "career", {"target_role": "Registered Nurse"}, agent="career_agent")
+    agent = ResumeAgent(bb)
+    assert agent._role_match("u1", DEVOPS_CV, use_target=False)["role"] == "DevOps Engineer"
+    rm = agent._role_match("u1", DEVOPS_CV)
+    assert rm["basis"] == "target role" and rm["better_fit"]["role"] == "DevOps Engineer"
