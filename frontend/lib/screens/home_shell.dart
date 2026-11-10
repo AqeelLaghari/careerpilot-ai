@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'career/career_screen.dart';
 import 'dashboard_screen.dart';
+import 'jobs/jobs_screen.dart';
 import 'resume/resume_screen.dart';
 
 /// The main app frame after login: a top bar plus bottom navigation tabs.
@@ -21,6 +22,7 @@ class _HomeShellState extends State<HomeShell> {
     DashboardScreen(),
     ResumeScreen(),
     CareerScreen(),
+    JobsScreen(),
     _ComingSoon('Interview Coach', Icons.videocam, 'Day 21'),
   ];
 
@@ -45,6 +47,7 @@ class _HomeShellState extends State<HomeShell> {
           NavigationDestination(icon: Icon(Icons.dashboard), label: 'Dashboard'),
           NavigationDestination(icon: Icon(Icons.description), label: 'Resume'),
           NavigationDestination(icon: Icon(Icons.explore), label: 'Career'),
+          NavigationDestination(icon: Icon(Icons.work_outline), label: 'Jobs'),
           NavigationDestination(icon: Icon(Icons.videocam), label: 'Interview'),
         ],
       ),
