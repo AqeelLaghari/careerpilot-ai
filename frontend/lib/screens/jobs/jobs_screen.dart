@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../services/api_client.dart';
 import '../../theme.dart';
 import '../career/career_screen.dart' show EmptyHint;
+import 'trending_skills.dart';
 
 /// Live remote jobs a Pakistani can apply to, best match with the user's CV first.
 /// Every job shows its source (link back) and Apply opens the original posting.
@@ -146,6 +147,7 @@ class _JobsScreenState extends State<JobsScreen> {
                 style: const TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 12),
+              TrendingSkills(userSkills: {for (final s in (d['user_skills'] as List? ?? [])) '$s'.toLowerCase()}),
               Row(children: [
                 Expanded(
                   child: TextField(

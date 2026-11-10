@@ -197,9 +197,76 @@ def _rank_by_meaning(title: str, model: dict) -> list[tuple[str, float, float]]:
 
 
 def role_profile(role: str) -> dict | None:
-    model = load_model()
     name = find_role(role)
-    return {"role": name, **model["roles"][name]} if name else None
+    return {"role": name, **_live_blend(name)} if name else None
+
+
+# ------------------------------------------------ live re-weighting (Day 14) --
+# market_learning.py counts how often each skill appears in LIVE postings of a role and
+# hands it over here. The role's weights then blend the base model with the live shares.
+# Newer data counts more: the base postings are discounted with the same half-life the
+# build script uses (a posting `half_life_days` old counts half), so the live share grows
+# as the base data ages, up to LIVE_MAX_SHARE.
+_live: dict = {}
+_blend_cache: dict = {}
+LIVE_MAX_SHARE, LIVE_MIN_FREQ, LIVE_TOP = 0.5, 0.03, 40
+
+
+def set_live_roles(live: dict):
+    global _live
+    _live = dict(live or {})
+    _blend_cache.clear()
+
+
+@lru_cache(maxsize=2)
+def skill_role_counts(_stamp: str) -> dict[str, int]:
+    """In how many roles each skill is common (the IDF count of the build script)."""
+    from collections import Counter
+    return Counter(s["name"] for r in load_model()["roles"].values() for s in r["skills"])
+
+
+def _idf(skill: str, model: dict) -> float:
+    import math
+    common = skill_role_counts(model["built_at"]).get(skill, 0)
+    return math.log((1 + len(model["roles"])) / (1 + common)) + 1
+
+
+def live_share(base_postings: int, live_postings: int, model: dict, now: float | None = None) -> float:
+    import time
+    from datetime import datetime
+    try:
+        data_to = datetime.fromisoformat(model.get("data_to", "")).timestamp()
+    except ValueError:
+        data_to = now or time.time()
+    age_days = max(0.0, ((now or time.time()) - data_to) / 86400)
+    decay = 0.5 ** (age_days / float(model.get("half_life_days") or 365))
+    return min(LIVE_MAX_SHARE, live_postings / (live_postings + base_postings * decay))
+
+
+def _live_blend(name: str) -> dict:
+    model = load_model()
+    base = model["roles"][name]
+    live = _live.get(name)
+    if not live:
+        return base
+    if name in _blend_cache:
+        return _blend_cache[name]
+    a = live_share(base["postings"], live["postings"], model)
+    cats = {s["name"]: s["category"] for s in base["skills"]}
+    freq = {s["name"]: (1 - a) * s["freq"] for s in base["skills"]}
+    for skill, f in live["freq"].items():
+        freq[skill] = freq.get(skill, 0.0) + a * f
+    if any(s not in cats for s in freq):
+        from app.services.roadmap import _skill_categories
+        all_cats = _skill_categories()
+        cats.update({s: all_cats.get(s, "other") for s in freq if s not in cats})
+    scored = [(s, f, f * _idf(s, model)) for s, f in freq.items() if f >= LIVE_MIN_FREQ]
+    top = max((w for _, _, w in scored), default=1.0) or 1.0
+    skills = [{"name": s, "category": cats[s], "freq": round(f, 3), "weight": round(w / top, 3)}
+              for s, f, w in sorted(scored, key=lambda x: -x[2])[:LIVE_TOP]]
+    out = base | {"skills": skills, "live_postings": live["postings"], "live_share": round(a, 2)}
+    _blend_cache[name] = out
+    return out
 
 
 def keyword_coverage(resume_skills: list[str], role: str, top_n: int = 20) -> dict | None:

@@ -28,8 +28,11 @@ def _warm_up():
         embeddings.embed(["warm up"])
         get_nlp()
         log.info("Warm-up done in %.0f s: AI models ready", time.time() - t)
-        from app.services import live_jobs
+        from app.services import live_jobs, market_learning
+        market_learning.load_state()                 # skills learned from live postings
+        log.info("Learned skills loaded: %d", len(market_learning.learned_skills()["skills"]))
         live_jobs.ensure_fresh()                     # fetch remote jobs in the background
+        market_learning.maybe_learn()                # weekly: learn from saved postings
     except Exception:
         log.exception("Warm-up failed (matching will retry on first use)")
 

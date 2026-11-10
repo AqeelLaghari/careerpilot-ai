@@ -83,7 +83,7 @@ def _save_all(jobs: list[dict]):
             for j in jobs[i:i + 400]:
                 doc = {k: j.get(k) for k in ("id", "source", "title", "company", "location", "scope",
                                              "open_to_pakistan", "url", "published_at", "expires_at",
-                                             "skills", "category", "dedupe_key")}
+                                             "skills", "tags", "category", "dedupe_key")}
                 doc["description"] = j["description"][:4000]
                 doc["fetched_at"] = now
                 batch.set(col.document(j["dedupe_key"]), doc, merge=True)

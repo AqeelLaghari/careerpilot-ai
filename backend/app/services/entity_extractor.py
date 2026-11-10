@@ -7,6 +7,7 @@ and certifications. If the rules find too little, Gemini fills only the gaps.
 """
 import json
 import re
+import threading
 from datetime import date
 from functools import lru_cache
 
@@ -37,28 +38,102 @@ def _prep(text: str) -> str:
 
 
 # ------------------------------------------------------------- spaCy model --
+# The skill list = data/skills.json (the base list, hand-checked) + skills the app learned
+# from live job postings (market_learning.py, confirmed by Gemini, removable by an admin).
+# Learned skills are swapped in while the server runs: no restart, no redeploy.
+_learned: list[dict] = []                 # [{"name", "category", "aliases"}]
+_built: dict = {}                         # "nlp", "matchers" (built lazily, swapped on reload)
+_build_lock = threading.Lock()
+_version = 0
+
+
 @lru_cache(maxsize=1)
-def get_nlp():
+def _base_vocab() -> dict:
+    return json.loads((DATA_DIR / "skills.json").read_text(encoding="utf-8"))
+
+
+def _canon(entry: str) -> str:
+    return entry.lstrip("!").split("|")[0]
+
+
+def _merged_vocab(learned: list[dict]) -> dict[str, list[str]]:
+    vocab = {cat: list(lst) for cat, lst in _base_vocab().items() if not cat.startswith("_")}
+    where = {_canon(e).lower(): (cat, i) for cat, lst in vocab.items() for i, e in enumerate(lst)}
+    for s in learned:
+        name = str(s.get("name", "")).strip()
+        if not name or "|" in name:
+            continue
+        aliases = [a.strip() for a in s.get("aliases") or [] if a and a.strip() and "|" not in a]
+        if name.lower() in where:                       # a new spelling of a skill we know
+            cat, i = where[name.lower()]
+            have = {a.lower() for a in vocab[cat][i].lstrip("!").split("|")}
+            vocab[cat][i] += "".join("|" + a for a in aliases if a.lower() not in have)
+        elif s.get("category") in vocab:                # a brand-new skill
+            vocab[s["category"]].append("|".join(dict.fromkeys([name, *aliases])))
+            where[name.lower()] = (s["category"], len(vocab[s["category"]]) - 1)
+    return vocab
+
+
+def skill_vocab() -> dict[str, list[str]]:
+    """{category: ['Canonical|alias', ...]} including learned skills."""
+    if "vocab" not in _built:
+        _ensure_built()
+    return _built["vocab"]
+
+
+def vocab_version() -> int:
+    """Changes every time learned skills are reloaded (for caches elsewhere)."""
+    return _version
+
+
+def _build(learned: list[dict]) -> dict:
+    from spacy.matcher import PhraseMatcher
+    vocab = _merged_vocab(learned)
     nlp = spacy.load("en_core_web_sm", disable=["lemmatizer"])
     ruler = nlp.add_pipe("entity_ruler", before="ner", config={"phrase_matcher_attr": None})
-    vocab = json.loads((DATA_DIR / "skills.json").read_text(encoding="utf-8"))
+    lower, exact = PhraseMatcher(nlp.vocab, attr="LOWER"), PhraseMatcher(nlp.vocab, attr="ORTH")
     patterns = []
     for category, entries in vocab.items():
-        if category.startswith("_"):
-            continue
         for entry in entries:
             needs_context = entry.startswith("!")
             names = entry.lstrip("!").split("|")
-            canonical = names[0]
+            skill_id = f"{category}::{names[0]}" + ("::ctx" if needs_context else "")
             for alias in names:
                 tokens = nlp.make_doc(_prep(alias))
-                exact = needs_context or alias in CASE_SENSITIVE
-                key = "ORTH" if exact else "LOWER"
-                pattern = [{key: t.text if exact else t.lower_} for t in tokens if not t.is_space]
-                skill_id = f"{category}::{canonical}" + ("::ctx" if needs_context else "")
-                patterns.append({"label": "SKILL", "pattern": pattern, "id": skill_id})
+                is_exact = needs_context or alias in CASE_SENSITIVE
+                key = "ORTH" if is_exact else "LOWER"
+                patterns.append({"label": "SKILL", "id": skill_id,
+                                 "pattern": [{key: t.text if is_exact else t.lower_} for t in tokens if not t.is_space]})
+                (exact if is_exact else lower).add(skill_id, [tokens])
     ruler.add_patterns(patterns)
-    return nlp
+    return {"nlp": nlp, "matchers": (nlp, lower, exact), "vocab": vocab}
+
+
+def _ensure_built():
+    with _build_lock:
+        if "nlp" not in _built:
+            _built.update(_build(_learned))
+
+
+def set_learned_skills(learned: list[dict]):
+    """Load a new list of learned skills. The new detector is built first and then
+    swapped in, so requests running meanwhile keep using the old one."""
+    global _learned, _version
+    learned = [dict(s) for s in learned]
+    if learned == _learned and "nlp" in _built:
+        return
+    new = _build(learned)
+    with _build_lock:
+        _learned = learned
+        _built.clear()
+        _built.update(new)
+        _version += 1
+
+
+def get_nlp():
+    if "nlp" not in _built:
+        _ensure_built()
+    return _built["nlp"]
 
 
 def _has_list_context(ent) -> bool:
@@ -84,25 +159,12 @@ def find_skills(text: str, in_skills_section: bool = False) -> dict[str, dict]:
     return found
 
 
-@lru_cache(maxsize=1)
 def _phrase_matchers():
     """Same skills as the EntityRuler, but as spaCy PhraseMatchers (one case-insensitive,
     one exact-case). Much faster for exact phrases; used for bulk job postings."""
-    from spacy.matcher import PhraseMatcher
-    nlp = get_nlp()
-    lower, exact = PhraseMatcher(nlp.vocab, attr="LOWER"), PhraseMatcher(nlp.vocab, attr="ORTH")
-    vocab = json.loads((DATA_DIR / "skills.json").read_text(encoding="utf-8"))
-    for category, entries in vocab.items():
-        if category.startswith("_"):
-            continue
-        for entry in entries:
-            needs_context = entry.startswith("!")
-            names = entry.lstrip("!").split("|")
-            skill_id = f"{category}::{names[0]}" + ("::ctx" if needs_context else "")
-            for alias in names:
-                target = exact if (needs_context or alias in CASE_SENSITIVE) else lower
-                target.add(skill_id, [nlp.make_doc(_prep(alias))])
-    return nlp, lower, exact
+    if "matchers" not in _built:
+        _ensure_built()
+    return _built["matchers"]
 
 
 def find_skills_batch(texts, batch_size: int = 256):

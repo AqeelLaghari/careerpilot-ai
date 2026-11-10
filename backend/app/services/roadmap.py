@@ -165,10 +165,15 @@ def add_foundations(gap: list[dict], have: set[str], g: nx.DiGraph) -> list[dict
     return list(items.values())
 
 
-@lru_cache(maxsize=1)
 def _skill_categories() -> dict[str, str]:
-    data = json.loads((DATA_DIR / "skills.json").read_text(encoding="utf-8"))
-    return {e.lstrip("!").split("|")[0]: cat for cat, lst in data.items() if not cat.startswith("_") for e in lst}
+    from app.services import entity_extractor as ee
+    return _categories(ee.vocab_version())
+
+
+@lru_cache(maxsize=4)
+def _categories(_version: int) -> dict[str, str]:     # includes skills learned from live postings
+    from app.services.entity_extractor import skill_vocab
+    return {e.lstrip("!").split("|")[0]: cat for cat, lst in skill_vocab().items() for e in lst}
 
 
 def order_skills(items: list[dict], g: nx.DiGraph) -> list[dict]:

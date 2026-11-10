@@ -183,6 +183,7 @@ class CareerAgent:
                 self.bb.write(uid, "jobs", {"top": top, "role": role, "matched_at": time.time()},
                               agent=AGENT_NAME)
         return {"jobs": results, "role": role, "query": query, **status,
+                "user_skills": [s["name"] for s in profile.get("skills", [])],
                 "sources": [{"name": v["name"], "url": v["site"]} for v in live_jobs.job_sources.SOURCES.values()]}
 
     # ------------------------------------------------------- questionnaire --

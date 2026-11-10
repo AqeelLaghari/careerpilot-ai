@@ -13,4 +13,6 @@ GEMINI_MODEL_FAST = os.getenv("GEMINI_MODEL_FAST", "gemini-3.5-flash-lite")  # "
 FIREBASE_KEY_PATH = BACKEND_DIR / os.getenv("FIREBASE_KEY_PATH", "firebase-key.json")
 DATA_DIR = BACKEND_DIR / "data"
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "").strip()                # free: YouTube Data API v3
-HIMALAYAS_API_KEY = os.getenv("HIMALAYAS_API_KEY", "").strip()   # optional: higher rate limit
+HIMALAYAS_API_KEY = os.getenv("HIMALAYAS_API_KEY", "").strip()
+# Firebase user IDs (comma separated) allowed to manage learned skills
+ADMIN_UIDS = {u.strip() for u in os.getenv("ADMIN_UIDS", "").split(",") if u.strip()}   # optional: higher rate limit
