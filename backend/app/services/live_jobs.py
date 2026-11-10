@@ -14,6 +14,7 @@
   (q=<role>, country=PK), cached per role, so niche roles get relevant jobs too.
 """
 import json
+import re
 import logging
 import threading
 import time
@@ -175,9 +176,9 @@ def ensure_fresh() -> bool:
 def add_role_jobs(role: str | None, wait: bool = False):
     """Jobs for the user's role straight from Himalayas (open to Pakistan), cached per role.
     Runs in the background unless wait=True; they show up on the next load."""
-    if not role or time.time() - _role_cache.get(role.lower(), 0) < ROLE_CACHE_SECONDS:
+    if not role or time.time() - _role_cache.get(role.lower().strip(), 0) < ROLE_CACHE_SECONDS:
         return
-    _role_cache[role.lower()] = time.time()
+    _role_cache[role.lower().strip()] = time.time()
     if not wait:
         threading.Thread(target=_role_jobs, args=(role,), daemon=True).start()
         return
@@ -202,14 +203,39 @@ def status() -> dict:
 
 
 # --------------------------------------------------------------- matching --
+_WORD = re.compile(r"[a-z0-9+#.]+")
+_STOP = {"job", "jobs", "remote", "a", "an", "the", "and", "or", "for", "in", "of", "to", "with"}
+
+
+def search(jobs: list[dict], query: str) -> list[dict]:
+    """Every word of the query must appear in the job's title, company, skills or tags
+    ('python developer' finds 'Senior Python Developer' and 'Backend Developer (Python)').
+    If no job has all the words, the description is searched too."""
+    words = [w for w in _WORD.findall(query.lower()) if w not in _STOP] or [query.lower().strip()]
+
+    def has_all(text: str) -> bool:
+        found = set(_WORD.findall(text))
+        return all(w in found or any(f.startswith(w) for f in found) for w in words)
+
+    short = [j for j in jobs if has_all(" ".join([j["title"], j["company"], *j.get("skills", []),
+                                                   *j.get("tags", [])]).lower())]
+    found = short or [j for j in jobs if has_all(f"{j['title']} {j['description']}".lower())]
+    for j in found:                                   # the title says it: show these first
+        j["_title_hit"] = has_all(j["title"].lower())
+    return found
+
+
+def search_jobs(query: str):
+    """A user's search also asks Himalayas directly (open to Pakistan, cached 6 h per query),
+    so a search finds jobs that are not in the shared pool yet. Waits: about 2-5 s."""
+    add_role_jobs(query, wait=True)
+
 def match_jobs(profile: dict, query: str | None = None, limit: int = 30) -> list[dict]:
     """Jobs open to Pakistan, best match first."""
     with _lock:
         jobs = list(_pool["jobs"].values())
     if query:
-        q = query.lower()
-        jobs = [j for j in jobs if q in j["title"].lower() or q in j["company"].lower()
-                or any(q in s.lower() for s in j.get("skills", []))]
+        jobs = search(jobs, query)
     if not jobs:
         return []
     _embed(jobs)
@@ -231,6 +257,9 @@ def match_jobs(profile: dict, query: str | None = None, limit: int = 30) -> list
                                           "job_type", "salary", "published_at", "source")}
                    | {"source_name": job_sources.SOURCES[j["source"]]["name"],
                       "excerpt": j["description"][:280], "match": score, "semantic": sem, "keyword": kw,
-                      "matched_skills": matched[:8], "missing_skills": missing[:6]})
-    out.sort(key=lambda r: (-r["match"], -(r["published_at"] or 0)))
+                      "matched_skills": matched[:8], "missing_skills": missing[:6],
+                      "_title_hit": bool(query and j.get("_title_hit"))})
+    out.sort(key=lambda r: (not r["_title_hit"], -r["match"], -(r["published_at"] or 0)))
+    for r in out:
+        del r["_title_hit"]
     return out[:limit]

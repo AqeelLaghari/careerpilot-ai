@@ -24,7 +24,9 @@ class _JobsScreenState extends State<JobsScreen> {
   String _query = '';
   bool _strongOnly = false;
   Timer? _retry;
+  Timer? _typing;
   int _retries = 0;
+  int _request = 0; // only the newest request may update the screen
   final _search = TextEditingController();
 
   @override
@@ -36,6 +38,7 @@ class _JobsScreenState extends State<JobsScreen> {
   @override
   void dispose() {
     _retry?.cancel();
+    _typing?.cancel();
     _search.dispose();
     super.dispose();
   }
@@ -47,13 +50,15 @@ class _JobsScreenState extends State<JobsScreen> {
         _error = null;
       });
     }
+    final id = ++_request;
     try {
       final q = _query.isEmpty ? '' : '?q=${Uri.encodeQueryComponent(_query)}';
       final d = await api.get('/jobs$q');
-      if (!mounted) return;
+      if (!mounted || id != _request) return; // an older search finished late: ignore it
       setState(() {
         _data = d;
         _noResume = false;
+        _error = null;
       });
       // The first fetch of the day runs in the background on the server: check back soon.
       _retry?.cancel();
@@ -63,11 +68,32 @@ class _JobsScreenState extends State<JobsScreen> {
         _retry = Timer(const Duration(seconds: 15), () => _load(quiet: true));
       }
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || id != _request) return;
       final msg = '$e'.replaceFirst('Exception: ', '').replaceFirst(RegExp(r'API error \d+: '), '');
       setState(() => msg.toLowerCase().contains('upload a resume') ? _noResume = true : _error = msg);
+      if (_data != null && !_noResume) {
+        // Old results are still on screen: say clearly that this search failed.
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Search failed: $msg')));
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && id == _request) setState(() => _loading = false);
+    }
+  }
+
+  /// Search for [text] now (button / Enter) or after a short pause while typing.
+  void _searchFor(String text, {bool now = false}) {
+    _typing?.cancel();
+    final q = text.trim();
+    if (q == _query && !now) return;
+    if (now) {
+      setState(() => _query = q);
+      _load();
+    } else {
+      _typing = Timer(const Duration(milliseconds: 600), () {
+        if (!mounted) return;
+        setState(() => _query = q);
+        _load();
+      });
     }
   }
 
@@ -120,29 +146,45 @@ class _JobsScreenState extends State<JobsScreen> {
                 style: const TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 12),
-              TextField(
-                controller: _search,
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(
-                  hintText: 'Search a job title, company or skill',
-                  prefixIcon: const Icon(Icons.search),
-                  border: const OutlineInputBorder(),
-                  isDense: true,
-                  suffixIcon: _query.isEmpty
-                      ? null
-                      : IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _search.clear();
-                            _query = '';
-                            _load();
-                          }),
+              Row(children: [
+                Expanded(
+                  child: TextField(
+                    controller: _search,
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      hintText: 'Search a job title, company or skill',
+                      prefixIcon: const Icon(Icons.search),
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                      suffixIcon: _search.text.isEmpty
+                          ? null
+                          : IconButton(
+                              tooltip: 'Clear search',
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _search.clear();
+                                _searchFor('', now: true);
+                              }),
+                    ),
+                    onChanged: (v) {
+                      setState(() {}); // show or hide the clear button
+                      _searchFor(v);
+                    },
+                    onSubmitted: (v) => _searchFor(v, now: true),
+                  ),
                 ),
-                onSubmitted: (v) {
-                  _query = v.trim();
-                  _load();
-                },
-              ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: () => _searchFor(_search.text, now: true),
+                  child: const Text('Search'),
+                ),
+              ]),
+              if (_loading) const LinearProgressIndicator(minHeight: 2) else const SizedBox(height: 2),
+              if (_query.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text('${jobs.length} results for "$_query"', style: const TextStyle(color: Colors.grey)),
+                ),
               const SizedBox(height: 8),
               FilterChip(
                 label: const Text('Strong matches only (50%+)'),

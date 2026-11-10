@@ -169,7 +169,9 @@ class CareerAgent:
         live_jobs.ensure_fresh()                                # background, never waits
         career = self.bb.read_section(uid, "career") or {}
         role = career.get("target_role") or ((career.get("matches") or [{}])[0]).get("role")
-        if not query:
+        if query:
+            live_jobs.search_jobs(query)                        # ask Himalayas too (cached per query)
+        else:
             live_jobs.add_role_jobs(role)                       # Himalayas search for the role (cached)
         results = live_jobs.match_jobs(profile, query=query, limit=limit)
         status = live_jobs.status()

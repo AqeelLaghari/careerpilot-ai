@@ -106,3 +106,16 @@ def test_jobs_endpoint(pool, monkeypatch):
         assert client.get("/jobs/status").json()["jobs_available"] == 2
     finally:
         app.dependency_overrides.clear()
+
+
+def test_search_uses_every_word_and_puts_title_hits_first(pool):
+    extra = [_job("Senior Python Developer", desc="Python, Django, SQL."),
+             _job("Backend Engineer", desc="We use Python and Docker. You are a developer at heart."),
+             _job("Marketing Manager", desc="SEO, Google Analytics, Content Marketing.")]
+    live_jobs._add_skills(extra)
+    live_jobs._merge(extra)
+    cv = {"skills": [{"name": n, "mentions": 2} for n in ["Docker", "Kubernetes", "AWS", "Linux"]]}
+    res = [j["title"] for j in live_jobs.match_jobs(cv, query="python developer")]
+    assert res[0] == "Senior Python Developer"                      # words in any order, not one phrase
+    assert live_jobs.match_jobs(cv, query="Marketing")[0]["title"] == "Marketing Manager"
+    assert live_jobs.match_jobs(cv, query="zzz nothing") == []
