@@ -1,0 +1,3781 @@
+{
+ "built_at": "2026-11-10",
+ "model": "gemini-3.5-flash-lite",
+ "levels_meaning": {
+  "1": "basic",
+  "2": "core",
+  "3": "advanced",
+  "4": "umbrella field"
+ },
+ "levels": {
+  ".NET": 2,
+  "3D Modeling": 3,
+  "A/B Testing": 2,
+  "ACCA": 3,
+  "ACLS": 3,
+  "AI Agents": 3,
+  "ANSYS": 3,
+  "API Design": 2,
+  "API Testing": 2,
+  "AR/VR": 3,
+  "ASP.NET": 2,
+  "AWS": 3,
+  "AWS CloudWatch": 2,
+  "AWS EC2": 2,
+  "AWS ECS": 3,
+  "AWS EKS": 3,
+  "AWS IAM": 2,
+  "AWS Lambda": 2,
+  "AWS RDS": 2,
+  "AWS S3": 2,
+  "AWS VPC": 2,
+  "Academic Writing": 1,
+  "Account Management": 2,
+  "Accounting": 1,
+  "Accounts Payable": 1,
+  "Accounts Receivable": 1,
+  "Active Directory": 2,
+  "Adaptability": 1,
+  "Adobe Creative Suite": 4,
+  "Adobe Illustrator": 1,
+  "Adobe InDesign": 1,
+  "Adobe Lightroom": 1,
+  "Adobe Photoshop": 1,
+  "Adobe Premiere Pro": 1,
+  "Adobe XD": 1,
+  "Affiliate Marketing": 2,
+  "After Effects": 2,
+  "Agile": 2,
+  "Ahrefs": 2,
+  "Algorithms": 2,
+  "Amazon Redshift": 2,
+  "Analytical Skills": 1,
+  "Android": 2,
+  "Android Studio": 2,
+  "Angular": 2,
+  "Ansible": 2,
+  "Apache": 2,
+  "Apache Airflow": 3,
+  "Apache Kafka": 3,
+  "Apache Spark": 3,
+  "Appium": 2,
+  "Arduino": 1,
+  "ArgoCD": 3,
+  "Artificial Intelligence": 4,
+  "Asana": 1,
+  "Assembly": 2,
+  "Attention to Detail": 1,
+  "Auditing": 2,
+  "AutoCAD": 1,
+  "Azure DevOps": 3,
+  "B2B Sales": 2,
+  "BDD": 2,
+  "BambooHR": 1,
+  "Bank Reconciliation": 1,
+  "Banking Operations": 2,
+  "Bash": 1,
+  "Basic Life Support": 1,
+  "Big Data": 4,
+  "BigQuery": 2,
+  "Biochemistry": 1,
+  "Bitbucket": 2,
+  "Blender": 2,
+  "Blockchain": 3,
+  "Bookkeeping": 1,
+  "Bootstrap": 1,
+  "Brand Management": 3,
+  "Budgeting": 1,
+  "Bug Tracking": 1,
+  "Burp Suite": 3,
+  "Business Analysis": 2,
+  "Business Development": 2,
+  "Business Intelligence": 2,
+  "C": 1,
+  "C#": 1,
+  "C++": 1,
+  "CATIA": 2,
+  "CCNA": 2,
+  "CFA": 3,
+  "CI/CD": 3,
+  "CMA": 3,
+  "CNC Programming": 2,
+  "CNN": 3,
+  "COBOL": 1,
+  "CPR": 1,
+  "CRM": 1,
+  "CSS": 1,
+  "Campaign Management": 2,
+  "Canva": 1,
+  "Cassandra": 2,
+  "Celery": 2,
+  "Chef": 3,
+  "ChromaDB": 2,
+  "Circuit Design": 2,
+  "Cisco": 2,
+  "Civil 3D": 2,
+  "Classification": 2,
+  "Classroom Management": 1,
+  "Clinical Diagnosis": 3,
+  "Clinical Research": 2,
+  "Cloud Architecture": 3,
+  "Cloud Computing": 2,
+  "Cloud Run": 3,
+  "CloudFormation": 3,
+  "Cloudflare": 2,
+  "Clustering": 2,
+  "Code Review": 2,
+  "Cold Calling": 1,
+  "Color Theory": 1,
+  "Communication": 1,
+  "Community Management": 1,
+  "CompTIA": 1,
+  "Compensation and Benefits": 2,
+  "Competitor Analysis": 2,
+  "Compilers": 3,
+  "Computational Fluid Dynamics": 3,
+  "Computer Networking": 2,
+  "Computer Vision": 3,
+  "Conflict Resolution": 1,
+  "Confluence": 1,
+  "Construction Management": 3,
+  "Consul": 3,
+  "Consumer Behavior": 2,
+  "Containerization": 2,
+  "Content Marketing": 1,
+  "Content Strategy": 2,
+  "Content Writing": 1,
+  "Contract Drafting": 2,
+  "Conversion Rate Optimization": 2,
+  "Copywriting": 1,
+  "CorelDRAW": 1,
+  "Corporate Finance": 3,
+  "Corporate Law": 3,
+  "Cost Accounting": 2,
+  "CouchDB": 2,
+  "Creativity": 1,
+  "Credit Analysis": 2,
+  "Creo": 2,
+  "Critical Thinking": 1,
+  "Cryptography": 3,
+  "Cucumber": 2,
+  "Curriculum Development": 2,
+  "Customer Focus": 1,
+  "Customer Service": 1,
+  "Cybersecurity": 4,
+  "Cypress": 2,
+  "D3.js": 2,
+  "DNS": 2,
+  "DOM": 1,
+  "DaVinci Resolve": 2,
+  "Dart": 1,
+  "Dashboards": 2,
+  "Data Analysis": 2,
+  "Data Cleaning": 2,
+  "Data Engineering": 4,
+  "Data Entry": 1,
+  "Data Mining": 3,
+  "Data Modeling": 2,
+  "Data Pipelines": 3,
+  "Data Science": 4,
+  "Data Structures": 2,
+  "Data Structures and Algorithms": 2,
+  "Data Visualization": 2,
+  "Data Warehousing": 3,
+  "Database Design": 2,
+  "Datadog": 2,
+  "Decision Making": 1,
+  "Deep Learning": 3,
+  "Design Patterns": 3,
+  "Design Systems": 3,
+  "DevOps": 4,
+  "DevSecOps": 3,
+  "Differentiated Instruction": 2,
+  "Digital Marketing": 2,
+  "DigitalOcean": 2,
+  "Distributed Systems": 3,
+  "Django": 2,
+  "Docker": 2,
+  "Docker Compose": 2,
+  "DynamoDB": 2,
+  "E-commerce": 2,
+  "ELK Stack": 3,
+  "ETABS": 2,
+  "ETAP": 2,
+  "ETL": 2,
+  "Early Childhood Education": 2,
+  "Educational Technology": 2,
+  "Elasticsearch": 2,
+  "Electronic Health Records": 2,
+  "Elixir": 2,
+  "Email Marketing": 2,
+  "Embedded Systems": 3,
+  "Embeddings": 3,
+  "Emotional Intelligence": 1,
+  "Employee Engagement": 2,
+  "Employee Relations": 2,
+  "Entity Framework": 2,
+  "Epidemiology": 3,
+  "Equity Research": 3,
+  "Ethereum": 3,
+  "Event Management": 2,
+  "Express.js": 2,
+  "FAISS": 3,
+  "FPGA": 3,
+  "FastAPI": 2,
+  "Feature Engineering": 2,
+  "Figma": 1,
+  "Figma to Code": 2,
+  "FinTech": 4,
+  "Final Cut Pro": 1,
+  "Financial Analysis": 2,
+  "Financial Forecasting": 2,
+  "Financial Modeling": 3,
+  "Financial Reporting": 2,
+  "Financial Statements": 1,
+  "Fine-tuning": 3,
+  "Finite Element Analysis": 3,
+  "Firebase": 2,
+  "Firebase Hosting": 2,
+  "Firestore": 2,
+  "Firewalls": 2,
+  "First Aid": 1,
+  "Flask": 2,
+  "Flutter": 2,
+  "Flux": 2,
+  "Fortran": 1,
+  "Front Desk Operations": 1,
+  "Fusion 360": 2,
+  "GAAP": 1,
+  "GD&T": 2,
+  "Game Development": 4,
+  "Gemini API": 2,
+  "General Ledger": 1,
+  "Generative AI": 3,
+  "Git": 2,
+  "GitHub": 2,
+  "GitHub Actions": 3,
+  "GitLab": 2,
+  "GitLab CI": 3,
+  "GitOps": 3,
+  "Go": 1,
+  "Godot": 2,
+  "Golang": 1,
+  "Good Clinical Practice": 1,
+  "Google Ads": 1,
+  "Google Analytics": 1,
+  "Google Classroom": 1,
+  "Google Cloud": 2,
+  "Google Colab": 1,
+  "Google Kubernetes Engine": 3,
+  "Google Search Console": 1,
+  "Google Sheets": 1,
+  "Google Tag Manager": 1,
+  "Grafana": 2,
+  "Grafana Loki": 2,
+  "GraphQL": 2,
+  "Graphic Design": 4,
+  "Groovy": 1,
+  "Growth Marketing": 4,
+  "HIPAA": 1,
+  "HR Policies": 1,
+  "HRIS": 2,
+  "HTML": 1,
+  "HTTP": 1,
+  "HVAC": 1,
+  "Hadoop": 3,
+  "HashiCorp Vault": 3,
+  "Haskell": 1,
+  "Headhunting": 1,
+  "Health and Safety": 1,
+  "Helm": 3,
+  "Heroku": 2,
+  "Hibernate": 2,
+  "Hootsuite": 1,
+  "HubSpot": 1,
+  "Hugging Face": 3,
+  "Human Resource Management": 4,
+  "IAM Policies": 2,
+  "ICD-10": 1,
+  "IFRS": 2,
+  "ISO 27001": 3,
+  "ISO 9001": 3,
+  "Illustration": 1,
+  "Incident Response": 3,
+  "Infection Control": 1,
+  "Influencer Marketing": 1,
+  "Information Architecture": 2,
+  "Infrastructure as Code": 3,
+  "Instructional Design": 2,
+  "Integration Testing": 2,
+  "Interaction Design": 2,
+  "Interpersonal Skills": 1,
+  "Inventory Management": 1,
+  "Investment Analysis": 2,
+  "IoT": 3,
+  "Ionic": 2,
+  "Islamic Banking": 2,
+  "Istio": 3,
+  "JMeter": 2,
+  "JUnit": 2,
+  "JWT": 2,
+  "Jaeger": 3,
+  "Java": 1,
+  "JavaScript": 1,
+  "Jenkins": 2,
+  "Jest": 2,
+  "Jetpack Compose": 2,
+  "Jira": 1,
+  "Job Analysis": 2,
+  "Julia": 1,
+  "Jupyter": 1,
+  "KPI Tracking": 1,
+  "Kaggle": 2,
+  "Kali Linux": 2,
+  "Kanban": 1,
+  "Keras": 3,
+  "Kotlin": 1,
+  "Kotlin Multiplatform": 2,
+  "Kubernetes": 3,
+  "Kustomize": 2,
+  "LSTM": 3,
+  "LabVIEW": 2,
+  "Laboratory Techniques": 1,
+  "Labour Law": 2,
+  "LangChain": 3,
+  "Laravel": 2,
+  "Large Language Models": 3,
+  "Lead Generation": 1,
+  "Leadership": 2,
+  "Lean Manufacturing": 2,
+  "Legal Research": 1,
+  "Legal Writing": 1,
+  "Lesson Planning": 1,
+  "LightGBM": 3,
+  "Linear Algebra": 1,
+  "LinkedIn Ads": 1,
+  "Linux": 1,
+  "Literature Review": 1,
+  "Litigation": 2,
+  "LlamaIndex": 3,
+  "Load Balancing": 2,
+  "Logistics": 2,
+  "Logo Design": 2,
+  "Looker": 2,
+  "Lua": 1,
+  "MATLAB": 2,
+  "MLOps": 3,
+  "Machine Learning": 3,
+  "Mailchimp": 1,
+  "Malware Analysis": 3,
+  "Management Accounting": 2,
+  "Manual Testing": 1,
+  "MariaDB": 2,
+  "Market Research": 1,
+  "Marketing Analytics": 2,
+  "Marketing Automation": 2,
+  "Marketing Strategy": 3,
+  "Material UI": 2,
+  "Matplotlib": 2,
+  "Media Planning": 2,
+  "MediaPipe": 3,
+  "Medical Coding": 1,
+  "Medical Terminology": 1,
+  "Memcached": 2,
+  "Mentoring": 2,
+  "Meta Ads": 1,
+  "Metasploit": 3,
+  "MicroStation": 2,
+  "Microbiology": 1,
+  "Microcontrollers": 2,
+  "Microservices": 3,
+  "Microsoft Azure": 2,
+  "Microsoft Excel": 1,
+  "Microsoft Office": 1,
+  "Microsoft PowerPoint": 1,
+  "Microsoft Project": 2,
+  "Microsoft SQL Server": 2,
+  "Microsoft SharePoint": 2,
+  "Microsoft Word": 1,
+  "Mobile App Development": 3,
+  "Mocha": 2,
+  "Model Deployment": 3,
+  "MongoDB": 2,
+  "Mongoose": 2,
+  "Monitoring": 2,
+  "Moodle": 1,
+  "Motion Graphics": 2,
+  "Multisim": 2,
+  "Multitasking": 1,
+  "Multithreading": 3,
+  "MySQL": 2,
+  "NEBOSH": 2,
+  "NLTK": 2,
+  "Natural Language Processing": 3,
+  "Negotiation": 2,
+  "Neo4j": 2,
+  "NestJS": 2,
+  "Netlify": 1,
+  "Network Security": 3,
+  "Neural Networks": 3,
+  "New Relic": 2,
+  "Next.js": 2,
+  "Nginx": 2,
+  "Nmap": 2,
+  "NoSQL": 2,
+  "Node.js": 2,
+  "Nomad": 2,
+  "NumPy": 2,
+  "Nursing": 4,
+  "Nuxt.js": 2,
+  "OAuth": 2,
+  "OWASP": 3,
+  "Object-Oriented Programming": 1,
+  "Objective-C": 1,
+  "Office Administration": 1,
+  "Onboarding": 1,
+  "Online Teaching": 1,
+  "OpenAI API": 2,
+  "OpenCV": 3,
+  "OpenShift": 3,
+  "OpenTelemetry": 3,
+  "Operating Systems": 1,
+  "Oracle Database": 2,
+  "Oracle Financials": 3,
+  "Oracle NetSuite": 3,
+  "Organizational Development": 4,
+  "Organizational Skills": 1,
+  "PCB Design": 3,
+  "PCR": 1,
+  "PHP": 1,
+  "PL/SQL": 2,
+  "PLC": 2,
+  "PLC Programming": 2,
+  "PMP": 3,
+  "PSpice": 2,
+  "Packer": 2,
+  "Pandas": 2,
+  "Patient Care": 1,
+  "Patient Counseling": 2,
+  "Pay-Per-Click": 2,
+  "Payroll": 1,
+  "Penetration Testing": 3,
+  "PeopleSoft": 3,
+  "Performance Management": 2,
+  "Performance Marketing": 3,
+  "Performance Testing": 2,
+  "Perl": 1,
+  "Pharmacology": 1,
+  "Pharmacovigilance": 3,
+  "Phlebotomy": 1,
+  "Photography": 1,
+  "Physiotherapy": 2,
+  "Pinecone": 2,
+  "Pivot Tables": 1,
+  "Playwright": 2,
+  "Plotly": 2,
+  "Podman": 2,
+  "PostgreSQL": 2,
+  "Postman": 1,
+  "Power BI": 2,
+  "Power Systems": 2,
+  "PowerShell": 1,
+  "Predictive Modeling": 3,
+  "Primavera P6": 2,
+  "Prisma": 2,
+  "Probability": 1,
+  "Problem Solving": 1,
+  "Procurement": 2,
+  "Product Management": 4,
+  "Product Marketing": 3,
+  "Progressive Web Apps": 2,
+  "Project Management": 4,
+  "Prolog": 1,
+  "Prometheus": 2,
+  "Prompt Engineering": 2,
+  "Proteus": 2,
+  "Prototyping": 1,
+  "Public Health": 4,
+  "Public Relations": 2,
+  "Public Speaking": 1,
+  "Pulumi": 2,
+  "Puppet": 3,
+  "PyTorch": 3,
+  "Python": 1,
+  "Quality Assurance": 2,
+  "Quality Control": 2,
+  "Quantity Surveying": 3,
+  "Query Optimization": 2,
+  "QuickBooks": 1,
+  "R": 1,
+  "RAG": 3,
+  "REST APIs": 2,
+  "RNN": 3,
+  "ROS": 3,
+  "RTOS": 3,
+  "RabbitMQ": 3,
+  "Radiology": 3,
+  "Rancher": 3,
+  "Raspberry Pi": 2,
+  "React": 2,
+  "React Native": 3,
+  "Record Keeping": 1,
+  "Recruitment": 1,
+  "Redis": 2,
+  "Redux": 2,
+  "Regression": 2,
+  "Regression Testing": 2,
+  "Regulatory Compliance": 2,
+  "Reinforcement Learning": 3,
+  "Relational Databases": 1,
+  "Renewable Energy": 3,
+  "Report Writing": 1,
+  "Reporting": 1,
+  "Requirements Gathering": 2,
+  "Research Methodology": 1,
+  "Research Skills": 1,
+  "Responsive Design": 2,
+  "Retail Management": 2,
+  "Revit": 2,
+  "Risk Assessment": 2,
+  "Risk Management": 2,
+  "Robotics": 4,
+  "Routing and Switching": 2,
+  "Ruby": 1,
+  "Ruby on Rails": 2,
+  "Rust": 1,
+  "SAP": 3,
+  "SAP FICO": 3,
+  "SAP2000": 3,
+  "SAS": 2,
+  "SCADA": 3,
+  "SEO": 2,
+  "SIEM": 3,
+  "SOC": 3,
+  "SPSS": 2,
+  "SQL": 1,
+  "SQLite": 1,
+  "STAAD Pro": 3,
+  "Sage 50": 1,
+  "Sales": 1,
+  "Sales Forecasting": 2,
+  "Salesforce": 2,
+  "Sass": 1,
+  "Scala": 2,
+  "SciPy": 2,
+  "Scrum": 2,
+  "Seaborn": 2,
+  "Search Engine Marketing": 2,
+  "Security Auditing": 3,
+  "Selenium": 2,
+  "Self-motivated": 1,
+  "Semrush": 2,
+  "Sentence Transformers": 3,
+  "Sequelize": 2,
+  "ServSafe": 1,
+  "Serverless": 3,
+  "Shopify": 2,
+  "Simulink": 3,
+  "Site Reliability Engineering": 3,
+  "Site Supervision": 2,
+  "Six Sigma": 3,
+  "Sketch": 2,
+  "SketchUp": 2,
+  "Smart Contracts": 3,
+  "Snowflake": 2,
+  "Social Media Management": 2,
+  "Social Media Marketing": 2,
+  "Socket.IO": 2,
+  "Software Architecture": 3,
+  "Software Development Life Cycle": 2,
+  "Software Engineering": 4,
+  "Software Testing": 2,
+  "Solar PV": 2,
+  "SolidWorks": 2,
+  "Solidity": 3,
+  "SonarQube": 2,
+  "Special Education": 4,
+  "Splunk": 2,
+  "Spring Boot": 2,
+  "Sprint Planning": 2,
+  "Stable Diffusion": 3,
+  "Stakeholder Management": 2,
+  "Statistics": 2,
+  "Storyboarding": 2,
+  "Strapi": 2,
+  "Strategic Planning": 3,
+  "Structural Analysis": 3,
+  "Structural Design": 3,
+  "Student Assessment": 2,
+  "Succession Planning": 3,
+  "Supabase": 2,
+  "Supply Chain Management": 4,
+  "Surveying": 2,
+  "Svelte": 2,
+  "Swift": 1,
+  "SwiftUI": 2,
+  "System Administration": 2,
+  "System Design": 3,
+  "T-SQL": 2,
+  "TCP/IP": 2,
+  "TDD": 2,
+  "Tableau": 2,
+  "Tailwind CSS": 2,
+  "Tally": 1,
+  "Taxation": 3,
+  "Teaching": 1,
+  "Teamwork": 1,
+  "Technical Writing": 2,
+  "TensorFlow": 3,
+  "Terraform": 3,
+  "Test Automation": 2,
+  "Test Cases": 2,
+  "Thermodynamics": 2,
+  "Threat Modeling": 3,
+  "Three.js": 2,
+  "Time Management": 1,
+  "Time Series Analysis": 2,
+  "Trade Marketing": 2,
+  "Training and Development": 2,
+  "Transformers": 3,
+  "Translation": 1,
+  "Treasury Management": 3,
+  "Trello": 1,
+  "Trivy": 2,
+  "Tutoring": 1,
+  "TypeScript": 2,
+  "Typography": 1,
+  "UI/UX": 4,
+  "UML": 1,
+  "Ubuntu": 1,
+  "Unit Testing": 2,
+  "Unity": 3,
+  "Unix": 1,
+  "Unreal Engine": 3,
+  "Usability Testing": 2,
+  "User Flows": 1,
+  "User Research": 1,
+  "VBA": 1,
+  "VHDL": 3,
+  "VMware": 2,
+  "Vagrant": 2,
+  "Valuation": 3,
+  "Variance Analysis": 2,
+  "Vector Databases": 3,
+  "Vercel": 2,
+  "Verilog": 3,
+  "Version Control": 1,
+  "Video Editing": 1,
+  "Video Marketing": 2,
+  "Virtualization": 2,
+  "Visual Basic": 1,
+  "Visual Design": 1,
+  "Visual Merchandising": 1,
+  "Vital Signs": 1,
+  "Vite": 2,
+  "VoIP": 2,
+  "Vue.js": 2,
+  "Vulnerability Assessment": 3,
+  "Waterfall": 1,
+  "Web Accessibility": 2,
+  "Web3": 3,
+  "WebSockets": 2,
+  "Webpack": 2,
+  "Whisper": 3,
+  "Windows Server": 2,
+  "Wireframing": 1,
+  "Wireshark": 2,
+  "WordPress": 1,
+  "Work Ethic": 1,
+  "Workday": 1,
+  "Workforce Planning": 2,
+  "XGBoost": 3,
+  "Xamarin": 3,
+  "Xcode": 2,
+  "Xero": 1,
+  "YOLO": 3,
+  "dbt": 2,
+  "gRPC": 3,
+  "iOS": 3,
+  "jQuery": 1,
+  "pytest": 2,
+  "scikit-learn": 3,
+  "spaCy": 3
+ },
+ "edges": [
+  [
+   "Microsoft Office",
+   "Microsoft Excel",
+   76
+  ],
+  [
+   "Sales",
+   "Business Development",
+   31
+  ],
+  [
+   "Microsoft Excel",
+   "Reporting",
+   25
+  ],
+  [
+   "CRM",
+   "Salesforce",
+   22
+  ],
+  [
+   "Microsoft Office",
+   "Microsoft PowerPoint",
+   18
+  ],
+  [
+   "Basic Life Support",
+   "ACLS",
+   17
+  ],
+  [
+   "Microsoft Office",
+   "Reporting",
+   17
+  ],
+  [
+   "Accounting",
+   "Financial Statements",
+   16
+  ],
+  [
+   "Quality Control",
+   "Quality Assurance",
+   16
+  ],
+  [
+   "Sales",
+   "Account Management",
+   15
+  ],
+  [
+   "Agile",
+   "Scrum",
+   14
+  ],
+  [
+   "Health and Safety",
+   "Regulatory Compliance",
+   13
+  ],
+  [
+   "Microsoft Excel",
+   "Data Analysis",
+   13
+  ],
+  [
+   "Recruitment",
+   "Onboarding",
+   13
+  ],
+  [
+   "Basic Life Support",
+   "CPR",
+   11
+  ],
+  [
+   "Accounting",
+   "General Ledger",
+   10
+  ],
+  [
+   "Accounting",
+   "Payroll",
+   10
+  ],
+  [
+   "Microsoft Office",
+   "Microsoft Word",
+   10
+  ],
+  [
+   "SQL",
+   "Data Analysis",
+   10
+  ],
+  [
+   "Accounting",
+   "Accounts Payable",
+   9
+  ],
+  [
+   "Accounting",
+   "Budgeting",
+   9
+  ],
+  [
+   "Accounting",
+   "Financial Reporting",
+   9
+  ],
+  [
+   "Medical Terminology",
+   "Patient Care",
+   9
+  ],
+  [
+   "Bookkeeping",
+   "Accounting",
+   8
+  ],
+  [
+   "Data Entry",
+   "Reporting",
+   8
+  ],
+  [
+   "HTML",
+   "CSS",
+   8
+  ],
+  [
+   "JavaScript",
+   "Angular",
+   8
+  ],
+  [
+   "JavaScript",
+   "React",
+   8
+  ],
+  [
+   "Accounting",
+   "Accounts Receivable",
+   7
+  ],
+  [
+   "Accounting",
+   "Auditing",
+   7
+  ],
+  [
+   "Accounting",
+   "Bank Reconciliation",
+   7
+  ],
+  [
+   "Accounting",
+   "Reporting",
+   7
+  ],
+  [
+   "CPR",
+   "Patient Care",
+   7
+  ],
+  [
+   "Digital Marketing",
+   "Campaign Management",
+   7
+  ],
+  [
+   "Financial Statements",
+   "Financial Reporting",
+   7
+  ],
+  [
+   "Legal Research",
+   "Litigation",
+   7
+  ],
+  [
+   "Risk Assessment",
+   "Risk Management",
+   7
+  ],
+  [
+   "Sales",
+   "B2B Sales",
+   7
+  ],
+  [
+   "Statistics",
+   "Data Analysis",
+   7
+  ],
+  [
+   "Customer Service",
+   "Sales",
+   6
+  ],
+  [
+   "HIPAA",
+   "Electronic Health Records",
+   6
+  ],
+  [
+   "HTML",
+   "JavaScript",
+   6
+  ],
+  [
+   "JavaScript",
+   "TypeScript",
+   6
+  ],
+  [
+   "Microsoft Excel",
+   "Pivot Tables",
+   6
+  ],
+  [
+   "Python",
+   "Data Analysis",
+   6
+  ],
+  [
+   "SQL",
+   "ETL",
+   6
+  ],
+  [
+   "Vital Signs",
+   "Monitoring",
+   6
+  ],
+  [
+   "Accounting",
+   "Cost Accounting",
+   5
+  ],
+  [
+   "Accounting",
+   "Taxation",
+   5
+  ],
+  [
+   "AutoCAD",
+   "Revit",
+   5
+  ],
+  [
+   "Basic Life Support",
+   "Patient Care",
+   5
+  ],
+  [
+   "C#",
+   ".NET",
+   5
+  ],
+  [
+   "Computer Networking",
+   "Cisco",
+   5
+  ],
+  [
+   "Data Analysis",
+   "Data Visualization",
+   5
+  ],
+  [
+   "Docker",
+   "Kubernetes",
+   5
+  ],
+  [
+   "Financial Analysis",
+   "Financial Forecasting",
+   5
+  ],
+  [
+   "Infection Control",
+   "Patient Care",
+   5
+  ],
+  [
+   "Java",
+   "Spring Boot",
+   5
+  ],
+  [
+   "JavaScript",
+   "Node.js",
+   5
+  ],
+  [
+   "Microsoft Office",
+   "Microsoft SharePoint",
+   5
+  ],
+  [
+   "Python",
+   "Machine Learning",
+   5
+  ],
+  [
+   "Sales",
+   "Lead Generation",
+   5
+  ],
+  [
+   "Accounting",
+   "Financial Analysis",
+   4
+  ],
+  [
+   "Accounting",
+   "Financial Forecasting",
+   4
+  ],
+  [
+   "Basic Life Support",
+   "Nursing",
+   4
+  ],
+  [
+   "CSS",
+   "JavaScript",
+   4
+  ],
+  [
+   "Computer Networking",
+   "DNS",
+   4
+  ],
+  [
+   "Customer Service",
+   "Patient Care",
+   4
+  ],
+  [
+   "Customer Service",
+   "Retail Management",
+   4
+  ],
+  [
+   "Data Analysis",
+   "Business Intelligence",
+   4
+  ],
+  [
+   "Data Analysis",
+   "Dashboards",
+   4
+  ],
+  [
+   "Digital Marketing",
+   "Email Marketing",
+   4
+  ],
+  [
+   "GAAP",
+   "Financial Reporting",
+   4
+  ],
+  [
+   "GAAP",
+   "Financial Statements",
+   4
+  ],
+  [
+   "Health and Safety",
+   "HVAC",
+   4
+  ],
+  [
+   "Linux",
+   "DevOps",
+   4
+  ],
+  [
+   "Microsoft Excel",
+   "Budgeting",
+   4
+  ],
+  [
+   "Python",
+   "Artificial Intelligence",
+   4
+  ],
+  [
+   "Python",
+   "Data Science",
+   4
+  ],
+  [
+   "Regulatory Compliance",
+   "Quality Control",
+   4
+  ],
+  [
+   "SIEM",
+   "SOC",
+   4
+  ],
+  [
+   "SQL",
+   "Microsoft SQL Server",
+   4
+  ],
+  [
+   "SQL",
+   "Oracle Database",
+   4
+  ],
+  [
+   "Sales",
+   "Retail Management",
+   4
+  ],
+  [
+   "Sales",
+   "Visual Merchandising",
+   4
+  ],
+  [
+   "Spring Boot",
+   "Microservices",
+   4
+  ],
+  [
+   ".NET",
+   "ASP.NET",
+   3
+  ],
+  [
+   "Bookkeeping",
+   "Financial Reporting",
+   3
+  ],
+  [
+   "Budgeting",
+   "Reporting",
+   3
+  ],
+  [
+   "C",
+   "C++",
+   3
+  ],
+  [
+   "CPR",
+   "ACLS",
+   3
+  ],
+  [
+   "CPR",
+   "Nursing",
+   3
+  ],
+  [
+   "CRM",
+   "Account Management",
+   3
+  ],
+  [
+   "Computer Networking",
+   "Cybersecurity",
+   3
+  ],
+  [
+   "Customer Service",
+   "CRM",
+   3
+  ],
+  [
+   "Digital Marketing",
+   "Social Media Marketing",
+   3
+  ],
+  [
+   "Financial Analysis",
+   "Financial Modeling",
+   3
+  ],
+  [
+   "Financial Statements",
+   "Financial Analysis",
+   3
+  ],
+  [
+   "General Ledger",
+   "Financial Statements",
+   3
+  ],
+  [
+   "HR Policies",
+   "Employee Relations",
+   3
+  ],
+  [
+   "Health and Safety",
+   "PLC",
+   3
+  ],
+  [
+   "Java",
+   "Microservices",
+   3
+  ],
+  [
+   "JavaScript",
+   "jQuery",
+   3
+  ],
+  [
+   "Jira",
+   "Agile",
+   3
+  ],
+  [
+   "Lead Generation",
+   "Business Development",
+   3
+  ],
+  [
+   "Machine Learning",
+   "Deep Learning",
+   3
+  ],
+  [
+   "Machine Learning",
+   "Natural Language Processing",
+   3
+  ],
+  [
+   "Market Research",
+   "Marketing Strategy",
+   3
+  ],
+  [
+   "Medical Terminology",
+   "Nursing",
+   3
+  ],
+  [
+   "Microsoft Excel",
+   "Business Intelligence",
+   3
+  ],
+  [
+   "Microsoft Excel",
+   "Financial Forecasting",
+   3
+  ],
+  [
+   "Microsoft Office",
+   "Microsoft Project",
+   3
+  ],
+  [
+   "Monitoring",
+   "Quality Assurance",
+   3
+  ],
+  [
+   "Operating Systems",
+   "Active Directory",
+   3
+  ],
+  [
+   "Operating Systems",
+   "Linux",
+   3
+  ],
+  [
+   "Operating Systems",
+   "Windows Server",
+   3
+  ],
+  [
+   "Patient Care",
+   "Physiotherapy",
+   3
+  ],
+  [
+   "Patient Care",
+   "Radiology",
+   3
+  ],
+  [
+   "Record Keeping",
+   "Reporting",
+   3
+  ],
+  [
+   "Regulatory Compliance",
+   "Clinical Research",
+   3
+  ],
+  [
+   "Regulatory Compliance",
+   "Quality Assurance",
+   3
+  ],
+  [
+   "Requirements Gathering",
+   "Business Analysis",
+   3
+  ],
+  [
+   "Risk Management",
+   "Regulatory Compliance",
+   3
+  ],
+  [
+   "SQL",
+   "Data Warehousing",
+   3
+  ],
+  [
+   "Sales",
+   "Cold Calling",
+   3
+  ],
+  [
+   "Sales",
+   "Salesforce",
+   3
+  ],
+  [
+   "Software Testing",
+   "Test Automation",
+   3
+  ],
+  [
+   "Statistics",
+   "Data Science",
+   3
+  ],
+  [
+   "Virtualization",
+   "VMware",
+   3
+  ],
+  [
+   "Vital Signs",
+   "Patient Care",
+   3
+  ],
+  [
+   "Wireframing",
+   "Prototyping",
+   3
+  ],
+  [
+   "Accounting",
+   "GAAP",
+   2
+  ],
+  [
+   "Accounting",
+   "Procurement",
+   2
+  ],
+  [
+   "Accounting",
+   "Risk Management",
+   2
+  ],
+  [
+   "Adobe Illustrator",
+   "Adobe Creative Suite",
+   2
+  ],
+  [
+   "Adobe Photoshop",
+   "Adobe Creative Suite",
+   2
+  ],
+  [
+   "Assembly",
+   "Quality Assurance",
+   2
+  ],
+  [
+   "Assembly",
+   "Quality Control",
+   2
+  ],
+  [
+   "Auditing",
+   "Regulatory Compliance",
+   2
+  ],
+  [
+   "AutoCAD",
+   "Assembly",
+   2
+  ],
+  [
+   "AutoCAD",
+   "SolidWorks",
+   2
+  ],
+  [
+   "Biochemistry",
+   "PCR",
+   2
+  ],
+  [
+   "Budgeting",
+   "Payroll",
+   2
+  ],
+  [
+   "C#",
+   "ASP.NET",
+   2
+  ],
+  [
+   "CPR",
+   "Health and Safety",
+   2
+  ],
+  [
+   "CRM",
+   "HubSpot",
+   2
+  ],
+  [
+   "CSS",
+   "Angular",
+   2
+  ],
+  [
+   "CSS",
+   "React",
+   2
+  ],
+  [
+   "Classification",
+   "Quality Control",
+   2
+  ],
+  [
+   "Cloud Computing",
+   "AWS",
+   2
+  ],
+  [
+   "Cloud Computing",
+   "Microsoft Azure",
+   2
+  ],
+  [
+   "Computer Networking",
+   "CCNA",
+   2
+  ],
+  [
+   "Computer Networking",
+   "Cloud Computing",
+   2
+  ],
+  [
+   "Computer Networking",
+   "Firewalls",
+   2
+  ],
+  [
+   "Computer Networking",
+   "Microsoft Azure",
+   2
+  ],
+  [
+   "Computer Networking",
+   "TCP/IP",
+   2
+  ],
+  [
+   "Computer Networking",
+   "VoIP",
+   2
+  ],
+  [
+   "Content Marketing",
+   "Digital Marketing",
+   2
+  ],
+  [
+   "Customer Service",
+   "Account Management",
+   2
+  ],
+  [
+   "Data Analysis",
+   "Data Science",
+   2
+  ],
+  [
+   "Data Analysis",
+   "Risk Management",
+   2
+  ],
+  [
+   "Data Entry",
+   "Data Analysis",
+   2
+  ],
+  [
+   "Data Visualization",
+   "Dashboards",
+   2
+  ],
+  [
+   "Deep Learning",
+   "Large Language Models",
+   2
+  ],
+  [
+   "Digital Marketing",
+   "Marketing Strategy",
+   2
+  ],
+  [
+   "Digital Marketing",
+   "Product Marketing",
+   2
+  ],
+  [
+   "Digital Marketing",
+   "SEO",
+   2
+  ],
+  [
+   "ETL",
+   "Data Pipelines",
+   2
+  ],
+  [
+   "Employee Relations",
+   "Organizational Development",
+   2
+  ],
+  [
+   "Financial Modeling",
+   "Valuation",
+   2
+  ],
+  [
+   "Financial Statements",
+   "Financial Forecasting",
+   2
+  ],
+  [
+   "Firewalls",
+   "Cybersecurity",
+   2
+  ],
+  [
+   "First Aid",
+   "Patient Care",
+   2
+  ],
+  [
+   "Front Desk Operations",
+   "Customer Service",
+   2
+  ],
+  [
+   "GD&T",
+   "CNC Programming",
+   2
+  ],
+  [
+   "General Ledger",
+   "Bank Reconciliation",
+   2
+  ],
+  [
+   "General Ledger",
+   "Financial Reporting",
+   2
+  ],
+  [
+   "Git",
+   "Jenkins",
+   2
+  ],
+  [
+   "HIPAA",
+   "Patient Care",
+   2
+  ],
+  [
+   "HR Policies",
+   "Regulatory Compliance",
+   2
+  ],
+  [
+   "HTML",
+   "React",
+   2
+  ],
+  [
+   "Health and Safety",
+   "Assembly",
+   2
+  ],
+  [
+   "Health and Safety",
+   "Logistics",
+   2
+  ],
+  [
+   "Infrastructure as Code",
+   "Terraform",
+   2
+  ],
+  [
+   "Inventory Management",
+   "Logistics",
+   2
+  ],
+  [
+   "Java",
+   "Hibernate",
+   2
+  ],
+  [
+   "Lead Generation",
+   "B2B Sales",
+   2
+  ],
+  [
+   "Lean Manufacturing",
+   "Six Sigma",
+   2
+  ],
+  [
+   "Lesson Planning",
+   "Curriculum Development",
+   2
+  ],
+  [
+   "Linux",
+   "Bash",
+   2
+  ],
+  [
+   "Linux",
+   "Kubernetes",
+   2
+  ],
+  [
+   "Logistics",
+   "Quality Control",
+   2
+  ],
+  [
+   "Machine Learning",
+   "Computer Vision",
+   2
+  ],
+  [
+   "Machine Learning",
+   "Generative AI",
+   2
+  ],
+  [
+   "Market Research",
+   "Brand Management",
+   2
+  ],
+  [
+   "Market Research",
+   "Business Development",
+   2
+  ],
+  [
+   "Market Research",
+   "Digital Marketing",
+   2
+  ],
+  [
+   "Medical Terminology",
+   "Electronic Health Records",
+   2
+  ],
+  [
+   "Microsoft Excel",
+   "KPI Tracking",
+   2
+  ],
+  [
+   "Microsoft Excel",
+   "Payroll",
+   2
+  ],
+  [
+   "Microsoft Office",
+   "Business Intelligence",
+   2
+  ],
+  [
+   "Microsoft Office",
+   "HRIS",
+   2
+  ],
+  [
+   "Microsoft Office",
+   "Project Management",
+   2
+  ],
+  [
+   "Microsoft Office",
+   "Salesforce",
+   2
+  ],
+  [
+   "Microsoft Project",
+   "Primavera P6",
+   2
+  ],
+  [
+   "Microsoft Word",
+   "Reporting",
+   2
+  ],
+  [
+   "Monitoring",
+   "Auditing",
+   2
+  ],
+  [
+   "Operating Systems",
+   "System Administration",
+   2
+  ],
+  [
+   "PLC",
+   "PLC Programming",
+   2
+  ],
+  [
+   "Patient Care",
+   "Electronic Health Records",
+   2
+  ],
+  [
+   "Patient Care",
+   "Monitoring",
+   2
+  ],
+  [
+   "Python",
+   "Algorithms",
+   2
+  ],
+  [
+   "Python",
+   "Ansible",
+   2
+  ],
+  [
+   "Python",
+   "ETL",
+   2
+  ],
+  [
+   "Python",
+   "Test Automation",
+   2
+  ],
+  [
+   "R",
+   "Data Analysis",
+   2
+  ],
+  [
+   "REST APIs",
+   "Microservices",
+   2
+  ],
+  [
+   "Record Keeping",
+   "Accounting",
+   2
+  ],
+  [
+   "Recruitment",
+   "Training and Development",
+   2
+  ],
+  [
+   "SQL",
+   "Dashboards",
+   2
+  ],
+  [
+   "SQL",
+   "Data Modeling",
+   2
+  ],
+  [
+   "SQL",
+   "Power BI",
+   2
+  ],
+  [
+   "SQL",
+   "T-SQL",
+   2
+  ],
+  [
+   "Sales",
+   "E-commerce",
+   2
+  ],
+  [
+   "Scrum",
+   "Sprint Planning",
+   2
+  ],
+  [
+   "SketchUp",
+   "3D Modeling",
+   2
+  ],
+  [
+   "Software Development Life Cycle",
+   "Agile",
+   2
+  ],
+  [
+   "Software Development Life Cycle",
+   "Test Cases",
+   2
+  ],
+  [
+   "Software Testing",
+   "Integration Testing",
+   2
+  ],
+  [
+   "Software Testing",
+   "Regression",
+   2
+  ],
+  [
+   "Software Testing",
+   "Test Cases",
+   2
+  ],
+  [
+   "SolidWorks",
+   "Finite Element Analysis",
+   2
+  ],
+  [
+   "Statistics",
+   "Machine Learning",
+   2
+  ],
+  [
+   "Statistics",
+   "Six Sigma",
+   2
+  ],
+  [
+   "Test Automation",
+   "Selenium",
+   2
+  ],
+  [
+   "Test Cases",
+   "Quality Assurance",
+   2
+  ],
+  [
+   "User Research",
+   "Information Architecture",
+   2
+  ],
+  [
+   "User Research",
+   "UI/UX",
+   2
+  ],
+  [
+   "Windows Server",
+   "Active Directory",
+   2
+  ],
+  [
+   ".NET",
+   "Entity Framework",
+   1
+  ],
+  [
+   ".NET",
+   "Microsoft SharePoint",
+   1
+  ],
+  [
+   "AWS",
+   "Cloud Architecture",
+   1
+  ],
+  [
+   "AWS",
+   "Serverless",
+   1
+  ],
+  [
+   "Accounting",
+   "CFA",
+   1
+  ],
+  [
+   "Accounting",
+   "Financial Modeling",
+   1
+  ],
+  [
+   "Accounting",
+   "KPI Tracking",
+   1
+  ],
+  [
+   "Accounting",
+   "Report Writing",
+   1
+  ],
+  [
+   "Accounting",
+   "Treasury Management",
+   1
+  ],
+  [
+   "Accounts Receivable",
+   "Financial Forecasting",
+   1
+  ],
+  [
+   "Adobe InDesign",
+   "Adobe Creative Suite",
+   1
+  ],
+  [
+   "Adobe Photoshop",
+   "After Effects",
+   1
+  ],
+  [
+   "Adobe Photoshop",
+   "Digital Marketing",
+   1
+  ],
+  [
+   "Adobe Photoshop",
+   "Video Editing",
+   1
+  ],
+  [
+   "After Effects",
+   "Motion Graphics",
+   1
+  ],
+  [
+   "Agile",
+   "DevOps",
+   1
+  ],
+  [
+   "Agile",
+   "Product Management",
+   1
+  ],
+  [
+   "Agile",
+   "Sprint Planning",
+   1
+  ],
+  [
+   "Algorithms",
+   "Embedded Systems",
+   1
+  ],
+  [
+   "Android",
+   "Logistics",
+   1
+  ],
+  [
+   "Android",
+   "Mobile App Development",
+   1
+  ],
+  [
+   "Android Studio",
+   "Jetpack Compose",
+   1
+  ],
+  [
+   "Ansible",
+   "Site Reliability Engineering",
+   1
+  ],
+  [
+   "Assembly",
+   "Classification",
+   1
+  ],
+  [
+   "Assembly",
+   "Flux",
+   1
+  ],
+  [
+   "Assembly",
+   "Lean Manufacturing",
+   1
+  ],
+  [
+   "AutoCAD",
+   "Civil 3D",
+   1
+  ],
+  [
+   "AutoCAD",
+   "System Design",
+   1
+  ],
+  [
+   "BDD",
+   "Cucumber",
+   1
+  ],
+  [
+   "Bank Reconciliation",
+   "Accounts Receivable",
+   1
+  ],
+  [
+   "Bash",
+   "Ansible",
+   1
+  ],
+  [
+   "Bash",
+   "DevOps",
+   1
+  ],
+  [
+   "Basic Life Support",
+   "CMA",
+   1
+  ],
+  [
+   "Basic Life Support",
+   "Vital Signs",
+   1
+  ],
+  [
+   "Biochemistry",
+   "Pharmacology",
+   1
+  ],
+  [
+   "Bookkeeping",
+   "Auditing",
+   1
+  ],
+  [
+   "Bookkeeping",
+   "Bank Reconciliation",
+   1
+  ],
+  [
+   "Bookkeeping",
+   "Financial Statements",
+   1
+  ],
+  [
+   "Bookkeeping",
+   "General Ledger",
+   1
+  ],
+  [
+   "Bookkeeping",
+   "Reporting",
+   1
+  ],
+  [
+   "Bookkeeping",
+   "Risk Management",
+   1
+  ],
+  [
+   "Budgeting",
+   "KPI Tracking",
+   1
+  ],
+  [
+   "Business Analysis",
+   "Business Intelligence",
+   1
+  ],
+  [
+   "Business Analysis",
+   "Product Management",
+   1
+  ],
+  [
+   "Business Analysis",
+   "Software Development Life Cycle",
+   1
+  ],
+  [
+   "Business Analysis",
+   "Test Cases",
+   1
+  ],
+  [
+   "Business Development",
+   "Account Management",
+   1
+  ],
+  [
+   "Business Development",
+   "Salesforce",
+   1
+  ],
+  [
+   "Business Intelligence",
+   "Dashboards",
+   1
+  ],
+  [
+   "C",
+   "Embedded Systems",
+   1
+  ],
+  [
+   "C",
+   "Microcontrollers",
+   1
+  ],
+  [
+   "C++",
+   "Software Engineering",
+   1
+  ],
+  [
+   "CCNA",
+   "Cisco",
+   1
+  ],
+  [
+   "CI/CD",
+   "AWS",
+   1
+  ],
+  [
+   "CI/CD",
+   "Site Reliability Engineering",
+   1
+  ],
+  [
+   "CNC Programming",
+   "Quality Assurance",
+   1
+  ],
+  [
+   "COBOL",
+   "Unit Testing",
+   1
+  ],
+  [
+   "CRM",
+   "Business Development",
+   1
+  ],
+  [
+   "CRM",
+   "Campaign Management",
+   1
+  ],
+  [
+   "CRM",
+   "Cold Calling",
+   1
+  ],
+  [
+   "CRM",
+   "Conversion Rate Optimization",
+   1
+  ],
+  [
+   "CRM",
+   "Lead Generation",
+   1
+  ],
+  [
+   "CSS",
+   "Bootstrap",
+   1
+  ],
+  [
+   "CSS",
+   "Responsive Design",
+   1
+  ],
+  [
+   "CSS",
+   "UI/UX",
+   1
+  ],
+  [
+   "Canva",
+   "Digital Marketing",
+   1
+  ],
+  [
+   "Circuit Design",
+   "PCB Design",
+   1
+  ],
+  [
+   "Classification",
+   "Project Management",
+   1
+  ],
+  [
+   "Classification",
+   "Special Education",
+   1
+  ],
+  [
+   "Clinical Research",
+   "Pharmacovigilance",
+   1
+  ],
+  [
+   "Cold Calling",
+   "Campaign Management",
+   1
+  ],
+  [
+   "CompTIA",
+   "CCNA",
+   1
+  ],
+  [
+   "Competitor Analysis",
+   "Marketing Strategy",
+   1
+  ],
+  [
+   "Computer Networking",
+   "AWS",
+   1
+  ],
+  [
+   "Computer Networking",
+   "IoT",
+   1
+  ],
+  [
+   "Computer Networking",
+   "Network Security",
+   1
+  ],
+  [
+   "Computer Networking",
+   "Routing and Switching",
+   1
+  ],
+  [
+   "Computer Networking",
+   "System Design",
+   1
+  ],
+  [
+   "Confluence",
+   "Agile",
+   1
+  ],
+  [
+   "Containerization",
+   "Kubernetes",
+   1
+  ],
+  [
+   "Contract Drafting",
+   "Litigation",
+   1
+  ],
+  [
+   "Copywriting",
+   "Content Marketing",
+   1
+  ],
+  [
+   "Copywriting",
+   "Content Strategy",
+   1
+  ],
+  [
+   "Copywriting",
+   "Email Marketing",
+   1
+  ],
+  [
+   "Copywriting",
+   "SEO",
+   1
+  ],
+  [
+   "Cost Accounting",
+   "Variance Analysis",
+   1
+  ],
+  [
+   "Cryptography",
+   "Cybersecurity",
+   1
+  ],
+  [
+   "Customer Service",
+   "Brand Management",
+   1
+  ],
+  [
+   "Customer Service",
+   "Business Development",
+   1
+  ],
+  [
+   "Customer Service",
+   "Chef",
+   1
+  ],
+  [
+   "Customer Service",
+   "Employee Engagement",
+   1
+  ],
+  [
+   "Customer Service",
+   "Onboarding",
+   1
+  ],
+  [
+   "Customer Service",
+   "Patient Counseling",
+   1
+  ],
+  [
+   "Customer Service",
+   "Quality Assurance",
+   1
+  ],
+  [
+   "Customer Service",
+   "Reporting",
+   1
+  ],
+  [
+   "Customer Service",
+   "Salesforce",
+   1
+  ],
+  [
+   "Dashboards",
+   "Power BI",
+   1
+  ],
+  [
+   "Data Analysis",
+   "Financial Forecasting",
+   1
+  ],
+  [
+   "Data Analysis",
+   "Monitoring",
+   1
+  ],
+  [
+   "Data Analysis",
+   "Product Management",
+   1
+  ],
+  [
+   "Data Analysis",
+   "Quality Control",
+   1
+  ],
+  [
+   "Data Analysis",
+   "Risk Assessment",
+   1
+  ],
+  [
+   "Data Analysis",
+   "Six Sigma",
+   1
+  ],
+  [
+   "Data Analysis",
+   "Tableau",
+   1
+  ],
+  [
+   "Data Entry",
+   "Bookkeeping",
+   1
+  ],
+  [
+   "Data Entry",
+   "CRM",
+   1
+  ],
+  [
+   "Data Entry",
+   "Electronic Health Records",
+   1
+  ],
+  [
+   "Data Entry",
+   "Front Desk Operations",
+   1
+  ],
+  [
+   "Data Entry",
+   "Record Keeping",
+   1
+  ],
+  [
+   "Data Entry",
+   "Regulatory Compliance",
+   1
+  ],
+  [
+   "Data Modeling",
+   "Data Analysis",
+   1
+  ],
+  [
+   "Data Modeling",
+   "Data Science",
+   1
+  ],
+  [
+   "Data Modeling",
+   "Data Warehousing",
+   1
+  ],
+  [
+   "Data Modeling",
+   "ETL",
+   1
+  ],
+  [
+   "Data Modeling",
+   "Power BI",
+   1
+  ],
+  [
+   "Data Pipelines",
+   "Apache Airflow",
+   1
+  ],
+  [
+   "Data Pipelines",
+   "Data Engineering",
+   1
+  ],
+  [
+   "Data Science",
+   "Artificial Intelligence",
+   1
+  ],
+  [
+   "Data Visualization",
+   "Business Intelligence",
+   1
+  ],
+  [
+   "Deep Learning",
+   "PyTorch",
+   1
+  ],
+  [
+   "Design Patterns",
+   "Software Architecture",
+   1
+  ],
+  [
+   "Digital Marketing",
+   "Growth Marketing",
+   1
+  ],
+  [
+   "Docker",
+   "CI/CD",
+   1
+  ],
+  [
+   "Docker",
+   "Containerization",
+   1
+  ],
+  [
+   "Early Childhood Education",
+   "Curriculum Development",
+   1
+  ],
+  [
+   "Electronic Health Records",
+   "Clinical Research",
+   1
+  ],
+  [
+   "Epidemiology",
+   "Public Health",
+   1
+  ],
+  [
+   "Financial Analysis",
+   "Variance Analysis",
+   1
+  ],
+  [
+   "Financial Reporting",
+   "Auditing",
+   1
+  ],
+  [
+   "Financial Reporting",
+   "Financial Analysis",
+   1
+  ],
+  [
+   "Financial Reporting",
+   "Financial Forecasting",
+   1
+  ],
+  [
+   "Financial Statements",
+   "Auditing",
+   1
+  ],
+  [
+   "Financial Statements",
+   "Budgeting",
+   1
+  ],
+  [
+   "Financial Statements",
+   "Corporate Finance",
+   1
+  ],
+  [
+   "Financial Statements",
+   "Risk Assessment",
+   1
+  ],
+  [
+   "Financial Statements",
+   "Variance Analysis",
+   1
+  ],
+  [
+   "Finite Element Analysis",
+   "ANSYS",
+   1
+  ],
+  [
+   "Finite Element Analysis",
+   "Structural Analysis",
+   1
+  ],
+  [
+   "First Aid",
+   "Basic Life Support",
+   1
+  ],
+  [
+   "First Aid",
+   "Vital Signs",
+   1
+  ],
+  [
+   "GAAP",
+   "Auditing",
+   1
+  ],
+  [
+   "GAAP",
+   "Corporate Finance",
+   1
+  ],
+  [
+   "Git",
+   "CI/CD",
+   1
+  ],
+  [
+   "Git",
+   "DevOps",
+   1
+  ],
+  [
+   "GitHub",
+   "CI/CD",
+   1
+  ],
+  [
+   "Google Ads",
+   "Search Engine Marketing",
+   1
+  ],
+  [
+   "Google Analytics",
+   "Reporting",
+   1
+  ],
+  [
+   "HR Policies",
+   "Human Resource Management",
+   1
+  ],
+  [
+   "HR Policies",
+   "Onboarding",
+   1
+  ],
+  [
+   "HRIS",
+   "PeopleSoft",
+   1
+  ],
+  [
+   "HTML",
+   "Angular",
+   1
+  ],
+  [
+   "HTML",
+   "UI/UX",
+   1
+  ],
+  [
+   "Health and Safety",
+   "Infection Control",
+   1
+  ],
+  [
+   "Health and Safety",
+   "Lean Manufacturing",
+   1
+  ],
+  [
+   "Health and Safety",
+   "Patient Care",
+   1
+  ],
+  [
+   "Health and Safety",
+   "Power Systems",
+   1
+  ],
+  [
+   "Health and Safety",
+   "Public Health",
+   1
+  ],
+  [
+   "Health and Safety",
+   "Reporting",
+   1
+  ],
+  [
+   "Health and Safety",
+   "Risk Management",
+   1
+  ],
+  [
+   "Health and Safety",
+   "ServSafe",
+   1
+  ],
+  [
+   "Health and Safety",
+   "Training and Development",
+   1
+  ],
+  [
+   "HubSpot",
+   "Marketing Automation",
+   1
+  ],
+  [
+   "Human Resource Management",
+   "Organizational Development",
+   1
+  ],
+  [
+   "Infection Control",
+   "Phlebotomy",
+   1
+  ],
+  [
+   "Infection Control",
+   "Quality Control",
+   1
+  ],
+  [
+   "Instructional Design",
+   "Curriculum Development",
+   1
+  ],
+  [
+   "Inventory Management",
+   "Procurement",
+   1
+  ],
+  [
+   "Inventory Management",
+   "Retail Management",
+   1
+  ],
+  [
+   "Inventory Management",
+   "SAP",
+   1
+  ],
+  [
+   "Java",
+   ".NET",
+   1
+  ],
+  [
+   "Java",
+   "Android",
+   1
+  ],
+  [
+   "Java",
+   "Design Patterns",
+   1
+  ],
+  [
+   "Java",
+   "JUnit",
+   1
+  ],
+  [
+   "Java",
+   "REST APIs",
+   1
+  ],
+  [
+   "Java",
+   "Selenium",
+   1
+  ],
+  [
+   "Java",
+   "Snowflake",
+   1
+  ],
+  [
+   "Java",
+   "Test Automation",
+   1
+  ],
+  [
+   "JavaScript",
+   "Next.js",
+   1
+  ],
+  [
+   "JavaScript",
+   "Product Management",
+   1
+  ],
+  [
+   "JavaScript",
+   "Redux",
+   1
+  ],
+  [
+   "Jenkins",
+   "CI/CD",
+   1
+  ],
+  [
+   "Jenkins",
+   "DevOps",
+   1
+  ],
+  [
+   "Jira",
+   "Confluence",
+   1
+  ],
+  [
+   "Jira",
+   "Sprint Planning",
+   1
+  ],
+  [
+   "KPI Tracking",
+   "Performance Management",
+   1
+  ],
+  [
+   "Kotlin",
+   "Android",
+   1
+  ],
+  [
+   "Kubernetes",
+   "Site Reliability Engineering",
+   1
+  ],
+  [
+   "Lead Generation",
+   "Campaign Management",
+   1
+  ],
+  [
+   "Lean Manufacturing",
+   "Quality Control",
+   1
+  ],
+  [
+   "Legal Research",
+   "Legal Writing",
+   1
+  ],
+  [
+   "Linux",
+   "Ansible",
+   1
+  ],
+  [
+   "Linux",
+   "CI/CD",
+   1
+  ],
+  [
+   "Linux",
+   "Embedded Systems",
+   1
+  ],
+  [
+   "Linux",
+   "Network Security",
+   1
+  ],
+  [
+   "Linux",
+   "Python",
+   1
+  ],
+  [
+   "Linux",
+   "Software Engineering",
+   1
+  ],
+  [
+   "Linux",
+   "VMware",
+   1
+  ],
+  [
+   "Linux",
+   "Virtualization",
+   1
+  ],
+  [
+   "Logistics",
+   "Classification",
+   1
+  ],
+  [
+   "Machine Learning",
+   "MLOps",
+   1
+  ],
+  [
+   "Machine Learning",
+   "PyTorch",
+   1
+  ],
+  [
+   "Machine Learning",
+   "TensorFlow",
+   1
+  ],
+  [
+   "Market Research",
+   "Artificial Intelligence",
+   1
+  ],
+  [
+   "Market Research",
+   "Competitor Analysis",
+   1
+  ],
+  [
+   "Market Research",
+   "E-commerce",
+   1
+  ],
+  [
+   "Market Research",
+   "Lead Generation",
+   1
+  ],
+  [
+   "Market Research",
+   "Product Management",
+   1
+  ],
+  [
+   "Medical Terminology",
+   "Assembly",
+   1
+  ],
+  [
+   "Medical Terminology",
+   "Clinical Research",
+   1
+  ],
+  [
+   "Medical Terminology",
+   "Front Desk Operations",
+   1
+  ],
+  [
+   "Medical Terminology",
+   "ICD-10",
+   1
+  ],
+  [
+   "Medical Terminology",
+   "Phlebotomy",
+   1
+  ],
+  [
+   "Microbiology",
+   "PCR",
+   1
+  ],
+  [
+   "Microbiology",
+   "Quality Control",
+   1
+  ],
+  [
+   "Microbiology",
+   "Reporting",
+   1
+  ],
+  [
+   "Microsoft Azure",
+   "Network Security",
+   1
+  ],
+  [
+   "Microsoft Excel",
+   "Accounting",
+   1
+  ],
+  [
+   "Microsoft Excel",
+   "Dashboards",
+   1
+  ],
+  [
+   "Microsoft Excel",
+   "Financial Analysis",
+   1
+  ],
+  [
+   "Microsoft Excel",
+   "Financial Statements",
+   1
+  ],
+  [
+   "Microsoft Excel",
+   "Inventory Management",
+   1
+  ],
+  [
+   "Microsoft Excel",
+   "Microsoft Project",
+   1
+  ],
+  [
+   "Microsoft Excel",
+   "Office Administration",
+   1
+  ],
+  [
+   "Microsoft Excel",
+   "Statistics",
+   1
+  ],
+  [
+   "Microsoft Office",
+   "Accounting",
+   1
+  ],
+  [
+   "Microsoft Office",
+   "Budgeting",
+   1
+  ],
+  [
+   "Microsoft Office",
+   "Data Analysis",
+   1
+  ],
+  [
+   "Microsoft Office",
+   "Electronic Health Records",
+   1
+  ],
+  [
+   "Microsoft Office",
+   "Financial Forecasting",
+   1
+  ],
+  [
+   "Microsoft Office",
+   "Front Desk Operations",
+   1
+  ],
+  [
+   "Microsoft Office",
+   "KPI Tracking",
+   1
+  ],
+  [
+   "Microsoft Office",
+   "Legal Research",
+   1
+  ],
+  [
+   "Microsoft Office",
+   "Payroll",
+   1
+  ],
+  [
+   "Microsoft PowerPoint",
+   "Reporting",
+   1
+  ],
+  [
+   "Microsoft SQL Server",
+   "Data Analysis",
+   1
+  ],
+  [
+   "Microsoft SQL Server",
+   "T-SQL",
+   1
+  ],
+  [
+   "Microsoft Word",
+   "Legal Research",
+   1
+  ],
+  [
+   "Microsoft Word",
+   "Litigation",
+   1
+  ],
+  [
+   "Monitoring",
+   "Performance Management",
+   1
+  ],
+  [
+   "Monitoring",
+   "Prometheus",
+   1
+  ],
+  [
+   "Monitoring",
+   "Risk Management",
+   1
+  ],
+  [
+   "Monitoring",
+   "SIEM",
+   1
+  ],
+  [
+   "Multithreading",
+   "RTOS",
+   1
+  ],
+  [
+   "Node.js",
+   "Distributed Systems",
+   1
+  ],
+  [
+   "Node.js",
+   "REST APIs",
+   1
+  ],
+  [
+   "Nursing",
+   "Public Health",
+   1
+  ],
+  [
+   "Objective-C",
+   "iOS",
+   1
+  ],
+  [
+   "Onboarding",
+   "Employee Engagement",
+   1
+  ],
+  [
+   "Onboarding",
+   "Training and Development",
+   1
+  ],
+  [
+   "Operating Systems",
+   "Cybersecurity",
+   1
+  ],
+  [
+   "Operating Systems",
+   "PowerShell",
+   1
+  ],
+  [
+   "Operating Systems",
+   "RTOS",
+   1
+  ],
+  [
+   "Operating Systems",
+   "System Design",
+   1
+  ],
+  [
+   "Operating Systems",
+   "VMware",
+   1
+  ],
+  [
+   "Operating Systems",
+   "Virtualization",
+   1
+  ],
+  [
+   "Oracle Database",
+   "Data Analysis",
+   1
+  ],
+  [
+   "Patient Care",
+   "Clinical Research",
+   1
+  ],
+  [
+   "Patient Care",
+   "Patient Counseling",
+   1
+  ],
+  [
+   "Patient Care",
+   "Phlebotomy",
+   1
+  ],
+  [
+   "Patient Care",
+   "Regulatory Compliance",
+   1
+  ],
+  [
+   "Payroll",
+   "Accounts Receivable",
+   1
+  ],
+  [
+   "Payroll",
+   "Auditing",
+   1
+  ],
+  [
+   "Payroll",
+   "Compensation and Benefits",
+   1
+  ],
+  [
+   "Performance Management",
+   "Employee Relations",
+   1
+  ],
+  [
+   "Pharmacology",
+   "Patient Care",
+   1
+  ],
+  [
+   "Power Systems",
+   "Regulatory Compliance",
+   1
+  ],
+  [
+   "PowerShell",
+   "Incident Response",
+   1
+  ],
+  [
+   "Probability",
+   "Clinical Research",
+   1
+  ],
+  [
+   "Probability",
+   "Data Analysis",
+   1
+  ],
+  [
+   "Procurement",
+   "Logistics",
+   1
+  ],
+  [
+   "Procurement",
+   "Project Management",
+   1
+  ],
+  [
+   "Procurement",
+   "SAP",
+   1
+  ],
+  [
+   "Procurement",
+   "Supply Chain Management",
+   1
+  ],
+  [
+   "Prometheus",
+   "Grafana",
+   1
+  ],
+  [
+   "Prototyping",
+   "UI/UX",
+   1
+  ],
+  [
+   "Public Relations",
+   "Business Development",
+   1
+  ],
+  [
+   "Python",
+   "AWS Lambda",
+   1
+  ],
+  [
+   "Python",
+   "Apache Spark",
+   1
+  ],
+  [
+   "Python",
+   "Big Data",
+   1
+  ],
+  [
+   "Python",
+   "C++",
+   1
+  ],
+  [
+   "Python",
+   "Data Engineering",
+   1
+  ],
+  [
+   "Python",
+   "Data Pipelines",
+   1
+  ],
+  [
+   "Python",
+   "DevOps",
+   1
+  ],
+  [
+   "Python",
+   "Django",
+   1
+  ],
+  [
+   "Python",
+   "Fine-tuning",
+   1
+  ],
+  [
+   "Python",
+   "Flask",
+   1
+  ],
+  [
+   "Python",
+   "SQL",
+   1
+  ],
+  [
+   "Python",
+   "Software Engineering",
+   1
+  ],
+  [
+   "Python",
+   "Terraform",
+   1
+  ],
+  [
+   "Quality Assurance",
+   "Software Testing",
+   1
+  ],
+  [
+   "Quality Control",
+   "Auditing",
+   1
+  ],
+  [
+   "REST APIs",
+   "API Design",
+   1
+  ],
+  [
+   "React",
+   "Next.js",
+   1
+  ],
+  [
+   "React",
+   "Redux",
+   1
+  ],
+  [
+   "React",
+   "Web3",
+   1
+  ],
+  [
+   "Record Keeping",
+   "Data Analysis",
+   1
+  ],
+  [
+   "Record Keeping",
+   "Quality Control",
+   1
+  ],
+  [
+   "Recruitment",
+   "Cold Calling",
+   1
+  ],
+  [
+   "Recruitment",
+   "Compensation and Benefits",
+   1
+  ],
+  [
+   "Recruitment",
+   "Sales",
+   1
+  ],
+  [
+   "Recruitment",
+   "Workforce Planning",
+   1
+  ],
+  [
+   "Regulatory Compliance",
+   "CFA",
+   1
+  ],
+  [
+   "Regulatory Compliance",
+   "Construction Management",
+   1
+  ],
+  [
+   "Regulatory Compliance",
+   "Taxation",
+   1
+  ],
+  [
+   "Relational Databases",
+   "Data Modeling",
+   1
+  ],
+  [
+   "Relational Databases",
+   "Data Warehousing",
+   1
+  ],
+  [
+   "Reporting",
+   "Classification",
+   1
+  ],
+  [
+   "Reporting",
+   "Compensation and Benefits",
+   1
+  ],
+  [
+   "Reporting",
+   "Organizational Development",
+   1
+  ],
+  [
+   "Reporting",
+   "Project Management",
+   1
+  ],
+  [
+   "Requirements Gathering",
+   "Agile",
+   1
+  ],
+  [
+   "Requirements Gathering",
+   "Design Patterns",
+   1
+  ],
+  [
+   "Requirements Gathering",
+   "Product Management",
+   1
+  ],
+  [
+   "Retail Management",
+   "Performance Management",
+   1
+  ],
+  [
+   "Retail Management",
+   "Succession Planning",
+   1
+  ],
+  [
+   "SQL",
+   "Business Intelligence",
+   1
+  ],
+  [
+   "SQL",
+   "Data Engineering",
+   1
+  ],
+  [
+   "SQL",
+   "Data Pipelines",
+   1
+  ],
+  [
+   "SQL",
+   "Entity Framework",
+   1
+  ],
+  [
+   "SQL",
+   "FinTech",
+   1
+  ],
+  [
+   "SQL",
+   "MySQL",
+   1
+  ],
+  [
+   "SQL",
+   "PL/SQL",
+   1
+  ],
+  [
+   "SQL",
+   "PostgreSQL",
+   1
+  ],
+  [
+   "SQL",
+   "Query Optimization",
+   1
+  ],
+  [
+   "SQL",
+   "Relational Databases",
+   1
+  ],
+  [
+   "SQL",
+   "Snowflake",
+   1
+  ],
+  [
+   "SQL",
+   "Software Engineering",
+   1
+  ],
+  [
+   "SQL",
+   "Tableau",
+   1
+  ],
+  [
+   "Sales",
+   "Brand Management",
+   1
+  ],
+  [
+   "Sales",
+   "CRM",
+   1
+  ],
+  [
+   "Sales",
+   "Campaign Management",
+   1
+  ],
+  [
+   "Sales",
+   "KPI Tracking",
+   1
+  ],
+  [
+   "Sales",
+   "Reporting",
+   1
+  ],
+  [
+   "Sales",
+   "Sales Forecasting",
+   1
+  ],
+  [
+   "Scala",
+   "Apache Spark",
+   1
+  ],
+  [
+   "Social Media Marketing",
+   "Social Media Management",
+   1
+  ],
+  [
+   "Software Development Life Cycle",
+   "Quality Assurance",
+   1
+  ],
+  [
+   "Software Development Life Cycle",
+   "React",
+   1
+  ],
+  [
+   "Software Engineering",
+   "Artificial Intelligence",
+   1
+  ],
+  [
+   "Software Engineering",
+   "Project Management",
+   1
+  ],
+  [
+   "Software Testing",
+   "API Testing",
+   1
+  ],
+  [
+   "Software Testing",
+   "JUnit",
+   1
+  ],
+  [
+   "Software Testing",
+   "Performance Testing",
+   1
+  ],
+  [
+   "Software Testing",
+   "Regression Testing",
+   1
+  ],
+  [
+   "SolidWorks",
+   "Assembly",
+   1
+  ],
+  [
+   "Statistics",
+   "Clinical Research",
+   1
+  ],
+  [
+   "Statistics",
+   "Financial Forecasting",
+   1
+  ],
+  [
+   "Statistics",
+   "Pharmacovigilance",
+   1
+  ],
+  [
+   "Statistics",
+   "Quality Assurance",
+   1
+  ],
+  [
+   "Statistics",
+   "Quality Control",
+   1
+  ],
+  [
+   "Statistics",
+   "Risk Assessment",
+   1
+  ],
+  [
+   "Structural Analysis",
+   "Structural Design",
+   1
+  ],
+  [
+   "Structural Design",
+   "Construction Management",
+   1
+  ],
+  [
+   "Swift",
+   "iOS",
+   1
+  ],
+  [
+   "System Administration",
+   "Active Directory",
+   1
+  ],
+  [
+   "System Administration",
+   "VMware",
+   1
+  ],
+  [
+   "TCP/IP",
+   "DNS",
+   1
+  ],
+  [
+   "TCP/IP",
+   "SCADA",
+   1
+  ],
+  [
+   "Terraform",
+   "Site Reliability Engineering",
+   1
+  ],
+  [
+   "Test Automation",
+   "Cypress",
+   1
+  ],
+  [
+   "Thermodynamics",
+   "Finite Element Analysis",
+   1
+  ],
+  [
+   "Training and Development",
+   "Organizational Development",
+   1
+  ],
+  [
+   "Training and Development",
+   "Project Management",
+   1
+  ],
+  [
+   "Training and Development",
+   "Special Education",
+   1
+  ],
+  [
+   "TypeScript",
+   "Node.js",
+   1
+  ],
+  [
+   "Typography",
+   "Graphic Design",
+   1
+  ],
+  [
+   "Visual Design",
+   "Responsive Design",
+   1
+  ],
+  [
+   "Visual Merchandising",
+   "Retail Management",
+   1
+  ],
+  [
+   "Vulnerability Assessment",
+   "Penetration Testing",
+   1
+  ],
+  [
+   "Webpack",
+   "CI/CD",
+   1
+  ],
+  [
+   "WordPress",
+   "UI/UX",
+   1
+  ],
+  [
+   "Workforce Planning",
+   "Succession Planning",
+   1
+  ],
+  [
+   "Xcode",
+   "iOS",
+   1
+  ],
+  [
+   "iOS",
+   "Mobile App Development",
+   1
+  ]
+ ],
+ "stats": {
+  "skills_levelled": 692,
+  "roles": 522,
+  "edges": 613,
+  "dropped": {
+   "not in the role's list": 29,
+   "level makes no sense": 106,
+   "contradicted": 121
+  }
+ }
+}

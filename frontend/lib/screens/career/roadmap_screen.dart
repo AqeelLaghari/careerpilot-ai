@@ -271,6 +271,8 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
           title: Text(s['name'] as String),
           subtitle: Text([
             switch (kind) { 'foundation' => 'Foundation', 'improve' => 'Improve', _ => 'New skill' },
+            if (s['level'] != null)
+              switch (s['level'] as int) { 1 => 'Basic', 2 => 'Core', 3 => 'Advanced', _ => 'Whole field' },
             '${s['hours']} h',
             if (share != null) 'in ${(share * 100).round()}% of postings',
           ].join(' · ')),

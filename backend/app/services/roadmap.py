@@ -6,12 +6,17 @@
      + skills the user rated "beginner" (to improve, at half the effort)
 2. Prerequisites: a directed graph (networkx DiGraph) of "learn A before B":
      - hand-checked edges from data/skill_graph.json (like a course syllabus), plus
-     - edges LEARNED from job postings by co-occurrence asymmetry (market_model.json),
-       added only if they don't create a cycle; hand-checked edges win.
+     - edges built OFFLINE with Gemini for every role's skill list (data/skill_order.json,
+       scripts/build_skill_order.py): validated names, voted across roles, and
+     - edges LEARNED from job postings by co-occurrence asymmetry (market_model.json).
+       Each extra edge is added only if it doesn't create a cycle; hand-checked edges win,
+       then Gemini edges (most votes first), then learned ones.
    Missing foundations of each gap skill are added (walking back until a skill the
    user already knows), so the plan never says "Kubernetes" before "Docker".
 3. Order: topological sort of the gap subgraph (a DAG). Among skills that are free
-   to go next, the most important for the role comes first.
+   to go next: the most BASIC first (skill level 1 basic … 4 umbrella field, from
+   skill_order.json), then the one that unlocks the most other planned skills, then the
+   most important for the role.
 4. Schedule: each skill = Learn → Practise → Build tasks, sized by a per-category
    effort estimate, packed into weeks of the user's weekly hours (questionnaire).
    The total is compared with the user's timeline.
@@ -35,6 +40,8 @@ from app.services import learning_resources, llm, market_model
 log = logging.getLogger(__name__)
 
 GRAPH_PATH = DATA_DIR / "skill_graph.json"
+ORDER_PATH = DATA_DIR / "skill_order.json"
+DEFAULT_LEVEL = 2
 SOFT = "soft_skills"
 
 # Rough hours to become job-ready in one skill, by kind of skill (estimates; tuned on Day 23)
@@ -51,6 +58,9 @@ IMPROVE_FACTOR = 0.5   # "beginner" skills (to improve) and foundations (intro l
 STEPS = [("learn", "Learn the basics of {s}", 0.4),
          ("practise", "Practise {s} with exercises", 0.35),
          ("build", "Build: {project}", 0.25)]
+# An umbrella field (level 4) comes last, after its parts, so its first step is a capstone
+UMBRELLA_STEPS = {"learn": "Put it all together: how {s} works end to end",
+                  "practise": "Practise a complete {s} workflow on a small real project"}
 
 WEEKLY_HOURS = {"2-5": 4, "5-10": 8, "10-20": 15, "20+": 22}
 TIMELINE_WEEKS = {"1m": 4, "3m": 13, "6m": 26, "12m": 52}
@@ -63,18 +73,38 @@ def _graph(model_stamp: str | None) -> nx.DiGraph:
     g = nx.DiGraph()
     for a, b in json.loads(GRAPH_PATH.read_text(encoding="utf-8"))["edges"]:
         g.add_edge(a, b, source="curated")
-    model = market_model.load_model() or {}
-    added = 0
-    for e in model.get("prerequisites", []):
-        a, b = e["before"], e["after"]
-        if g.has_edge(a, b) or g.has_edge(b, a):
-            continue
+
+    def add(a, b, **attrs) -> bool:
+        if a == b or g.has_edge(a, b) or g.has_edge(b, a):
+            return False
         if a in g and b in g and nx.has_path(g, b, a):      # would create a cycle
-            continue
-        g.add_edge(a, b, source="learned", confidence=e["p_before_given_after"])
-        added += 1
-    log.info("Skill graph: %d edges (%d learned from postings)", g.number_of_edges(), added)
+            return False
+        g.add_edge(a, b, **attrs)
+        return True
+
+    gemini = sum(add(a, b, source="gemini", votes=n) for a, b, n in _skill_order().get("edges", []))
+    model = market_model.load_model() or {}
+    # statistics can't tell a field from its parts, so a learned pair must also make sense by level
+    learned = sum(add(e["before"], e["after"], source="learned", confidence=e["p_before_given_after"])
+                  for e in model.get("prerequisites", [])
+                  if skill_level(e["before"]) <= skill_level(e["after"]))
+    log.info("Skill graph: %d edges (%d from Gemini, %d learned from postings)",
+             g.number_of_edges(), gemini, learned)
     return g
+
+
+@lru_cache(maxsize=1)
+def _skill_order() -> dict:
+    """Skill levels + prerequisite pairs built offline with Gemini ({} if not built)."""
+    try:
+        return json.loads(ORDER_PATH.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {}
+
+
+def skill_level(name: str) -> int:
+    """1 basic, 2 core, 3 advanced, 4 umbrella field."""
+    return _skill_order().get("levels", {}).get(name, DEFAULT_LEVEL)
 
 
 def skill_graph() -> nx.DiGraph:
@@ -109,7 +139,9 @@ def skill_gap(profile: dict, role: str, levels: dict | None = None, top_n: int =
 
 
 def add_foundations(gap: list[dict], have: set[str], g: nx.DiGraph) -> list[dict]:
-    """Add missing prerequisites of gap skills, walking back until a known skill."""
+    """Add missing prerequisites of gap skills, walking back until a known skill.
+    Only general rules add skills (hand-checked + learned from postings). Gemini's pairs are
+    role-specific, so they only order skills that are already in the plan."""
     items = {s["name"]: s for s in gap}
     have_l = {h.lower() for h in have}
     categories = _skill_categories()
@@ -119,7 +151,7 @@ def add_foundations(gap: list[dict], have: set[str], g: nx.DiGraph) -> list[dict
         if skill not in g:
             continue
         for pre in g.predecessors(skill):
-            if pre.lower() in have_l:
+            if pre.lower() in have_l or g.edges[pre, skill].get("source") == "gemini":
                 continue
             if pre not in items:
                 items[pre] = {"name": pre, "kind": "foundation", "category": categories.get(pre),
@@ -140,13 +172,19 @@ def _skill_categories() -> dict[str, str]:
 
 
 def order_skills(items: list[dict], g: nx.DiGraph) -> list[dict]:
-    """Topological order of the gap subgraph; ties → more important first, foundations early."""
+    """Topological order of the gap subgraph (prerequisites always first). Among skills
+    that are free to go next: most basic level first, then the one that unlocks the most
+    other planned skills, then the most important for the role."""
     by_name = {i["name"]: i for i in items}
     sub = nx.DiGraph()
     sub.add_nodes_from(by_name)
     sub.add_edges_from((a, b) for a, b in g.subgraph(by_name).edges)
+    unlocks = {n: len(nx.descendants(sub, n)) for n in sub}
     kind_rank = {"foundation": 0, "learn": 1, "improve": 2}
-    key = lambda n: (-round(by_name[n]["weight"], 3), kind_rank[by_name[n]["kind"]], n)  # noqa: E731
+    for n, i in by_name.items():
+        i["level"] = skill_level(n)
+    key = lambda n: (by_name[n]["level"], -unlocks[n], -round(by_name[n]["weight"], 3),  # noqa: E731
+                     kind_rank[by_name[n]["kind"]], n)
     return [by_name[n] for n in nx.lexicographical_topological_sort(sub, key=key)]
 
 
@@ -174,6 +212,8 @@ def schedule(items: list[dict], hours_per_week: float) -> list[dict]:
                 if used >= hours_per_week - 1e-9:
                     weeks.append(current)
                     current, used = [], 0.0
+            if item.get("level") == 4 and not item.get("needed_for"):   # last in its chain: a capstone
+                title = UMBRELLA_STEPS.get(step, title)
             label = title.format(s=item["name"], project=item["project"])
             for n, piece in enumerate(pieces, 1):
                 piece["id"] = f"{_slug(item['name'])}-{step}-{n}"

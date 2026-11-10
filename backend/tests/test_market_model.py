@@ -96,3 +96,20 @@ def test_market_endpoints(built_model):
     prof = client.get("/market/roles/devops engineer").json()
     assert prof["role"] == "DevOps Engineer" and prof["skills"][0]["weight"] == 1.0
     assert client.get("/market/roles/astronaut").status_code == 404
+
+
+def test_find_role_handles_spelling_synonyms_and_unsure_titles(built_model, monkeypatch):  # noqa: F811
+    from app.services import llm
+    mm = market_model
+    mm._gemini_pick.cache_clear()
+    assert mm.find_role("Dev-Ops Engineer") == "DevOps Engineer"            # same letters, other spelling
+    assert mm.find_role("RN nurse") == "Registered Nurse"                   # meaning, not just words
+    assert mm.find_role("zzzz qqqq") is None
+    # unsure case: Gemini picks from the closest roles; an answer outside the list is ignored
+    monkeypatch.setattr(llm, "generate_json", lambda *a, **k: {"role": "data analyst"})
+    mm._gemini_pick.cache_clear()
+    assert mm.find_role("Numbers and dashboards person") == "Data Analyst"
+    monkeypatch.setattr(llm, "generate_json", lambda *a, **k: {"role": "Astronaut"})
+    mm._gemini_pick.cache_clear()
+    assert mm.find_role("Space walker") is None
+    mm._gemini_pick.cache_clear()

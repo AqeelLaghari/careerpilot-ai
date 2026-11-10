@@ -14,10 +14,15 @@ A skill most roles ask for (e.g. Communication) gets a lower weight than a skill
 that is typical for THIS role (e.g. Kubernetes for DevOps Engineer).
 """
 import json
+import logging
 import re
 from functools import lru_cache
 
+from pydantic import BaseModel
+
 from app.config import DATA_DIR
+
+log = logging.getLogger(__name__)
 
 MODEL_PATH = DATA_DIR / "market_model.json"
 
@@ -86,11 +91,109 @@ def find_role(title: str) -> str | None:
     words = set(norm.lower().split())
     if not words or not roles:
         return None
+    squashed = {_squash(r): r for r in roles}                  # "Cybersecurity" = "Cyber Security"
+    if _squash(norm) in squashed:
+        return squashed[_squash(norm)]
+    try:
+        hit = _closest_by_meaning(title, model)
+        if hit:
+            return hit
+    except Exception:                                          # embeddings unavailable: words only
+        log.warning("Role lookup by meaning failed; using word overlap", exc_info=True)
     # Best word overlap; ties go to the role with more postings
     best = max(roles, key=lambda r: (len(words & set(r.lower().split())) / len(words | set(r.lower().split())),
                                      roles[r]["postings"]))
     overlap = words & set(best.lower().split())
     return best if overlap else None
+
+
+def _squash(t: str) -> str:
+    return re.sub(r"[^a-z0-9+#]", "", t.lower())
+
+
+# Short forms people type in job titles, spelled out so the language model understands them
+_EXPAND = {"ml": "machine learning", "ai": "artificial intelligence", "soc": "security operations center",
+           "sre": "site reliability", "qa": "quality assurance", "bi": "business intelligence",
+           "hr": "human resources", "dev": "developer", "devs": "developers", "swe": "software engineer",
+           "mle": "machine learning engineer", "dba": "database administrator", "ba": "business analyst",
+           "pen": "penetration", "sec": "security", "infosec": "information security", "ux": "user experience",
+           "ui": "user interface", "it": "information technology", "nlp": "natural language processing",
+           "cv": "computer vision", "seo": "search engine optimization", "ca": "chartered accountant",
+           "acca": "chartered accountant", "mbbs": "doctor physician", "ece": "electronics engineering"}
+NAME_W, PROFILE_W, WORDS_W, MIN_MEANING = 0.55, 0.30, 0.15, 0.5
+
+
+def _expand(title: str) -> str:
+    return " ".join(_EXPAND.get(w, w) for w in re.sub(r"[^a-z0-9+#/ ]", " ", title.lower()).split())
+
+
+@lru_cache(maxsize=1)
+def _role_name_vectors(stamp: str):
+    from app.services.embeddings import embed
+    names = list(load_model()["roles"])
+    return names, embed([_expand(n) for n in names])
+
+
+def _closest_by_meaning(title: str, model: dict) -> str | None:
+    ranked = _rank_by_meaning(title, model)
+    if not ranked:
+        return None
+    name, score, meaning = ranked[0]
+    if meaning >= SURE:
+        return name
+    picked = _gemini_pick(title, tuple(r[0] for r in ranked[:GEMINI_CANDIDATES]))
+    if picked is not None:
+        return picked or None                                   # "" = Gemini says none fits
+    return name if meaning >= MIN_MEANING else None
+
+
+SURE, GEMINI_CANDIDATES = 0.8, 12
+
+
+class _Pick(BaseModel):
+    role: str
+
+
+@lru_cache(maxsize=512)
+def _gemini_pick(title: str, candidates: tuple[str, ...]) -> str | None:
+    """Unsure cases only: Gemini (fast tier) picks the closest of the candidate roles.
+    Returns the role, "" if none fits, or None if Gemini is unavailable (caller decides)."""
+    from app.services import llm
+    out = llm.generate_json(
+        f"A user of a career app typed this job title: \"{title}\".\n"
+        "Which ONE of these roles is the same job or the closest job to it? "
+        "Answer with the role exactly as written, or \"none\" if none is close.\n- " + "\n- ".join(candidates),
+        _Pick, tier="fast", temperature=0.0)
+    if not out:
+        return None
+    role = str(out.get("role", "")).strip()
+    exact = {c.lower(): c for c in candidates}
+    return exact.get(role.lower(), "")
+
+
+def _rank_by_meaning(title: str, model: dict) -> list[tuple[str, float, float]]:
+    """All roles ranked by how close their NAME and SKILL PROFILE are in meaning to the title
+    (SBERT), with a little weight on shared words: (role, score, best meaning similarity).
+    Handles other spellings, synonyms and short forms: 'Cybersecurity Analyst' → Cyber
+    Security Analyst, 'Doctor' → Physician. Unsure cases go to Gemini (see above)."""
+    from app.services import career_matcher
+    from app.services.embeddings import embed
+    names, name_vecs = _role_name_vectors(model["built_at"])
+    q = embed([_expand(title)])[0]
+    name_cos = name_vecs @ q
+    index, idx_names = career_matcher.role_index()
+    profile_cos = {}
+    if index is not None:
+        sims, ids = index.search(q.reshape(1, -1), len(idx_names))
+        profile_cos = {idx_names[i]: float(s) for s, i in zip(sims[0], ids[0]) if i >= 0}
+    words = set(_expand(title).split())
+    ranked = []
+    for name, nc in zip(names, name_cos):
+        rw = set(_expand(name).split())
+        pc = profile_cos.get(name, 0.0)
+        score = NAME_W * float(nc) + PROFILE_W * pc + WORDS_W * len(words & rw) / len(words | rw)
+        ranked.append((name, score, max(float(nc), pc)))
+    return sorted(ranked, key=lambda r: -r[1])
 
 
 def role_profile(role: str) -> dict | None:

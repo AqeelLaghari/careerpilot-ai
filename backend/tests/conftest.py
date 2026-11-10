@@ -88,3 +88,14 @@ def _no_real_embeddings(monkeypatch, tmp_path):
     career_matcher._role_index.cache_clear()
     yield
     career_matcher._role_index.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def _offline_gemini(monkeypatch):
+    """Tests never call the real Gemini API (no network, no quota, same result every run).
+    Tests that need an LLM answer patch llm.generate_json / llm._get_client themselves."""
+    from app.services import llm
+
+    def _no_client():
+        raise RuntimeError("Gemini is disabled in tests")
+    monkeypatch.setattr(llm, "_get_client", _no_client)

@@ -188,3 +188,49 @@ def test_gemini_docs_link_used_only_if_it_opens(built_model, monkeypatch):  # no
     by = {s["name"]: s for s in plan["skills"]}
     assert any(r["url"] == "https://docs.docker.com/" for r in by["Docker"]["resources"])
     assert not any("made-up" in r["url"] for r in by["Kubernetes"]["resources"])
+
+
+# ------------------------------------------------ learning order (levels) --
+def _items(*names, weights=None):
+    w = weights or {}
+    return [{"name": n, "kind": "learn", "category": None, "weight": w.get(n, 0.5)} for n in names]
+
+
+def test_basic_skills_come_before_umbrella_fields(monkeypatch):
+    """No rule links them, yet 'Data Science' (umbrella, most demanded) must not come first."""
+    monkeypatch.setattr(rm, "_skill_order", lambda: {"levels": {
+        "Data Science": 4, "Python": 1, "Linear Algebra": 1, "Machine Learning": 3, "Statistics": 2}})
+    g = nx.DiGraph([("Python", "Machine Learning"), ("Statistics", "Machine Learning")])
+    items = _items("Data Science", "Machine Learning", "Statistics", "Python", "Linear Algebra",
+                   weights={"Data Science": 1.0, "Machine Learning": 0.9, "Linear Algebra": 0.95})
+    order = [i["name"] for i in rm.order_skills(items, g)]
+    assert order[-1] == "Data Science"
+    assert order[0] == "Python"                      # basic AND unlocks Machine Learning
+    assert order.index("Statistics") < order.index("Machine Learning")
+
+
+def test_gemini_edges_are_validated_and_never_beat_curated(monkeypatch):
+    monkeypatch.setattr(rm, "_skill_order", lambda: {"edges": [
+        ["Kubernetes", "Docker", 9],                 # contradicts curated Docker → Kubernetes
+        ["Python", "Data Science", 5]]})
+    monkeypatch.setattr(market_model, "load_model", lambda: {"built_at": "y", "roles": {}, "prerequisites": []})
+    g = rm.skill_graph()
+    assert nx.is_directed_acyclic_graph(g)
+    assert g.edges["Docker", "Kubernetes"]["source"] == "curated" and not g.has_edge("Kubernetes", "Docker")
+    assert g.edges["Python", "Data Science"]["source"] == "gemini"
+
+
+def test_combine_votes_and_filters():
+    from scripts.build_skill_order import combine
+    names = ["Python", "Data Science", "Statistics", "Excel"]
+    roles = {"A": ["Python", "Data Science", "Statistics"], "B": ["Python", "Data Science", "Statistics"],
+             "C": ["Python", "Statistics"]}
+    progress = {"levels": {"python": 1, "Data Science": 4, "Statistics": 2, "Made Up": 1},
+                "role_pairs": {"A": [["Python", "Data Science"], ["Statistics", "Python"], ["Excel", "Python"]],
+                               "B": [["python", "data science"], ["Python", "Statistics"]],
+                               "C": [["Data Science", "Python"]]}}           # not in C's list
+    out = combine(progress, names, roles)
+    assert "Made Up" not in out["levels"] and out["levels"]["Python"] == 1
+    assert ["Python", "Data Science", 2] in out["edges"]
+    assert not any(e[:2] in (["Statistics", "Python"], ["Python", "Statistics"]) for e in out["edges"])  # 1 vs 1
+    assert not any("Excel" in e for e in out["edges"])                        # Excel isn't in A's list
