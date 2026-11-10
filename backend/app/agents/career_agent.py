@@ -1,7 +1,7 @@
 """Career Guide Agent (CGA).
 
 Reads:  the "resume" section of the Blackboard (written by the Resume Agent)
-Writes: the "questionnaire", "career" and "roadmap" sections of the Blackboard
+Writes: the "questionnaire", "career", "roadmap" and "jobs" sections of the Blackboard
 
 It never calls the Resume Agent directly; it only reads what that agent
 left on the Blackboard (Blackboard pattern).
@@ -12,11 +12,12 @@ Grows over Days 9-11:
             its answers enrich the profile used for career matching
     Day 11: skill gap (set difference) + prerequisite DAG (networkx topological
             sort) -> weekly learning roadmap
+    Day 14: live remote jobs open to Pakistan, ranked by match with the profile
 """
 import time
 
 from app.orchestrator.blackboard import Blackboard
-from app.services import career_matcher
+from app.services import career_matcher, live_jobs
 from app.services import roadmap as rm
 from app.services import questionnaire as qn
 from app.services.person import resume_person_key
@@ -159,6 +160,28 @@ class CareerAgent:
                 if old is not None and new is not None:
                     match_change = {"role": target, "before": old, "after": new}
         return plan | {"progress": rm.progress(plan), "skill_completed": completed, "match_change": match_change}
+
+    # ---------------------------------------------------------------- jobs --
+    def jobs(self, uid: str, query: str | None = None, limit: int = 30) -> dict:
+        """Remote jobs a Pakistani can apply to, best match with this user first.
+        The top matches are kept on the Blackboard (for the dashboard)."""
+        profile, _ = self._profile(uid)
+        live_jobs.ensure_fresh()                                # background, never waits
+        career = self.bb.read_section(uid, "career") or {}
+        role = career.get("target_role") or ((career.get("matches") or [{}])[0]).get("role")
+        if not query:
+            live_jobs.add_role_jobs(role)                       # Himalayas search for the role (cached)
+        results = live_jobs.match_jobs(profile, query=query, limit=limit)
+        status = live_jobs.status()
+        if not query and results:
+            top = [{"id": j["id"], "title": j["title"], "company": j["company"], "match": j["match"]}
+                   for j in results[:10]]
+            old = self.bb.read_section(uid, "jobs") or {}
+            if [t["id"] for t in old.get("top", [])] != [t["id"] for t in top]:   # write only on change
+                self.bb.write(uid, "jobs", {"top": top, "role": role, "matched_at": time.time()},
+                              agent=AGENT_NAME)
+        return {"jobs": results, "role": role, "query": query, **status,
+                "sources": [{"name": v["name"], "url": v["site"]} for v in live_jobs.job_sources.SOURCES.values()]}
 
     # ------------------------------------------------------- questionnaire --
     def _career_for_questions(self, uid: str) -> dict:

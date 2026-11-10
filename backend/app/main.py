@@ -10,7 +10,7 @@ from app.auth import current_uid
 from app.services import llm
 from app.deps import blackboard
 from app.orchestrator.blackboard import SECTIONS
-from app.routers import career, market, questionnaire, resume, roadmap
+from app.routers import career, jobs, market, questionnaire, resume, roadmap
 
 logging.basicConfig(level=logging.INFO)
 
@@ -28,6 +28,8 @@ def _warm_up():
         embeddings.embed(["warm up"])
         get_nlp()
         log.info("Warm-up done in %.0f s: AI models ready", time.time() - t)
+        from app.services import live_jobs
+        live_jobs.ensure_fresh()                     # fetch remote jobs in the background
     except Exception:
         log.exception("Warm-up failed (matching will retry on first use)")
 
@@ -53,6 +55,7 @@ app.include_router(market.router)
 app.include_router(career.router)
 app.include_router(questionnaire.router)
 app.include_router(roadmap.router)
+app.include_router(jobs.router)
 
 
 

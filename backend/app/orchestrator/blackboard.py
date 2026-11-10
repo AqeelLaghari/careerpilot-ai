@@ -15,7 +15,7 @@ import threading
 import time
 from copy import deepcopy
 
-SECTIONS = ("profile", "resume", "questionnaire", "career", "roadmap", "interviews")
+SECTIONS = ("profile", "resume", "questionnaire", "career", "roadmap", "jobs", "interviews")
 
 
 class Blackboard:
