@@ -33,6 +33,8 @@ def _warm_up():
         log.info("Learned skills loaded: %d", len(market_learning.learned_skills()["skills"]))
         live_jobs.ensure_fresh()                     # fetch remote jobs in the background
         market_learning.maybe_learn()                # weekly: learn from saved postings
+        from app.services import speech
+        speech.get_model()                           # Whisper, so the first answer isn't slow
     except Exception:
         log.exception("Warm-up failed (matching will retry on first use)")
 

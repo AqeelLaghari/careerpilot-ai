@@ -20,3 +20,4 @@ pandas==2.*
 sentence-transformers>=3,<6
 faiss-cpu>=1.8
 networkx>=3
+faster-whisper==1.2.*       # Day 17: speech-to-text (Whisper on CPU, int8)

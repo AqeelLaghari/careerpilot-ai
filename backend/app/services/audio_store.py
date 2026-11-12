@@ -55,6 +55,14 @@ def save_answer(uid: str, session_id: str, question_id: str, pcm: bytes) -> dict
             "format": "wav pcm16 mono 16kHz", "path": str(path.relative_to(ROOT))}
 
 
+def delete_answer(uid: str, session_id: str, question_id: str):
+    """After transcription the audio is no longer needed: delete it (privacy)."""
+    try:
+        answer_path(uid, session_id, question_id).unlink(missing_ok=True)
+    except (OSError, ValueError):
+        pass
+
+
 def seconds(n_bytes: int) -> float:
     return n_bytes / BYTES_PER_SECOND
 

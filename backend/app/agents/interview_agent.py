@@ -14,7 +14,7 @@ from app.services import interview_questions as iq
 from app.services.profile import build_profile
 
 AGENT_NAME = "interview_agent"
-KEEP_SESSIONS = 20          # older sessions are dropped from the Blackboard
+KEEP_SESSIONS = 10          # older sessions are dropped (one Firestore doc per user: max 1 MB)
 KEEP_ASKED = 300            # question fingerprints remembered, so questions are not repeated
 RECENT_FOR_SKILLS = 3       # sessions looked at when choosing less-practised skills
 
@@ -78,9 +78,32 @@ class InterviewAgent:
         s = next((x for x in state["sessions"] if x["id"] == session_id), None)
         if s is None or not any(q["id"] == question_id for q in s["questions"]):
             return None
-        s.setdefault("answers", {})[question_id] = info | {"status": "recorded", "recorded_at": time.time()}
+        take = time.time()                      # identifies this recording (a new take replaces it)
+        s.setdefault("answers", {})[question_id] = info | {"status": "recorded", "recorded_at": take}
         done = all(q["id"] in s["answers"] for q in s["questions"])
         s["status"] = "recorded" if done else "in_progress"
         state["updated_at"] = time.time()
         self.bb.write(uid, "interviews", state, agent=AGENT_NAME)
-        return {"status": s["status"], "answered": len(s["answers"]), "total": len(s["questions"])}
+        return {"status": s["status"], "answered": len(s["answers"]), "total": len(s["questions"]), "take": take}
+
+    def save_transcript(self, uid: str, session_id: str, question_id: str, take: float,
+                        result: dict | None, error: str | None = None) -> bool:
+        """Day 17: transcript + speaking metrics for one answer. Ignored if the user has
+        recorded the question again since (a newer take is waiting for its own transcript)."""
+        state = self._state(uid)
+        s = next((x for x in state["sessions"] if x["id"] == session_id), None)
+        ans = ((s or {}).get("answers") or {}).get(question_id)
+        if ans is None or ans.get("recorded_at") != take:
+            return False
+        if result is None:
+            ans.update(status="failed", error=(error or "transcription failed")[:200])
+        else:
+            m = dict(result["metrics"])
+            m["pauses"] = m.get("pauses", [])[:10]
+            ans.update(status="transcribed", transcript=result["transcript"][:3000], metrics=m,
+                       stt_model=result["model"], transcribed_at=time.time())
+        if all((s["answers"].get(q["id"]) or {}).get("status") == "transcribed" for q in s["questions"]):
+            s["status"] = "transcribed"
+        state["updated_at"] = time.time()
+        self.bb.write(uid, "interviews", state, agent=AGENT_NAME)
+        return True
