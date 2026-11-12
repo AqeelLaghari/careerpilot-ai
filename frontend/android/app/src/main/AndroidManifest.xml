@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Interview Coach: record spoken answers and stream them to the server -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <!-- Talk to the backend -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application

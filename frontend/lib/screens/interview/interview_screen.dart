@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/api_client.dart';
 import '../../theme.dart';
 import '../career/career_screen.dart' show EmptyHint;
+import 'answer_screen.dart';
 
 /// Interview Coach: practice questions made for this user's CV and target role.
 /// (Answering by voice and camera, with scores, is added on top of this screen later.)
@@ -155,9 +156,18 @@ class _InterviewScreenState extends State<InterviewScreen> {
               Text('${s['role']} · ${s['level']} level · ${(s['questions'] as List).length} questions',
                   style: Theme.of(context).textTheme.titleMedium),
               Text('Made ${_date(s['created_at'] as num)}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              const SizedBox(height: 10),
+              FilledButton.icon(
+                onPressed: () async {
+                  await Navigator.of(context).push(MaterialPageRoute(builder: (_) => AnswerScreen(session: s)));
+                  _open(s['id'] as String); // show which questions are answered now
+                },
+                icon: const Icon(Icons.mic),
+                label: Text((s['answers'] as Map?)?.isNotEmpty == true ? 'Continue answering' : 'Answer out loud'),
+              ),
               const SizedBox(height: 8),
               for (final (i, q) in (s['questions'] as List).cast<Map<String, dynamic>>().indexed)
-                _QuestionCard(number: i + 1, q: q),
+                _QuestionCard(number: i + 1, q: q, answer: (s['answers'] as Map?)?[q['id']] as Map?),
             ],
           ]),
         ),
@@ -172,9 +182,10 @@ String _date(num epochSeconds) {
 }
 
 class _QuestionCard extends StatelessWidget {
-  const _QuestionCard({required this.number, required this.q});
+  const _QuestionCard({required this.number, required this.q, this.answer});
   final int number;
   final Map<String, dynamic> q;
+  final Map? answer; // set once the question was answered out loud
 
   static const _labels = {
     'intro': ('Introduction', Icons.waving_hand_outlined),
@@ -203,6 +214,13 @@ class _QuestionCard extends StatelessWidget {
               visualDensity: VisualDensity.compact,
             ),
             Text('about $minutes min', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+            if (answer != null)
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.check_circle, size: 16, color: AppColors.good),
+                const SizedBox(width: 4),
+                Text('Answered (${(answer!['duration_sec'] as num).round()} s)',
+                    style: const TextStyle(color: AppColors.good, fontSize: 12)),
+              ]),
           ]),
           const SizedBox(height: 8),
           Text(q['question'] as String, style: const TextStyle(fontSize: 16)),
