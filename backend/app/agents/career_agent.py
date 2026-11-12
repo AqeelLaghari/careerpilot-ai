@@ -17,6 +17,7 @@ Grows over Days 9-11:
 import time
 
 from app.orchestrator.blackboard import Blackboard
+from app.services.profile import build_profile
 from app.services import career_matcher, live_jobs
 from app.services import roadmap as rm
 from app.services import questionnaire as qn
@@ -76,14 +77,9 @@ class CareerAgent:
     def _profile(self, uid: str) -> tuple[dict, dict]:
         """Resume entities enriched with questionnaire answers and skills completed on the
         roadmap (Day 13), plus the raw answers."""
-        answers = self._answers(uid)
-        profile = qn.profile_entities(self._entities(uid), answers)
-        learned = (self.bb.read_section(uid, "roadmap") or {}).get("completed_skills", [])
-        have = {s["name"].lower() for s in profile.get("skills", [])}
-        profile["skills"] = list(profile.get("skills", [])) + [
-            {"name": c["name"], "category": "roadmap", "mentions": 1, "sections": ["roadmap"],
-             "learned_on_roadmap": True} for c in learned if c["name"].lower() not in have]
-        return profile, answers
+        entities = self._entities(uid)
+        return build_profile(entities, self.bb.read_section(uid, "questionnaire"),
+                             self.bb.read_section(uid, "roadmap"))
 
     # ------------------------------------------------------------ matching --
     def match(self, uid: str) -> dict | None:
