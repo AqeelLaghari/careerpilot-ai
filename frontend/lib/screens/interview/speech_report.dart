@@ -4,9 +4,10 @@ import '../../theme.dart';
 
 /// Transcript of one spoken answer (fillers highlighted) + pace, fillers, pauses and tips.
 class SpeechReport extends StatelessWidget {
-  const SpeechReport({super.key, required this.transcript, required this.metrics});
+  const SpeechReport({super.key, required this.transcript, required this.metrics, this.vision});
   final String transcript;
   final Map<String, dynamic> metrics;
+  final Map<String, dynamic>? vision; // eye contact (null if the camera was off)
 
   static const _fillers = {'um', 'umm', 'uh', 'uhh', 'uhm', 'er', 'erm', 'ah', 'hmm', 'mm', 'eh'};
   static const _habits = {'basically', 'actually', 'literally', 'honestly', 'obviously', 'totally'};
@@ -31,6 +32,38 @@ class SpeechReport extends StatelessWidget {
       ));
     }
     return SelectableText.rich(TextSpan(style: DefaultTextStyle.of(context).style.copyWith(height: 1.5), children: spans));
+  }
+
+  List<Widget> _eyeContact() {
+    final v = vision!;
+    final pct = v['eye_contact_pct'] as num;
+    final away = (v['away'] as List? ?? []).cast<Map>();
+    final color = pct >= 70 ? AppColors.good : (pct >= 50 ? AppColors.warn : AppColors.bad);
+    String at(num s) => '${s ~/ 60}:${(s % 60).round().toString().padLeft(2, '0')}';
+    return [
+      const SizedBox(height: 4),
+      Row(children: [
+        Icon(Icons.visibility_outlined, size: 18, color: color),
+        const SizedBox(width: 6),
+        Text('Eye contact ${pct.round()}% · ${v['label']}', style: TextStyle(fontWeight: FontWeight.w600, color: color)),
+      ]),
+      for (final e in away.take(5))
+        Padding(
+          padding: const EdgeInsets.only(left: 24, top: 2),
+          child: Text('${at(e['at'] as num)}  looked ${e['where']} for ${(e['seconds'] as num).toStringAsFixed(0)} s',
+              style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        ),
+      for (final t in (v['tips'] as List? ?? []).cast<String>().skip(pct >= 70 ? 1 : 0))
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Icon(Icons.tips_and_updates_outlined, size: 16, color: AppColors.brand),
+            const SizedBox(width: 6),
+            Expanded(child: Text(t)),
+          ]),
+        ),
+      const SizedBox(height: 4),
+    ];
   }
 
   Widget _stat(String value, String label, {Color? color}) => Padding(
@@ -72,6 +105,7 @@ class SpeechReport extends StatelessWidget {
               label: Text('"${e.key}" × ${e.value}', style: const TextStyle(fontSize: 12)),
             ),
         ]),
+      if (vision != null && vision!['eye_contact_pct'] != null) ..._eyeContact(),
       if (tips.isNotEmpty) ...[
         const SizedBox(height: 8),
         for (final t in tips)

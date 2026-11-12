@@ -5,12 +5,18 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 
+import '../../services/camera/face_camera.dart';
+import '../../services/camera/gaze_recorder.dart';
 import '../../services/interview_socket.dart';
+import '../../services/speaker.dart';
+import '../../services/turn_detector.dart';
 import '../../theme.dart';
 import 'speech_report.dart';
 
-/// Answer the interview questions out loud. The microphone audio is streamed to the
-/// server while you speak; each answer is saved when you press Stop (or time runs out).
+/// Answer the interview questions out loud. The interviewer reads each question aloud,
+/// then the microphone opens by itself; the answer ends after 3 s of quiet (or "I'm done").
+/// Audio is streamed to the server while you speak; the camera stays in the browser and
+/// only eye-contact letters are sent.
 class AnswerScreen extends StatefulWidget {
   const AnswerScreen({super.key, required this.session});
   final Map<String, dynamic> session;
@@ -30,6 +36,16 @@ class _AnswerScreenState extends State<AnswerScreen> {
   StreamSubscription<Uint8List>? _mic;
   Completer<void>? _micDone;
   Timer? _clock;
+  final _camera = FaceCamera();
+  late final _gaze = GazeRecorder(_camera);
+  final _voice = Speaker();
+  final _turn = TurnDetector();
+  Timer? _livePoll;
+  FaceSample _live = FaceSample.off;
+  bool _cameraOk = false;
+  bool _voiceOn = true; // interviewer reads questions aloud, then the mic opens by itself
+  bool _speaking = false;
+  final Map<String, Map> _vision = {}; // question id -> eye-contact result
 
   _Phase _phase = _Phase.connecting;
   String? _message;
@@ -51,11 +67,44 @@ class _AnswerScreenState extends State<AnswerScreen> {
   void initState() {
     super.initState();
     _connect();
+    _startCamera();
+  }
+
+  Future<void> _startCamera() async {
+    if (!FaceCamera.supported) return;
+    if (await _camera.start() != 'ok' || !mounted) return;
+    setState(() => _cameraOk = true);
+    _livePoll = Timer.periodic(const Duration(milliseconds: 300), (_) {
+      if (mounted) setState(() => _live = _camera.latest());
+    });
+    await _camera.track();
+  }
+
+  /// The interviewer reads the question; then the answer starts by itself.
+  Future<void> _ask() async {
+    if (!_voiceOn || _phase != _Phase.idle) return;
+    setState(() => _speaking = true);
+    await _voice.say(_q['question'] as String);
+    if (!mounted || !_speaking) return; // skipped or left the screen
+    setState(() => _speaking = false);
+    await Future<void>.delayed(const Duration(milliseconds: 400));
+    if (mounted && _phase == _Phase.idle && !_speaking) _record();
+  }
+
+  Future<void> _skipVoice() async {
+    setState(() => _speaking = false);
+    await _voice.stop();
+    if (_phase == _Phase.idle) _record();
   }
 
   @override
   void dispose() {
     _clock?.cancel();
+    _livePoll?.cancel();
+    _gaze.stop();
+    _camera.stop();
+    _speaking = false;
+    _voice.stop();
     _mic?.cancel();
     _recorder.dispose();
     _sub?.cancel();
@@ -94,11 +143,13 @@ class _AnswerScreenState extends State<AnswerScreen> {
           _phase = _Phase.idle;
           _index = next < 0 ? 0 : next;
         });
+        _ask();
       case 'started':
         _startMic();
       case 'progress':
         break; // the local clock is smoother; the server confirms it is receiving audio
       case 'saved':
+        if (m['vision'] != null) _vision[m['question_id'] as String] = m['vision'] as Map;
         setState(() {
           _transcribing.add(m['question_id'] as String);
           _results.remove(m['question_id']);
@@ -109,7 +160,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
       case 'transcribed':
         setState(() {
           _transcribing.remove(m['question_id']);
-          _results[m['question_id'] as String] = m;
+          _results[m['question_id'] as String] = {...m, 'vision': _vision[m['question_id']]};
         });
       case 'error':
         if (m['code'] == 'auth' || m['code'] == 'session') {
@@ -150,11 +201,20 @@ class _AnswerScreenState extends State<AnswerScreen> {
         noiseSuppress: true,
       ));
       _micDone = Completer<void>();
+      _turn.reset();
+      if (_cameraOk) _gaze.start();
       _mic = stream.listen(
         (chunk) {
           _socket.sendAudio(chunk);
           final level = _loudness(chunk);
           if (mounted) setState(() => _level = level);
+          // 16 kHz x 2 bytes = 32 bytes per millisecond
+          switch (_turn.feed(level, chunk.length ~/ 32)) {
+            case 'end':
+              _stop(); // quiet for 3 s after speaking: the answer is finished
+            case 'no_speech':
+              if (mounted) setState(() => _message = "We can't hear you. Check the microphone, or speak a little louder.");
+          }
         },
         onDone: () => _micDone?.complete(),
       );
@@ -174,6 +234,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
 
   void _stopClockAndMic() {
     _clock?.cancel();
+    _gaze.stop();
     _recorder.stop();
   }
 
@@ -185,6 +246,10 @@ class _AnswerScreenState extends State<AnswerScreen> {
     // Send "stop" only after the last audio chunk has gone out.
     await _micDone?.future.timeout(const Duration(seconds: 2), onTimeout: () {});
     await _mic?.cancel();
+    final codes = _gaze.stop();
+    if (codes.isNotEmpty) {
+      _socket.send({'type': 'vision', 'question_id': _q['id'], 'fps': _gaze.fps, 'codes': codes});
+    }
     _socket.send({'type': 'stop', 'question_id': _q['id']});
   }
 
@@ -202,7 +267,37 @@ class _AnswerScreenState extends State<AnswerScreen> {
   }
 
   void _go(int i) {
-    if (_phase == _Phase.idle) setState(() => _index = i);
+    if (_phase != _Phase.idle) return;
+    _voice.stop();
+    setState(() {
+      _index = i;
+      _speaking = false;
+      _message = null;
+    });
+    _ask();
+  }
+
+  /// Small live camera picture with a "looking at the screen" light.
+  Widget _cameraBox() {
+    final good = _live.lookingAtScreen;
+    return Align(
+      alignment: Alignment.centerRight,
+      child: SizedBox(
+        width: 200,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          AspectRatio(aspectRatio: 4 / 3, child: _camera.preview()),
+          const SizedBox(height: 4),
+          Row(children: [
+            Icon(Icons.circle, size: 10, color: _live.status != 'ready' ? Colors.grey : (good ? AppColors.good : AppColors.warn)),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(_live.status == 'ready' ? _live.direction : 'Starting camera…',
+                  style: const TextStyle(fontSize: 11, color: Colors.grey), overflow: TextOverflow.ellipsis),
+            ),
+          ]),
+        ]),
+      ),
+    );
   }
 
   String _mmss(int s) => '${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}';
@@ -210,7 +305,19 @@ class _AnswerScreenState extends State<AnswerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Interview · ${widget.session['role']}')),
+      appBar: AppBar(title: Text('Interview · ${widget.session['role']}'), actions: [
+        IconButton(
+          tooltip: _voiceOn ? 'Interviewer voice on (questions read aloud, mic opens by itself)' : 'Interviewer voice off',
+          icon: Icon(_voiceOn ? Icons.record_voice_over : Icons.voice_over_off),
+          onPressed: () {
+            setState(() => _voiceOn = !_voiceOn);
+            if (!_voiceOn) {
+              _speaking = false;
+              _voice.stop();
+            }
+          },
+        ),
+      ]),
       body: switch (_phase) {
         _Phase.connecting => const Center(child: CircularProgressIndicator()),
         _Phase.error => Center(
@@ -247,11 +354,41 @@ class _AnswerScreenState extends State<AnswerScreen> {
                 ),
             ]),
             const SizedBox(height: 16),
+            if (_cameraOk) _cameraBox(),
             Text('Question ${_index + 1} of ${_questions.length}', style: const TextStyle(color: Colors.grey)),
             const SizedBox(height: 6),
             Text(_q['question'] as String, style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 6),
-            Text('You have about ${_mmss(_limit)} to answer.', style: const TextStyle(color: Colors.grey)),
+            Row(children: [
+              Expanded(
+                child: Text(
+                    recording
+                        ? 'Stay quiet for 3 seconds when you are done, or press "I\'m done".'
+                        : 'You have about ${_mmss(_limit)} to answer.',
+                    style: const TextStyle(color: Colors.grey)),
+              ),
+              if (_speaking)
+                TextButton.icon(onPressed: _skipVoice, icon: const Icon(Icons.skip_next), label: const Text('Skip'))
+              else if (!recording && !busy)
+                TextButton.icon(
+                  onPressed: () async {
+                    setState(() => _speaking = true);
+                    await _voice.say(_q['question'] as String);
+                    if (mounted) setState(() => _speaking = false);
+                  },
+                  icon: const Icon(Icons.volume_up),
+                  label: const Text('Hear again'),
+                ),
+            ]),
+            if (_speaking)
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Row(children: [
+                  Icon(Icons.graphic_eq, color: AppColors.brand),
+                  SizedBox(width: 6),
+                  Text('The interviewer is asking the question…'),
+                ]),
+              ),
             const SizedBox(height: 24),
             if (recording) ...[
               Row(children: [
@@ -294,6 +431,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                   child: SpeechReport(
                     transcript: (_results[_q['id']]!['transcript'] as String?) ?? '',
                     metrics: (_results[_q['id']]!['metrics'] as Map).cast<String, dynamic>(),
+                    vision: (_results[_q['id']]!['vision'] as Map?)?.cast<String, dynamic>(),
                   ),
                 ),
               ),
@@ -331,7 +469,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                   style: FilledButton.styleFrom(backgroundColor: AppColors.bad),
                   onPressed: _stop,
                   icon: const Icon(Icons.stop),
-                  label: const Text('Stop'),
+                  label: const Text("I'm done"),
                 ),
               if (!recording && _index < _questions.length - 1)
                 OutlinedButton.icon(

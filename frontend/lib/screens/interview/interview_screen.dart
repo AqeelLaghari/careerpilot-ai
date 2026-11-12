@@ -248,6 +248,7 @@ class _QuestionCard extends StatelessWidget {
                   SpeechReport(
                     transcript: answer!['transcript'] as String,
                     metrics: (answer!['metrics'] as Map).cast<String, dynamic>(),
+                    vision: (answer!['vision'] as Map?)?.cast<String, dynamic>(),
                   ),
                   const Divider(height: 24),
                   const Text('What a strong answer covers', style: TextStyle(fontWeight: FontWeight.w600)),
