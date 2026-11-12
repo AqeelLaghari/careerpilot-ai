@@ -7,6 +7,7 @@ import 'package:record/record.dart';
 
 import '../../services/interview_socket.dart';
 import '../../theme.dart';
+import 'speech_report.dart';
 
 /// Answer the interview questions out loud. The microphone audio is streamed to the
 /// server while you speak; each answer is saved when you press Stop (or time runs out).
@@ -36,6 +37,12 @@ class _AnswerScreenState extends State<AnswerScreen> {
   int _elapsed = 0; // seconds since recording started
   double _level = 0; // microphone loudness 0..1
   final Map<String, double> _saved = {}; // question id -> seconds recorded
+  final Set<String> _transcribing = {}; // saved, waiting for the transcript
+  // question id -> {transcript, metrics} or {error}; earlier results come with the session
+  late final Map<String, Map<String, dynamic>> _results = {
+    for (final e in ((widget.session['answers'] as Map?) ?? {}).entries)
+      if ((e.value as Map)['transcript'] != null) e.key as String: (e.value as Map).cast<String, dynamic>(),
+  };
 
   Map<String, dynamic> get _q => _questions[_index];
   int get _limit => (_q['time_limit_sec'] as num).toInt();
@@ -93,9 +100,16 @@ class _AnswerScreenState extends State<AnswerScreen> {
         break; // the local clock is smoother; the server confirms it is receiving audio
       case 'saved':
         setState(() {
+          _transcribing.add(m['question_id'] as String);
+          _results.remove(m['question_id']);
           _saved[m['question_id'] as String] = (m['duration_sec'] as num).toDouble();
           _phase = _Phase.idle;
           _message = m['cut'] == true ? 'Time was up, so your answer was saved at the limit.' : null;
+        });
+      case 'transcribed':
+        setState(() {
+          _transcribing.remove(m['question_id']);
+          _results[m['question_id'] as String] = m;
         });
       case 'error':
         if (m['code'] == 'auth' || m['code'] == 'session') {
@@ -258,6 +272,31 @@ class _AnswerScreenState extends State<AnswerScreen> {
               const Text('Microphone level', style: TextStyle(fontSize: 12, color: Colors.grey)),
               const SizedBox(height: 16),
             ],
+            if (!recording && _transcribing.contains(_q['id']))
+              const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: Row(children: [
+                  SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                  SizedBox(width: 8),
+                  Text('Turning your answer into text…'),
+                ]),
+              )
+            else if (!recording && _results[_q['id']]?['error'] != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(_results[_q['id']]!['error'] as String, style: const TextStyle(color: AppColors.warn)),
+              )
+            else if (!recording && _results[_q['id']] != null)
+              Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: SpeechReport(
+                    transcript: (_results[_q['id']]!['transcript'] as String?) ?? '',
+                    metrics: (_results[_q['id']]!['metrics'] as Map).cast<String, dynamic>(),
+                  ),
+                ),
+              ),
             if (savedSecs != null && !recording)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),

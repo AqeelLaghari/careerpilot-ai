@@ -4,6 +4,7 @@ import '../../services/api_client.dart';
 import '../../theme.dart';
 import '../career/career_screen.dart' show EmptyHint;
 import 'answer_screen.dart';
+import 'speech_report.dart';
 
 /// Interview Coach: practice questions made for this user's CV and target role.
 /// (Answering by voice and camera, with scores, is added on top of this screen later.)
@@ -218,7 +219,10 @@ class _QuestionCard extends StatelessWidget {
               Row(mainAxisSize: MainAxisSize.min, children: [
                 const Icon(Icons.check_circle, size: 16, color: AppColors.good),
                 const SizedBox(width: 4),
-                Text('Answered (${(answer!['duration_sec'] as num).round()} s)',
+                Text(
+                    answer!['metrics'] == null
+                        ? 'Answered (${(answer!['duration_sec'] as num).round()} s)'
+                        : 'Answered · ${answer!['metrics']['wpm']} words/min · ${answer!['metrics']['filler_count']} fillers',
                     style: const TextStyle(color: AppColors.good, fontSize: 12)),
               ]),
           ]),
@@ -228,10 +232,20 @@ class _QuestionCard extends StatelessWidget {
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
               tilePadding: EdgeInsets.zero,
-              title: const Text('What a strong answer covers', style: TextStyle(fontSize: 13)),
+              title: Text(answer?['transcript'] != null ? 'Your answer and what a strong answer covers'
+                  : 'What a strong answer covers', style: const TextStyle(fontSize: 13)),
               childrenPadding: const EdgeInsets.only(bottom: 8),
               expandedCrossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (answer?['transcript'] != null) ...[
+                  SpeechReport(
+                    transcript: answer!['transcript'] as String,
+                    metrics: (answer!['metrics'] as Map).cast<String, dynamic>(),
+                  ),
+                  const Divider(height: 24),
+                  const Text('What a strong answer covers', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                ],
                 for (final k in (q['key_points'] as List).cast<String>())
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
