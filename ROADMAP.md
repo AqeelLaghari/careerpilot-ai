@@ -38,6 +38,16 @@ Job-market data goes stale, so the app keeps learning from fresh job postings wh
 - **Oversight:** an admin list of learned skills; any wrong skill can be removed.
 - **Live jobs = REMOTE jobs a Pakistani can apply to (decided 8 Nov 2026):** sources Himalayas (has candidate-location restrictions + worldwide filter; check its terms on display first), Remotive, Jobicy, RemoteOK (all free, no key; link back/attribution required), optional JSearch `remote_jobs_only`. Keep only jobs open to Worldwide/Anywhere/Asia/APAC/Pakistan; dedupe; match % (skills + SBERT); "Open worldwide" badge; Apply → original posting; cache a few hours. Users see ONLY these remote jobs; every fetched posting (eligible or not) also feeds skill learning. Day 14 starts by counting Pakistan-eligible jobs per API and confirming terms.
 
+## Live video interview (decided 13 Nov 2026)
+The mock interview is a real, spoken conversation, not a list of recorded answers.
+- **Length:** the user picks 5, 10 or 15 minutes; the interviewer keeps time and closes properly ("Any questions for me?").
+- **Camera on for the whole interview** (live preview). Video is NEVER uploaded or recorded: MediaPipe analyses it in the browser and only eye-contact numbers go to the server.
+- **AI voice:** questions are spoken with the device's free text-to-speech (`flutter_tts`: browser speechSynthesis on web, Android TTS on phones) and shown as text.
+- **Turn-taking:** the user just talks; the turn ends after ~3 s of silence (or an "I'm done" button). Audio streams over the Day 16 WebSocket; Whisper (Day 17) transcribes.
+- **Adaptive questions:** the Day 15 plan becomes the AGENDA (topics from the CV: intro, project, key skills, a gap skill, behaviour). After each answer Gemini (fast tier, one short call per turn) decides: follow-up, clarify, or next topic (max 2 follow-ups per topic). A short spoken acknowledgement covers the 3-6 s thinking gap.
+- **Fallback:** if Gemini fails, the interview continues with the planned questions.
+- **Report:** per-answer grading against key points, speech metrics, eye contact, tips.
+
 ## Folder structure
 
 ```
@@ -99,10 +109,10 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - [x] **Day 15**: Question generation from blackboard (profile + target role)
 - [x] **Day 16**: WebSocket endpoint; Flutter records and streams audio chunks
 - [ ] **Day 17**: faster-whisper transcription, WPM, filler-word counter
-- [ ] **Day 18**: MediaPipe Face Landmarker in Flutter Web (JS interop), iris position
-- [ ] **Day 19**: Eye-contact score + gaze-away log
-- [ ] **Day 20**: Answer grading (Gemini) + combined interview score
-- [ ] **Day 21**: Interview screen + report. **Milestone 3: full mock interview**
+- [ ] **Day 18**: Live camera preview for the whole interview + MediaPipe Face Landmarker in Flutter Web (JS interop), iris position
+- [ ] **Day 19**: Eye-contact score + gaze-away log; AI voice (flutter_tts) + automatic end-of-answer (silence) detection
+- [ ] **Day 20**: Live conversation loop (Gemini interviewer: follow-ups, time keeping, 5/10/15 min, planned-question fallback) + answer grading + combined interview score
+- [ ] **Day 21**: Live video interview screen + final report. **Milestone 3: full live mock interview** (may use a Week 4 buffer day)
 
 ## Week 4: Integration, evaluation, deployment
 - [ ] **Day 22**: Orchestrator synthesis; dashboard shows everything, live refresh; ATS score history across uploads; AI bullet rewriter button (Gemini fast tier, on click only)
