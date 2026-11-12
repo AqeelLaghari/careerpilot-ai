@@ -97,7 +97,7 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 
 ## Week 3: Interview Coach Agent
 - [x] **Day 15**: Question generation from blackboard (profile + target role)
-- [ ] **Day 16**: WebSocket endpoint; Flutter records and streams audio chunks
+- [x] **Day 16**: WebSocket endpoint; Flutter records and streams audio chunks
 - [ ] **Day 17**: faster-whisper transcription, WPM, filler-word counter
 - [ ] **Day 18**: MediaPipe Face Landmarker in Flutter Web (JS interop), iris position
 - [ ] **Day 19**: Eye-contact score + gaze-away log
