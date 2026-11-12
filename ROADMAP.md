@@ -109,7 +109,7 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - [x] **Day 15**: Question generation from blackboard (profile + target role)
 - [x] **Day 16**: WebSocket endpoint; Flutter records and streams audio chunks
 - [x] **Day 17**: faster-whisper transcription, WPM, filler-word counter
-- [ ] **Day 18**: Live camera preview for the whole interview + MediaPipe Face Landmarker in Flutter Web (JS interop), iris position
+- [x] **Day 18**: Live camera preview for the whole interview + MediaPipe Face Landmarker in Flutter Web (JS interop), iris position
 - [ ] **Day 19**: Eye-contact score + gaze-away log; AI voice (flutter_tts) + automatic end-of-answer (silence) detection
 - [ ] **Day 20**: Live conversation loop (Gemini interviewer: follow-ups, time keeping, 5/10/15 min, planned-question fallback) + answer grading + combined interview score
 - [ ] **Day 21**: Live video interview screen + final report. **Milestone 3: full live mock interview** (may use a Week 4 buffer day)
