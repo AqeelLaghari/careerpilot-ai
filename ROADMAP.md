@@ -96,7 +96,7 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - [x] **Day 14**: Self-learning market model + live REMOTE jobs (see "Live market learning" above): remote-job API clients (Himalayas, Remotive, Jobicy, RemoteOK) + Pakistan-eligibility filter + save postings to Firestore + new-skill discovery (Gemini fast, weekly batch) + skills in Firestore, hot-reloaded + trending skills + Jobs tab (match %, Apply). **Milestone 2: resume → career → roadmap**
 
 ## Week 3: Interview Coach Agent
-- [ ] **Day 15**: Question generation from blackboard (profile + target role)
+- [x] **Day 15**: Question generation from blackboard (profile + target role)
 - [ ] **Day 16**: WebSocket endpoint; Flutter records and streams audio chunks
 - [ ] **Day 17**: faster-whisper transcription, WPM, filler-word counter
 - [ ] **Day 18**: MediaPipe Face Landmarker in Flutter Web (JS interop), iris position
