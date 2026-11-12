@@ -4,6 +4,7 @@ import '../../services/api_client.dart';
 import '../../theme.dart';
 import '../career/career_screen.dart' show EmptyHint;
 import 'answer_screen.dart';
+import 'camera_check_screen.dart';
 import 'speech_report.dart';
 
 /// Interview Coach: practice questions made for this user's CV and target role.
@@ -120,6 +121,12 @@ class _InterviewScreenState extends State<InterviewScreen> {
                     ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Icons.auto_awesome),
                 label: Text(_generating ? 'Preparing questions…' : 'New interview'),
+              ),
+              OutlinedButton.icon(
+                onPressed: () =>
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CameraCheckScreen())),
+                icon: const Icon(Icons.videocam_outlined),
+                label: const Text('Camera check'),
               ),
               if (_sessions.length > 1)
                 PopupMenuButton<String>(
