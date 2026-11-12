@@ -47,7 +47,7 @@ def test_gemini_writes_all_in_one_call_and_bad_answers_are_replaced(monkeypatch)
     plan = iq.plan_session(PROFILE, "DevOps Engineer", COVERAGE, count=5)
     calls = []
 
-    def fake(prompt, schema, tier, temperature):
+    def fake(prompt, schema, tier, temperature, timeout=None):
         calls.append(tier)
         assert "Kubernetes" in prompt and "@" not in prompt
         return {"questions": [{"slot": i, "question": f"Question number {i} about the role, please explain?",
@@ -99,3 +99,15 @@ def test_interview_endpoints():
         assert len(bb.read_section("u1", "interviews")["asked"]) == 10
     finally:
         app.dependency_overrides.clear()
+
+
+def test_slow_gemini_falls_back_to_templates_within_the_budget(monkeypatch):
+    import time
+    from app.services import llm
+    monkeypatch.setattr(llm, "available", lambda: True)
+    monkeypatch.setattr(llm, "_generate", lambda model, prompt, config: time.sleep(3) or "{}")
+    monkeypatch.setattr(iq, "GEMINI_BUDGET", 0.5)
+    plan = iq.plan_session(PROFILE, "DevOps Engineer", COVERAGE, count=5)
+    t = time.time()
+    s = iq.write_questions(plan, PROFILE)
+    assert time.time() - t < 2.5 and s["source"] == "template" and len(s["questions"]) == 5

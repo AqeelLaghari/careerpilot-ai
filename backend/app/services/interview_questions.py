@@ -30,6 +30,7 @@ TYPES = ("intro", "technical", "project", "gap", "behavioural", "situational")
 TIME_LIMIT = {"intro": 90, "technical": 120, "project": 150, "gap": 90, "behavioural": 150, "situational": 120}
 MIN_COUNT, MAX_COUNT, DEFAULT_COUNT = 3, 12, 8
 SOFT = {"soft_skills", "self_reported"}
+GEMINI_BUDGET = 25          # seconds a user waits for Gemini; after that: templates
 
 
 # ------------------------------------------------------------------ level --
@@ -241,7 +242,8 @@ def write_questions(plan: dict, profile: dict, avoid: list[str] | None = None,
                     used_hashes: set[str] | None = None) -> dict:
     """The session: every slot gets a question (Gemini first, templates for the rest)."""
     used = set(used_hashes or set())
-    out = llm.generate_json(_prompt(plan, profile, avoid or []), _Batch, tier="fast", temperature=0.8)
+    out = llm.generate_json(_prompt(plan, profile, avoid or []), _Batch, tier="fast", temperature=0.8,
+                            timeout=GEMINI_BUDGET)
     by_slot = {}
     for q in (out or {}).get("questions", []):
         if isinstance(q.get("slot"), int) and 0 <= q["slot"] < len(plan["slots"]) and _valid(q) \

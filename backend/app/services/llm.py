@@ -11,7 +11,10 @@
 import hashlib
 import json
 import logging
+import time
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeout
 
 from pydantic import BaseModel
 
@@ -20,6 +23,7 @@ from app.config import GEMINI_API_KEY, GEMINI_MODEL, GEMINI_MODEL_FAST
 log = logging.getLogger(__name__)
 _client = None
 _cache: dict[str, str] = {}
+_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="gemini")
 usage = Counter()  # calls per model (shown on /health)
 
 MODELS = {"smart": GEMINI_MODEL, "fast": GEMINI_MODEL_FAST}
@@ -37,7 +41,8 @@ def _get_client():
     return _client
 
 
-def _call(prompt: str, tier: str, temperature: float, schema: type[BaseModel] | None) -> str | None:
+def _call(prompt: str, tier: str, temperature: float, schema: type[BaseModel] | None,
+          timeout: float | None = None) -> str | None:
     if not available():
         log.info("Gemini key not set; skipping LLM call.")
         return None
@@ -53,22 +58,42 @@ def _call(prompt: str, tier: str, temperature: float, schema: type[BaseModel] | 
         config.response_schema = schema
 
     other = "smart" if tier == "fast" else "fast"
+    deadline = time.monotonic() + timeout if timeout else None
     for model in (MODELS[tier], MODELS[other]):  # preferred model first, then fallback
         try:
-            resp = _get_client().models.generate_content(model=model, contents=prompt, config=config)
+            if deadline is None:
+                text = _generate(model, prompt, config)
+            else:
+                # Time budget: a busy Gemini (503 "high demand") can retry for minutes. Past the
+                # budget the caller uses its rule-based fallback; a late answer is still cached.
+                left = deadline - time.monotonic()
+                if left <= 0:
+                    raise TimeoutError("time budget used up")
+                fut = _pool.submit(_generate, model, prompt, config)
+                fut.add_done_callback(lambda f, k=key: f.exception() or _cache.__setitem__(k, f.result()))
+                text = fut.result(timeout=left)
             usage[model] += 1
-            _cache[key] = resp.text
-            return resp.text
+            _cache[key] = text
+            return text
+        except FutureTimeout:
+            usage[f"{model}_errors"] += 1
+            log.warning("Gemini %s took longer than %.0f s; using the fallback.", model, timeout)
+            return None
         except Exception as e:  # quota (429), network, outage…
             usage[f"{model}_errors"] += 1
             log.warning("Gemini %s failed (%s); trying fallback.", model, str(e)[:120])
     return None
 
 
+def _generate(model: str, prompt: str, config) -> str:
+    return _get_client().models.generate_content(model=model, contents=prompt, config=config).text
+
+
 def generate_json(prompt: str, schema: type[BaseModel], tier: str = "fast",
-                  temperature: float = 0.2) -> dict | None:
-    """Ask Gemini for JSON matching a Pydantic schema. Returns a dict or None."""
-    text = _call(prompt, tier, temperature, schema)
+                  temperature: float = 0.2, timeout: float | None = None) -> dict | None:
+    """Ask Gemini for JSON matching a Pydantic schema. Returns a dict or None.
+    timeout: seconds the caller can wait in total (None = no limit, for background jobs)."""
+    text = _call(prompt, tier, temperature, schema, timeout)
     if text is None:
         return None
     try:
