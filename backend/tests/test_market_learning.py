@@ -158,3 +158,16 @@ def test_general_words_never_become_skills_or_aliases(learner, monkeypatch):
     monkeypatch.setattr(ml, "find_candidates", lambda p: [{"term": "deployment", "postings": 20}])
     rep = ml.learn(posts)
     assert rep["aliases"] == [] and "Model Deployment" not in ee.find_skills("Fast deployment.")
+
+
+def test_start_up_recheck_drops_wrong_spellings_learned_by_older_rules(learner):
+    ml._state["skills"] = [
+        {"name": "Cybersecurity", "category": "security", "aliases": ["security"], "status": "approved", "by": "Gemini"},
+        {"name": "CI/CD", "category": "devops", "aliases": ["CI"], "status": "approved", "by": "Gemini"},
+        {"name": "Zorblex", "category": "data_science_ml", "aliases": [], "status": "approved", "by": "Gemini"}]
+    ml._state["last_run"] = time.time()
+    assert ml._recheck() == 1
+    names = {s["name"]: s["aliases"] for s in ml._state["skills"]}
+    assert "Cybersecurity" not in names and names["CI/CD"] == ["CI"] and "Zorblex" in names
+    assert "security" in ml._state["rejected"] and ml._state["last_run"] == 0.0
+    assert ml._recheck() == 0

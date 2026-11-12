@@ -93,7 +93,7 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - [x] **Day 11**: Skill-gap (set difference) + skill DAG (networkx topological sort) → weekly roadmap
 - [x] **Day 12**: Flutter: questionnaire + career matches screens; Android smoke test (Firebase Android config, backend address from phone, file picker, permissions)
 - [x] **Day 13**: Flutter: interactive roadmap (tick tasks; roadmap updates)
-- [ ] **Day 14**: Self-learning market model + live REMOTE jobs (see "Live market learning" above): remote-job API clients (Himalayas, Remotive, Jobicy, RemoteOK) + Pakistan-eligibility filter + save postings to Firestore + new-skill discovery (Gemini fast, weekly batch) + skills in Firestore, hot-reloaded + trending skills + Jobs tab (match %, Apply). **Milestone 2: resume → career → roadmap**
+- [x] **Day 14**: Self-learning market model + live REMOTE jobs (see "Live market learning" above): remote-job API clients (Himalayas, Remotive, Jobicy, RemoteOK) + Pakistan-eligibility filter + save postings to Firestore + new-skill discovery (Gemini fast, weekly batch) + skills in Firestore, hot-reloaded + trending skills + Jobs tab (match %, Apply). **Milestone 2: resume → career → roadmap**
 
 ## Week 3: Interview Coach Agent
 - [ ] **Day 15**: Question generation from blackboard (profile + target role)

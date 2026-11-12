@@ -109,7 +109,39 @@ def load_state():
         with _lock:
             _state.update(data)
     _loaded = True
+    if _recheck():
+        _save()
     apply()
+
+
+def _recheck() -> int:
+    """Check every stored skill again with today's rules, so a rule added later also cleans
+    what was learned before it. Gemini-learned spellings that don't look like the skill's
+    name ('security' → Cybersecurity) are dropped and never learned again; when anything is
+    dropped, the next learning run starts at once. Admin decisions are kept."""
+    base = {e.lstrip("!").split("|")[0].lower() for lst in entity_extractor._base_vocab().values()
+            if isinstance(lst, list) for e in lst}
+    dropped = 0
+    with _lock:
+        rejected = set(_state.get("rejected", []))
+        keep = []
+        for s in _state["skills"]:
+            if str(s.get("by", "")).startswith("admin"):
+                keep.append(s)
+                continue
+            good = [a for a in s.get("aliases", []) if looks_like_spelling_of(a, s["name"])]
+            for a in set(s.get("aliases", [])) - set(good):
+                rejected.add(a.lower())
+                dropped += 1
+            s["aliases"] = good
+            if s["name"].lower() in base and not good:      # nothing new left in this entry
+                continue
+            keep.append(s)
+        if dropped:
+            _state["skills"], _state["rejected"] = keep, sorted(rejected)
+            _state["last_run"] = 0.0                         # learn again with today's rules
+            log.info("Re-check of learned skills: dropped %d wrong spellings", dropped)
+    return dropped
 
 
 def _save():
