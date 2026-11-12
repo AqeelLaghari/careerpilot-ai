@@ -17,6 +17,7 @@ extension type _CpCamera._(JSObject _) implements JSObject {
   external web.HTMLElement container();
   external JSString latest();
   external void stop();
+  external void calibrate();
 }
 
 class FaceCamera {
@@ -46,6 +47,9 @@ class FaceCamera {
   }
 
   void stop() => _cp?.stop();
+
+  /// The next 1.5 s of looking at the screen become the new "straight ahead".
+  void calibrate() => _cp?.calibrate();
 
   /// The live camera picture. The same video element is reused, so the camera keeps
   /// running when the screen rebuilds.

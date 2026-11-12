@@ -9,6 +9,7 @@ class FaceCamera {
   Future<String> track() async => 'unsupported';
   FaceSample latest() => FaceSample.off;
   void stop() {}
+  void calibrate() {}
 
   Widget preview() => const ColoredBox(
         color: Colors.black12,

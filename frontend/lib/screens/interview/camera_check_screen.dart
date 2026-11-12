@@ -121,6 +121,22 @@ class _CameraCheckScreenState extends State<CameraCheckScreen> {
         Text('Eye opening ${s.eyesOpen.toStringAsFixed(2)} · ${s.fps} checks per second',
             style: const TextStyle(color: Colors.grey, fontSize: 12)),
       ],
+      const SizedBox(height: 8),
+      Row(children: [
+        Expanded(
+          child: Text(
+            s.calibrated
+                ? 'Centre = your normal position. If the dots are off-centre while you look at the screen, recalibrate.'
+                : 'Look at the middle of the screen for a moment to set your centre.',
+            style: const TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+        ),
+        TextButton.icon(
+          onPressed: _camera.calibrate,
+          icon: const Icon(Icons.center_focus_strong, size: 18),
+          label: const Text('Recalibrate'),
+        ),
+      ]),
     ]);
   }
 

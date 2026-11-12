@@ -112,6 +112,47 @@
     return ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2;
   }
 
+  // ---- calibration: the user's normal "looking at the screen" position becomes the centre.
+  // A laptop camera sits below the screen, so looking at the screen already reads as
+  // "a bit down"; without this, up/down would be off for most people.
+  // Sensitivity: how much raw change moves a value from the centre to the end (+-1).
+  const SCALE = { h: 2.0, v: 9.0, open: 4.0, yaw: 2.0, pitch: 4.0 };
+  let base = null, calib = null;                 // calib = samples being collected
+
+  function calibrate(ms) {
+    calib = { until: performance.now() + (ms || 1500), rows: [] };
+  }
+
+  function raw(lm) {
+    let h = 0, v = 0, open = 0, width = 0;
+    for (const e of EYES) {
+      // corners sorted left->right in the camera image, so both eyes are measured the same way
+      let [a, b] = e.corners.map((i) => lm[i]);
+      if (a.x > b.x) [a, b] = [b, a];
+      const iris = lm[e.iris];
+      const w = Math.hypot(b.x - a.x, b.y - a.y) || 1e-6;
+      h += along(iris, a, b);
+      // up/down: how far the iris is from the line between the eye corners (corners don't
+      // move with the gaze, eyelids do), as a share of the eye width; + = below the line
+      const cross = ((b.x - a.x) * (iris.y - a.y) - (b.y - a.y) * (iris.x - a.x)) / w;
+      v += cross / w;
+      const up = lm[e.lids[0]], down = lm[e.lids[1]];
+      open += Math.hypot(down.x - up.x, down.y - up.y) / w;
+      width += w;
+    }
+    h /= 2; v /= 2; open /= 2;
+    const nose = lm[NOSE], ca = lm[CHEEK_A], cb = lm[CHEEK_B];
+    const left = ca.x < cb.x ? ca : cb, right = ca.x < cb.x ? cb : ca;
+    // head up/down: nose tip below the line between the eyes, as a share of the eye distance
+    const eyeL = lm[EYES[0].iris], eyeR = lm[EYES[1].iris];
+    const eyeDist = Math.hypot(eyeR.x - eyeL.x, eyeR.y - eyeL.y) || 1e-6;
+    const noseDrop = ((eyeR.x - eyeL.x) * (nose.y - eyeL.y) - (eyeR.y - eyeL.y) * (nose.x - eyeL.x)) / (eyeDist * eyeDist);
+    return { h, v, open, yaw: along(nose, left, right), pitch: Math.abs(noseDrop) };
+  }
+
+  const clamp = (x) => Math.max(-1.5, Math.min(1.5, x));
+  const r3 = (x) => Math.round(x * 1000) / 1000;
+
   function measure(result, now) {
     frames++;
     if (now - fpsStart >= 1000) {
@@ -121,32 +162,33 @@
     }
     const faces = result.faceLandmarks || [];
     if (!faces.length) {
-      sample = { status: "ready", face: false, faces: 0, fps, t: Date.now() };
+      sample = { status: "ready", face: false, faces: 0, fps, t: Date.now(), calibrated: !!base, calibrating: !!calib };
       return;
     }
-    const lm = faces[0];
-    let h = 0, v = 0, open = 0;
-    for (const e of EYES) {
-      // corners sorted left->right in the camera image, so both eyes are measured the same way
-      let [a, b] = e.corners.map((i) => lm[i]);
-      if (a.x > b.x) [a, b] = [b, a];
-      h += along(lm[e.iris], a, b);
-      const up = lm[e.lids[0]], down = lm[e.lids[1]];
-      v += along(lm[e.iris], up, down);
-      open += Math.hypot(down.x - up.x, down.y - up.y) / (Math.hypot(b.x - a.x, b.y - a.y) || 1e-6);
+    const m = raw(faces[0]);
+    if (!base && !calib) calibrate(1500);          // first time a face is seen
+    if (calib) {
+      if (faces.length === 1 && m.open > 0.12) calib.rows.push(m);   // skip blinks
+      if (now >= calib.until && calib.rows.length >= 5) {
+        const avg = (k) => calib.rows.reduce((t, r) => t + r[k], 0) / calib.rows.length;
+        base = { h: avg("h"), v: avg("v"), open: avg("open"), yaw: avg("yaw"), pitch: avg("pitch") };
+        calib = null;
+      } else if (now >= calib.until + 3000) {
+        calib = null;                              // no clear face: try again next time
+      }
     }
-    h /= 2; v /= 2; open /= 2;
+    const b = base || { h: 0.5, v: 0, open: m.open, yaw: 0.5, pitch: m.pitch };
     // camera image -> mirror view: moving right in the image = the user's left
-    const gazeH = -(h - 0.5) * 2;
-    const gazeV = (v - 0.5) * 2;
-    const nose = lm[NOSE], ca = lm[CHEEK_A], cb = lm[CHEEK_B];
-    const left = ca.x < cb.x ? ca : cb, right = ca.x < cb.x ? cb : ca;
-    const yaw = -(along(nose, left, right) - 0.5) * 2;
-    const pitch = (along(nose, lm[BROW_MID], lm[CHIN]) - 0.45) * 2;
-    const r = (x) => Math.round(x * 1000) / 1000;
+    const gazeH = -(m.h - b.h) * SCALE.h * 2;
+    // eyes down: iris drops below the corner line AND the eyelids close a little
+    const gazeV = (m.v - b.v) * SCALE.v - (m.open - b.open) * SCALE.open;
+    const yaw = -(m.yaw - b.yaw) * SCALE.yaw * 2;
+    const pitch = (m.pitch - b.pitch) * SCALE.pitch;
     sample = {
       status: "ready", face: true, faces: faces.length, fps, t: Date.now(),
-      gaze_h: r(gazeH), gaze_v: r(gazeV), head_yaw: r(yaw), head_pitch: r(pitch), eyes_open: r(open),
+      calibrated: !!base, calibrating: !!calib,
+      gaze_h: r3(clamp(gazeH)), gaze_v: r3(clamp(gazeV)), head_yaw: r3(clamp(yaw)),
+      head_pitch: r3(clamp(pitch)), eyes_open: r3(m.open),
     };
   }
 
@@ -161,6 +203,7 @@
 
   window.cpCamera = {
     start, track, stop,
+    calibrate: () => { base = null; calibrate(1500); },
     container: () => makeBox(),
     latest: () => JSON.stringify(sample),
   };
