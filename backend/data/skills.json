@@ -293,7 +293,7 @@
   ],
   "data_analytics_bi": [
     "Data Analysis|Data Analytics",
-    "Microsoft Excel|Excel|MS Excel|Advanced Excel",
+    "Microsoft Excel|Excel|MS Excel|Advanced Excel|Spreadsheets|Spreadsheet",
     "Power BI|PowerBI",
     "Tableau",
     "Looker",
@@ -477,8 +477,8 @@
   ],
   "business_office": [
     "Microsoft Office|MS Office",
-    "Microsoft Word|MS Word",
-    "Microsoft PowerPoint|PowerPoint",
+    "Microsoft Word|MS Word|Word Processing|Text processor|Word processor",
+    "Microsoft PowerPoint|PowerPoint|MS PowerPoint|Slide presentation|Slide presentations",
     "Digital Marketing",
     "SEO|Search Engine Optimization",
     "Social Media Marketing",
@@ -662,7 +662,7 @@
     "ServSafe"
   ],
   "engineering_core": [
-    "AutoCAD",
+    "AutoCAD|Auto CAD|Auto-CAD",
     "SolidWorks",
     "CATIA",
     "ANSYS",
