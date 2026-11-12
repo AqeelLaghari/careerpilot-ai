@@ -70,3 +70,17 @@ class InterviewAgent:
 
     def session(self, uid: str, session_id: str) -> dict | None:
         return next((s for s in self._state(uid)["sessions"] if s["id"] == session_id), None)
+
+    def save_answer(self, uid: str, session_id: str, question_id: str, info: dict) -> dict | None:
+        """Note on the Blackboard that a question was answered (the audio itself is on disk).
+        Day 17 adds the transcript and speaking metrics to the same entry."""
+        state = self._state(uid)
+        s = next((x for x in state["sessions"] if x["id"] == session_id), None)
+        if s is None or not any(q["id"] == question_id for q in s["questions"]):
+            return None
+        s.setdefault("answers", {})[question_id] = info | {"status": "recorded", "recorded_at": time.time()}
+        done = all(q["id"] in s["answers"] for q in s["questions"])
+        s["status"] = "recorded" if done else "in_progress"
+        state["updated_at"] = time.time()
+        self.bb.write(uid, "interviews", state, agent=AGENT_NAME)
+        return {"status": s["status"], "answered": len(s["answers"]), "total": len(s["questions"])}
