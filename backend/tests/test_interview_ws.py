@@ -63,8 +63,10 @@ def test_record_an_answer_and_save_wav(ws_env):
         ws.send_bytes(SECOND[: len(SECOND) // 2])           # 4 chunks of half a second
     assert ws.receive_json() == {"type": "progress", "question_id": "q1", "seconds": 1.0}
     assert ws.receive_json()["seconds"] == 2.0
+    ws.send_json({"type": "vision", "question_id": "q1", "fps": 5, "codes": "S" * 8 + "d" * 2})
     ws.send_json({"type": "stop", "question_id": "q1"})
     saved = ws.receive_json()
+    assert saved["vision"]["eye_contact_pct"] == 100
     assert saved["type"] == "saved" and saved["duration_sec"] == 2.0 and saved["answered"] == 1
     assert saved["status"] == "in_progress" and saved["total"] == 2 and "take" not in saved
     done = ws.receive_json()                                # Day 17: the transcript follows
@@ -77,6 +79,7 @@ def test_record_an_answer_and_save_wav(ws_env):
     ans = bb.read_section("u1", "interviews")["sessions"][0]["answers"]["q1"]
     assert ans["status"] == "transcribed" and ans["duration_sec"] == 2.0 and ans["metrics"]["filler_count"] == 1
     assert "words" not in ans                               # word timings are not stored (doc size)
+    assert ans["vision"]["seconds"] == 2.0
     assert not list((tmp / "interviews").rglob("*.wav"))   # audio deleted after transcription
 
 

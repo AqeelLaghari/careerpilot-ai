@@ -11,7 +11,7 @@ from starlette.concurrency import run_in_threadpool
 from app.agents.interview_agent import InterviewAgent, NoResumeError
 from app.auth import current_uid, uid_from_token
 from app.deps import blackboard
-from app.services import audio_store, speech
+from app.services import audio_store, eye_contact, speech
 from app.services import interview_questions as iq
 
 router = APIRouter(prefix="/interview", tags=["Interview Coach Agent"])
@@ -54,6 +54,8 @@ def get_session(session_id: str, uid: str = Depends(current_uid)):
 #   server → app   {"type": "progress", "question_id", "seconds"}   about once a second
 #   app → server   {"type": "stop", "question_id": "q1"}   → server saves the .wav
 #   server → app   {"type": "saved", "question_id", "duration_sec", "answered", "total", "status"}
+#   app → server   {"type": "vision", "question_id", "fps", "codes": "SSSddS..."}  (Day 19, before
+#                  "stop"): where the user looked, one letter per look; scored by eye_contact.py
 #   app → server   {"type": "cancel"} drops the answer being recorded; {"type": "ping"} → "pong"
 #   server → app   {"type": "error", "code", "message"} (the connection stays open unless it's about login)
 # Close codes: 4401 not logged in, 4404 no such session, 4408 nothing received for IDLE_TIMEOUT s.
@@ -131,6 +133,7 @@ async def interview_ws(ws: WebSocket):
                 audio={"format": "pcm16", "sample_rate": audio_store.SAMPLE_RATE, "channels": audio_store.CHANNELS})
 
     current, buf, reported = None, bytearray(), 0
+    vision = None                                        # eye contact for the current answer
     jobs: set = set()
     # Answers recorded before a server restart, still waiting for their transcript
     for qid, ans in (session.get("answers") or {}).items():
@@ -138,9 +141,9 @@ async def interview_ws(ws: WebSocket):
             jobs.add(asyncio.create_task(transcribe_and_notify(ws, uid, session, qid, ans["recorded_at"])))
 
     async def finish(cut: bool = False):
-        nonlocal current, buf
-        qid, pcm = current, bytes(buf)
-        current, buf = None, bytearray()
+        nonlocal current, buf, vision
+        qid, pcm, eyes = current, bytes(buf), vision
+        current, buf, vision = None, bytearray(), None
         secs = audio_store.seconds(len(pcm))
         if secs < MIN_SECONDS:
             await _send(ws, type="error", code="too_short", question_id=qid,
@@ -148,10 +151,12 @@ async def interview_ws(ws: WebSocket):
             return
         info = await run_in_threadpool(audio_store.save_answer, uid, session_id, qid, pcm)
         progress = await run_in_threadpool(agent.save_answer, uid, session_id, qid,
-                                           {k: info[k] for k in ("bytes", "duration_sec", "format")} | {"cut": cut})
+                                           {k: info[k] for k in ("bytes", "duration_sec", "format")}
+                                           | {"cut": cut, "vision": eyes})
         progress = progress or {}
         take = progress.pop("take", None)
-        await _send(ws, type="saved", question_id=qid, duration_sec=info["duration_sec"], cut=cut, **progress)
+        await _send(ws, type="saved", question_id=qid, duration_sec=info["duration_sec"], cut=cut, vision=eyes,
+                    **progress)
         if take is not None:
             jobs.add(asyncio.create_task(transcribe_and_notify(ws, uid, session, qid, take)))
 
@@ -183,13 +188,16 @@ async def interview_ws(ws: WebSocket):
                 if qid not in limits:
                     await _send(ws, type="error", code="question", message=f"No question {qid!r} in this session")
                     continue
-                current, buf, reported = qid, bytearray(), 0     # starting again replaces the old take
+                current, buf, reported, vision = qid, bytearray(), 0, None   # a new take replaces the old
                 await _send(ws, type="started", question_id=qid, time_limit_sec=limits[qid])
             elif kind == "stop":
                 if current is None or (qid and qid != current):
                     await _send(ws, type="error", code="not_recording", message="Nothing is being recorded")
                     continue
                 await finish()
+            elif kind == "vision":
+                if current is not None and qid in (None, current):
+                    vision = eye_contact.analyse(str(data.get("codes", ""))[:20000], data.get("fps", 5))
             elif kind == "cancel":
                 current, buf = None, bytearray()
                 await _send(ws, type="cancelled")
