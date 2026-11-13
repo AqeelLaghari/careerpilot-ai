@@ -1,0 +1,183 @@
+"""Live video interview (Day 20): one continuous spoken conversation.
+
+POST /interview/live {"minutes": 5|10|15}   → a live session (agenda from the user's CV)
+WS   /interview/live/ws                     → the conversation
+
+Messages (JSON text unless said otherwise):
+  app → server   {"type": "auth", "token", "session_id"}                 first, within AUTH_WAIT s
+  server → app   {"type": "ready", "minutes", "role"}
+  server → app   {"type": "say", "turn_id", "text", "kind", "remaining_sec"}   the interviewer speaks
+  app → server   {"type": "listening", "turn_id"}      the app has finished speaking; the mic is open
+  app → server   BINARY frames: the answer (PCM 16-bit mono 16 kHz)
+  app → server   {"type": "vision", "fps", "codes"}    where the user looked (eye_contact.py letters)
+  app → server   {"type": "answered", "turn_id"}       the user finished (quiet for a few s, or "I'm done")
+  server → app   {"type": "thinking"}                  transcribing + deciding the next question
+  ...            the next "say", and so on, until
+  server → app   {"type": "ended"}                     after the goodbye (or after {"type": "end"} from the app)
+  server → app   {"type": "error", "code", "message"}
+The video never reaches the server; only the eye-contact letters do.
+"""
+import asyncio
+import json
+import logging
+import time
+
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
+from starlette.concurrency import run_in_threadpool
+
+from app.agents.interview_agent import NoResumeError
+from app.auth import current_uid, uid_from_token
+from app.routers.interview import _stt, agent
+from app.services import audio_store, eye_contact, interviewer, speech
+
+router = APIRouter(prefix="/interview", tags=["Interview Coach Agent"])
+log = logging.getLogger(__name__)
+
+AUTH_WAIT, IDLE_TIMEOUT = 10, 300
+MAX_ANSWER_SECONDS = 240          # one answer can't run longer than this
+
+
+class LiveIn(BaseModel):
+    minutes: int = 10
+    role: str | None = None
+
+
+@router.post("/live")
+def new_live(body: LiveIn, uid: str = Depends(current_uid)):
+    """Prepare a live interview (the agenda is made from the CV; about 3-10 s)."""
+    if body.minutes not in interviewer.TOPICS_FOR:
+        raise HTTPException(422, "minutes must be 5, 10 or 15")
+    try:
+        live = agent.new_live(uid, body.minutes, body.role)
+    except NoResumeError as e:
+        raise HTTPException(404, str(e))
+    return {k: live[k] for k in ("id", "role", "level", "minutes", "status")}
+
+
+async def _send(ws: WebSocket, **msg):
+    await ws.send_text(json.dumps(msg))
+
+
+def _process_answer(uid: str, live: dict, turn: dict, pcm: bytes, vision: dict | None) -> dict:
+    """Whisper thread: save the audio, transcribe (fast mode), measure, delete the audio."""
+    secs = audio_store.seconds(len(pcm))
+    answer = {"duration_sec": round(secs, 1), "vision": vision}
+    if secs < 0.5:
+        return answer | {"transcript": "", "metrics": speech.analyse([], 0)}
+    audio_store.save_answer(uid, live["id"], turn["id"], pcm)
+    path = audio_store.answer_path(uid, live["id"], turn["id"])
+    terms = [x for t in live["agenda"] for x in (t.get("skill"), t.get("project")) if x]
+    try:
+        r = speech.process(str(path), live["role"], terms, fast=True)
+        m = dict(r["metrics"])
+        m["pauses"] = m.get("pauses", [])[:10]
+        return answer | {"transcript": r["transcript"][:3000], "metrics": m}
+    except Exception:
+        log.exception("Live transcription failed")
+        return answer | {"transcript": "", "metrics": speech.analyse([], secs), "error": "transcription failed"}
+    finally:
+        audio_store.delete_answer(uid, live["id"], turn["id"])
+
+
+@router.websocket("/live/ws")
+async def live_ws(ws: WebSocket):
+    await ws.accept()
+    try:
+        first = json.loads(await asyncio.wait_for(ws.receive_text(), AUTH_WAIT))
+    except (asyncio.TimeoutError, ValueError, KeyError):
+        await ws.close(4401)
+        return
+    except WebSocketDisconnect:
+        return
+    uid = await run_in_threadpool(uid_from_token, str(first.get("token", ""))) if first.get("type") == "auth" else None
+    if uid is None:
+        await _send(ws, type="error", code="auth", message="Please log in again")
+        await ws.close(4401)
+        return
+    live = await run_in_threadpool(agent.session, uid, str(first.get("session_id", "")))
+    if live is None or live.get("mode") != "live":
+        await _send(ws, type="error", code="session", message="No such live interview")
+        await ws.close(4404)
+        return
+    if live["status"] == "completed":
+        await _send(ws, type="ended")
+        await ws.close()
+        return
+    await _send(ws, type="ready", minutes=live["minutes"], role=live["role"])
+    loop = asyncio.get_running_loop()
+
+    async def save():
+        await run_in_threadpool(agent.save_live, uid, live)
+
+    async def say(nxt: dict):
+        turn = {"id": f"t{len(live['turns']) + 1}", "topic_id": nxt["topic_id"], "kind": nxt["kind"],
+                "text": nxt["text"], "source": nxt.get("source"), "at": time.time()}
+        live["turns"].append(turn)
+        await _send(ws, type="say", turn_id=turn["id"], text=turn["text"], kind=turn["kind"],
+                    remaining_sec=round(interviewer.remaining_seconds(live)))
+        await save()
+        if nxt["kind"] == "goodbye":
+            await finish()
+
+    async def finish():
+        live["status"], live["ended_at"] = "completed", time.time()
+        for t in live["agenda"]:
+            if t["status"] == "current":
+                t["status"] = "done"
+        await save()
+        await _send(ws, type="ended")
+
+    # start, or carry on after a dropped connection
+    if not live["turns"]:
+        live["started_at"], live["status"] = time.time(), "in_progress"
+        await say(interviewer.start(live))
+    else:
+        last = live["turns"][-1]
+        if last.get("answer") is None:                     # repeat the question that was not answered
+            await _send(ws, type="say", turn_id=last["id"], text=last["text"], kind=last["kind"],
+                        remaining_sec=round(interviewer.remaining_seconds(live)))
+        else:
+            await say(await loop.run_in_executor(None, interviewer.decide, live))
+
+    listening, buf, vision = None, bytearray(), None
+    try:
+        while True:
+            msg = await asyncio.wait_for(ws.receive(), IDLE_TIMEOUT)
+            if msg["type"] == "websocket.disconnect":
+                return
+            if msg.get("bytes") is not None:
+                if listening is not None and audio_store.seconds(len(buf)) < MAX_ANSWER_SECONDS:
+                    buf.extend(msg["bytes"])
+                continue
+            try:
+                data = json.loads(msg.get("text") or "")
+            except ValueError:
+                continue
+            kind = data.get("type")
+            if kind == "listening":
+                listening, buf, vision = data.get("turn_id"), bytearray(), None
+            elif kind == "vision":
+                vision = eye_contact.analyse(str(data.get("codes", ""))[:20000], data.get("fps", 5))
+            elif kind == "answered" and listening is not None and live["status"] != "completed":
+                turn = next((t for t in live["turns"] if t["id"] == listening), live["turns"][-1])
+                pcm, eyes = bytes(buf), vision
+                listening, buf, vision = None, bytearray(), None
+                await _send(ws, type="thinking")
+                t0 = time.time()
+                turn["answer"] = await loop.run_in_executor(_stt, _process_answer, uid, live, turn, pcm, eyes)
+                nxt = await loop.run_in_executor(None, interviewer.decide, live)
+                log.info("Live turn %s: answer %.1f s, next ready in %.1f s (%s)", turn["id"],
+                         turn["answer"]["duration_sec"], time.time() - t0, nxt.get("source"))
+                if nxt["kind"] == "end":
+                    await finish()
+                else:
+                    await say(nxt)
+            elif kind == "end":
+                await finish()
+            elif kind == "ping":
+                await _send(ws, type="pong")
+    except asyncio.TimeoutError:
+        await ws.close(4408)
+    except WebSocketDisconnect:
+        return

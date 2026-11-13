@@ -61,12 +61,12 @@ def make_prompt(role: str | None = None, terms: list[str] | None = None) -> str:
     return " ".join(parts)
 
 
-def transcribe(path: str, prompt: str | None = None) -> dict:
+def transcribe(path: str, prompt: str | None = None, fast: bool = False) -> dict:
     """{'text', 'words': [{'w', 'start', 'end'}], 'duration', 'language_probability', 'seconds_taken'}"""
     t = time.time()
     with _lock:                                     # one at a time: Whisper already uses every CPU core
         segments, info = get_model().transcribe(
-            path, language="en", word_timestamps=True, vad_filter=True, beam_size=5,
+            path, language="en", word_timestamps=True, vad_filter=True, beam_size=1 if fast else 5,
             initial_prompt=prompt or FILLER_PROMPT, condition_on_previous_text=False)
         words = [{"w": w.word.strip(), "start": round(w.start, 2), "end": round(w.end, 2)}
                  for s in segments for w in (s.words or []) if w.word.strip()]
@@ -154,8 +154,9 @@ def analyse(words: list[dict], duration: float) -> dict:
     }
 
 
-def process(path: str, role: str | None = None, terms: list[str] | None = None) -> dict:
-    """Transcribe one answer and measure it."""
-    tr = transcribe(path, make_prompt(role, terms))
+def process(path: str, role: str | None = None, terms: list[str] | None = None, fast: bool = False) -> dict:
+    """Transcribe one answer and measure it. fast=True (live interview): greedy decoding,
+    about twice as fast, slightly less accurate."""
+    tr = transcribe(path, make_prompt(role, terms), fast)
     return {"transcript": tr["text"], "words": tr["words"], "metrics": analyse(tr["words"], tr["duration"]),
             "model": f"faster-whisper {MODEL_SIZE} {COMPUTE_TYPE}", "seconds_taken": tr["seconds_taken"]}

@@ -10,7 +10,7 @@ from app.auth import current_uid
 from app.services import llm
 from app.deps import blackboard
 from app.orchestrator.blackboard import SECTIONS
-from app.routers import career, interview, jobs, market, questionnaire, resume, roadmap
+from app.routers import career, interview, jobs, live_interview, market, questionnaire, resume, roadmap
 
 logging.basicConfig(level=logging.INFO)
 
@@ -62,6 +62,7 @@ app.include_router(questionnaire.router)
 app.include_router(roadmap.router)
 app.include_router(jobs.router)
 app.include_router(interview.router)
+app.include_router(live_interview.router)
 
 
 

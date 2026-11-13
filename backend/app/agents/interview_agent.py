@@ -65,7 +65,8 @@ class InterviewAgent:
     def sessions(self, uid: str) -> list[dict]:
         """Newest first, short form."""
         return [{"id": s["id"], "created_at": s["created_at"], "role": s["role"], "level": s["level"],
-                 "questions": len(s["questions"]), "status": s["status"], "source": s["source"]}
+                 "questions": len(s["questions"]), "status": s["status"], "source": s["source"],
+                 "mode": s.get("mode", "practice"), "minutes": s.get("minutes")}
                 for s in reversed(self._state(uid)["sessions"])]
 
     def session(self, uid: str, session_id: str) -> dict | None:
@@ -107,3 +108,21 @@ class InterviewAgent:
         state["updated_at"] = time.time()
         self.bb.write(uid, "interviews", state, agent=AGENT_NAME)
         return True
+
+    # ------------------------------------------------------- live interview (Day 20) --
+    def new_live(self, uid: str, minutes: int, role: str | None = None) -> dict:
+        """A live interview: the planned questions become the agenda the interviewer follows."""
+        from app.services import interviewer
+        count = interviewer.TOPICS_FOR[minutes] + 1           # + the intro the agenda replaces
+        session = self.new_session(uid, count, role)
+        session.update(mode="live", minutes=minutes, agenda=interviewer.build_agenda(session["questions"], minutes),
+                       turns=[], started_at=None, ended_at=None, status="ready")
+        self.save_live(uid, session)
+        return session
+
+    def save_live(self, uid: str, live: dict):
+        """Store the whole live session (replaces the stored copy)."""
+        state = self._state(uid)
+        state["sessions"] = [live if s["id"] == live["id"] else s for s in state["sessions"]]
+        state["updated_at"] = time.time()
+        self.bb.write(uid, "interviews", state, agent=AGENT_NAME)
