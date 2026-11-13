@@ -44,7 +44,17 @@
     // mirror it, like a selfie camera; measurements are converted to the same view
     video.style.cssText = "width:100%;height:100%;object-fit:cover;transform:scaleX(-1);";
     box.appendChild(video);
+    // Chrome PAUSES a video when it is moved to another place on the page (Flutter does this
+    // when the screen changes, e.g. preview -> full-screen interview). Keep it playing.
+    video.addEventListener("pause", () => { if (stream) resume(); });
     return box;
+  }
+
+  function resume() {
+    // try now and again shortly after: the element may still be moving between parents
+    [0, 100, 400].forEach((ms) => setTimeout(() => {
+      if (stream && video && video.paused) video.play().catch(() => {});
+    }, ms));
   }
 
   async function start() {
@@ -204,7 +214,7 @@
   window.cpCamera = {
     start, track, stop,
     calibrate: () => { base = null; calibrate(1500); },
-    container: () => makeBox(),
+    container: () => { const b = makeBox(); resume(); return b; },
     latest: () => JSON.stringify(sample),
   };
 })();
