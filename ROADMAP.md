@@ -47,6 +47,9 @@ The mock interview is a real, spoken conversation, not a list of recorded answer
 - **Adaptive questions:** the Day 15 plan becomes the AGENDA (topics from the CV: intro, project, key skills, a gap skill, behaviour). After each answer Gemini (fast tier, one short call per turn) decides: follow-up, clarify, or next topic (max 2 follow-ups per topic). A short spoken acknowledgement covers the 3-6 s thinking gap.
 - **Fallback:** if Gemini fails, the interview continues with the planned questions.
 - **Report:** per-answer grading against key points, speech metrics, eye contact, tips.
+- **Turn end:** 3 s of quiet after speaking (countdown shown from 1 s; background noise = quietest moment of the last 4 s, so soft voices count); the next question is prepared early at the first pause.
+- **Grading (decided 14 Nov 2026):** content 60% (Gemini smart tier, one call per interview: correctness with corrections, relevance, completeness vs key points, specifics, STAR), speaking 20%, presence 20%. Personal claims can't be verified; technical facts are. Rule-based fallback: SBERT match against key points.
+- **Urdu interviews (decided 14 Nov 2026, a MAIN feature, not beta):** language choice English / Urdu for the whole interview: questions in Urdu (Roman Urdu subtitles), Urdu voice (Android Google Urdu voice; on web the best available, with a clear fallback), answers in Urdu or mixed Urdu-English, Whisper tuned for Urdu (model size chosen by testing speed vs accuracy), Urdu filler words (matlab, yani, acha, woh...), Urdu pace range, grading and report in Roman Urdu.
 
 ## Folder structure
 
@@ -117,7 +120,7 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 ## Week 4: Integration, evaluation, deployment
 - [ ] **Day 22**: Orchestrator synthesis; dashboard shows everything, live refresh; ATS score history across uploads; AI bullet rewriter button (Gemini fast tier, on click only)
 - [ ] **Day 23**: Evaluation: parsing F1 on 25 labelled resumes; FAISS latency; WebSocket latency
-- [ ] **Day 24**: Automated tests (pytest) + error handling + buffer / bug fixing
+- [ ] **Day 24**: **Urdu interviews** (full feature, see "Live video interview") + error handling / bug fixing
 - [ ] **Day 25**: Deploy backend to Hugging Face Spaces
 - [ ] **Day 26**: Deploy web to Firebase Hosting; build Android APK
 - [ ] **Day 27**: Pilot test with 5 to 10 classmates (Google Form feedback)

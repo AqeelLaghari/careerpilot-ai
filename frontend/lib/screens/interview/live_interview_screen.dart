@@ -296,7 +296,7 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
               const SizedBox(height: 8),
               const Text(
                 'The interviewer will speak to you. Answer naturally, like a real interview. '
-                'When you finish an answer, stay quiet for 5 seconds (or press "I\'m done") '
+                'When you finish an answer, stay quiet for 3 seconds (or press "I\'m done") '
                 'and the next question follows. Look at the camera while you speak.',
                 textAlign: TextAlign.center,
               ),

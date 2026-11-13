@@ -4,7 +4,7 @@ import 'package:careerpilot/services/turn_detector.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('answer ends after 5 s of quiet, only once the user has spoken', () {
+  test('answer ends after 3 s of quiet, only once the user has spoken', () {
     final d = TurnDetector();
     for (var i = 0; i < 40; i++) {
       expect(d.feed(0.01, 100), isNull); // 4 s of quiet before speaking: keep waiting
@@ -13,12 +13,12 @@ void main() {
       expect(d.feed(0.3, 100), isNull); // 2 s of speech
     }
     String? r;
-    for (var i = 0; i < 49; i++) {
+    for (var i = 0; i < 29; i++) {
       r = d.feed(0.01, 100);
-      if (i == 29) expect(d.countdown, 2); // 3 s quiet: "Finishing in 2..."
+      if (i == 9) expect(d.countdown, 2); // 1 s quiet: "Finishing in 2..."
     }
-    expect(r, isNull); // 4.9 s quiet
-    expect(d.feed(0.01, 100), 'end'); // 5.0 s quiet
+    expect(r, isNull); // 2.9 s quiet
+    expect(d.feed(0.01, 100), 'end'); // 3.0 s quiet
     expect(d.feed(0.01, 100), isNull); // only once
   });
 
@@ -27,8 +27,8 @@ void main() {
     for (var i = 0; i < 10; i++) {
       d.feed(0.3, 100);
     }
-    for (var i = 0; i < 40; i++) {
-      expect(d.feed(0.01, 100), isNull); // 4 s thinking pause
+    for (var i = 0; i < 25; i++) {
+      expect(d.feed(0.01, 100), isNull); // 2.5 s thinking pause
     }
     d.feed(0.3, 100);
     expect(d.quietMs, 0);

@@ -7,7 +7,7 @@
 /// max(minLevel, noise x noiseFactor). minLevel is low on purpose so a soft voice counts.
 class TurnDetector {
   TurnDetector({
-    this.silenceMs = 5000,
+    this.silenceMs = 3000,
     this.minSpeechMs = 600,
     this.noSpeechMs = 20000,
     this.minLevel = 0.035,
@@ -36,7 +36,7 @@ class TurnDetector {
   /// Seconds left before the answer ends by itself, once the user has been quiet for a
   /// while (null = not counting down). Used for "Finishing in 3…".
   int? get countdown {
-    if (!hasSpoken || _ended || quietMs < 2000) return null;
+    if (!hasSpoken || _ended || quietMs < 1000) return null;
     final left = silenceMs - quietMs;
     return left <= 0 ? 0 : (left + 999) ~/ 1000;
   }
