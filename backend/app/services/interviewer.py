@@ -127,7 +127,8 @@ def _prompt(live: dict, remaining: float) -> str:
 
 
 def _ask_gemini(live: dict, remaining: float) -> dict | None:
-    return llm.generate_json(_prompt(live, remaining), _Next, tier="fast", temperature=0.6, timeout=GEMINI_BUDGET)
+    return llm.generate_json(_prompt(live, remaining), _Next, tier="fast", temperature=0.6, timeout=GEMINI_BUDGET,
+                             quick=True)
 
 
 # --------------------------------------------------------------- decide --

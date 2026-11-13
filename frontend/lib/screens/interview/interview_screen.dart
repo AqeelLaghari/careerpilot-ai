@@ -5,6 +5,7 @@ import '../../theme.dart';
 import '../career/career_screen.dart' show EmptyHint;
 import 'answer_screen.dart';
 import 'camera_check_screen.dart';
+import 'live_interview_screen.dart';
 import 'speech_report.dart';
 
 /// Interview Coach: practice questions made for this user's CV and target role.
@@ -24,6 +25,7 @@ class _InterviewScreenState extends State<InterviewScreen> {
   bool _noResume = false;
   String? _error;
   int _count = 8;
+  int _minutes = 10; // live interview length
 
   @override
   void initState() {
@@ -84,6 +86,45 @@ class _InterviewScreenState extends State<InterviewScreen> {
     }
   }
 
+  /// The main feature: a live video interview with a spoken, adaptive interviewer.
+  Widget _liveCard() => Card(
+        color: AppColors.brand.withValues(alpha: 0.06),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const Icon(Icons.video_call, color: AppColors.brand, size: 28),
+              const SizedBox(width: 8),
+              Text('Live video interview', style: Theme.of(context).textTheme.titleLarge),
+            ]),
+            const SizedBox(height: 6),
+            const Text('A real conversation: the interviewer speaks, listens to your answers and asks '
+                'follow-up questions, from your background to technical topics. Camera on, like a video call.'),
+            const SizedBox(height: 12),
+            Wrap(spacing: 12, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+              SegmentedButton<int>(
+                segments: const [
+                  ButtonSegment(value: 5, label: Text('5 min')),
+                  ButtonSegment(value: 10, label: Text('10 min')),
+                  ButtonSegment(value: 15, label: Text('15 min')),
+                ],
+                selected: {_minutes},
+                onSelectionChanged: (v) => setState(() => _minutes = v.first),
+              ),
+              FilledButton.icon(
+                onPressed: () async {
+                  await Navigator.of(context)
+                      .push(MaterialPageRoute(builder: (_) => LiveInterviewScreen(minutes: _minutes)));
+                  _loadSessions();
+                },
+                icon: const Icon(Icons.play_arrow),
+                label: const Text('Start interview'),
+              ),
+            ]),
+          ]),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator());
@@ -100,7 +141,9 @@ class _InterviewScreenState extends State<InterviewScreen> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 900),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Interview practice', style: Theme.of(context).textTheme.headlineSmall),
+            _liveCard(),
+            const SizedBox(height: 24),
+            Text('Practice question sets', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 4),
             const Text('Questions made for your CV, your skills and your target role. A new set every time.',
                 style: TextStyle(color: Colors.grey)),

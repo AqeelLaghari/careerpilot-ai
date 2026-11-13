@@ -10,7 +10,10 @@ Messages (JSON text unless said otherwise):
   app → server   {"type": "listening", "turn_id"}      the app has finished speaking; the mic is open
   app → server   BINARY frames: the answer (PCM 16-bit mono 16 kHz)
   app → server   {"type": "vision", "fps", "codes"}    where the user looked (eye_contact.py letters)
-  app → server   {"type": "answered", "turn_id"}       the user finished (quiet for a few s, or "I'm done")
+  app → server   {"type": "pause"}                     the user went quiet (~1 s) after speaking: the server
+                 starts transcribing + choosing the next question NOW, in case this is the end
+  app → server   {"type": "answered", "turn_id", "spoke_since_pause"}   the user finished (quiet for a few
+                 s, or "I'm done"); if they didn't speak again since the last pause, the early result is used
   server → app   {"type": "thinking"}                  transcribing + deciding the next question
   ...            the next "say", and so on, until
   server → app   {"type": "ended"}                     after the goodbye (or after {"type": "end"} from the app)
@@ -18,6 +21,7 @@ Messages (JSON text unless said otherwise):
 The video never reaches the server; only the eye-contact letters do.
 """
 import asyncio
+import copy
 import json
 import logging
 import time
@@ -59,14 +63,14 @@ async def _send(ws: WebSocket, **msg):
     await ws.send_text(json.dumps(msg))
 
 
-def _process_answer(uid: str, live: dict, turn: dict, pcm: bytes, vision: dict | None) -> dict:
+def _process_answer(uid: str, live: dict, file_id: str, pcm: bytes, vision: dict | None) -> dict:
     """Whisper thread: save the audio, transcribe (fast mode), measure, delete the audio."""
     secs = audio_store.seconds(len(pcm))
     answer = {"duration_sec": round(secs, 1), "vision": vision}
     if secs < 0.5:
         return answer | {"transcript": "", "metrics": speech.analyse([], 0)}
-    audio_store.save_answer(uid, live["id"], turn["id"], pcm)
-    path = audio_store.answer_path(uid, live["id"], turn["id"])
+    audio_store.save_answer(uid, live["id"], file_id, pcm)
+    path = audio_store.answer_path(uid, live["id"], file_id)
     terms = [x for t in live["agenda"] for x in (t.get("skill"), t.get("project")) if x]
     try:
         r = speech.process(str(path), live["role"], terms, fast=True)
@@ -77,7 +81,7 @@ def _process_answer(uid: str, live: dict, turn: dict, pcm: bytes, vision: dict |
         log.exception("Live transcription failed")
         return answer | {"transcript": "", "metrics": speech.analyse([], secs), "error": "transcription failed"}
     finally:
-        audio_store.delete_answer(uid, live["id"], turn["id"])
+        audio_store.delete_answer(uid, live["id"], file_id)
 
 
 @router.websocket("/live/ws")
@@ -141,6 +145,16 @@ async def live_ws(ws: WebSocket):
             await say(await loop.run_in_executor(None, interviewer.decide, live))
 
     listening, buf, vision = None, bytearray(), None
+    spec: dict = {}            # early work started at the last pause: {"n", "task"}
+
+    def think_early(turn_id: str, pcm: bytes, n: int):
+        """At a pause: transcribe what was said so far and choose the next question, on a COPY
+        of the interview (thrown away if the user carries on speaking)."""
+        draft = copy.deepcopy(live)
+        turn = next(t for t in draft["turns"] if t["id"] == turn_id)
+        turn["answer"] = _process_answer(uid, draft, f"{turn_id}_early{n}", pcm, None)
+        return draft, interviewer.decide(draft)
+
     try:
         while True:
             msg = await asyncio.wait_for(ws.receive(), IDLE_TIMEOUT)
@@ -157,6 +171,10 @@ async def live_ws(ws: WebSocket):
             kind = data.get("type")
             if kind == "listening":
                 listening, buf, vision = data.get("turn_id"), bytearray(), None
+                spec = {}
+            elif kind == "pause" and listening is not None:
+                n = spec.get("n", 0) + 1
+                spec = {"n": n, "task": loop.run_in_executor(_stt, think_early, listening, bytes(buf), n)}
             elif kind == "vision":
                 vision = eye_contact.analyse(str(data.get("codes", ""))[:20000], data.get("fps", 5))
             elif kind == "answered" and listening is not None and live["status"] != "completed":
@@ -164,11 +182,24 @@ async def live_ws(ws: WebSocket):
                 pcm, eyes = bytes(buf), vision
                 listening, buf, vision = None, bytearray(), None
                 await _send(ws, type="thinking")
-                t0 = time.time()
-                turn["answer"] = await loop.run_in_executor(_stt, _process_answer, uid, live, turn, pcm, eyes)
-                nxt = await loop.run_in_executor(None, interviewer.decide, live)
-                log.info("Live turn %s: answer %.1f s, next ready in %.1f s (%s)", turn["id"],
-                         turn["answer"]["duration_sec"], time.time() - t0, nxt.get("source"))
+                t0, early = time.time(), None
+                if spec.get("task") is not None and not data.get("spoke_since_pause"):
+                    try:
+                        early = await spec["task"]               # usually finished already
+                    except Exception:
+                        log.warning("Early answer processing failed; doing it now", exc_info=True)
+                spec = {}
+                if early is not None:
+                    draft, nxt = early
+                    live["agenda"] = draft["agenda"]
+                    turn["answer"] = next(t for t in draft["turns"] if t["id"] == turn["id"])["answer"] | {
+                        "duration_sec": round(audio_store.seconds(len(pcm)), 1), "vision": eyes}
+                else:
+                    turn["answer"] = await loop.run_in_executor(_stt, _process_answer, uid, live, turn["id"], pcm, eyes)
+                    nxt = await loop.run_in_executor(None, interviewer.decide, live)
+                log.info("Live turn %s: answer %.1f s, next ready %.1f s after the end (%s%s)", turn["id"],
+                         turn["answer"]["duration_sec"], time.time() - t0, nxt.get("source"),
+                         ", prepared early" if early else "")
                 if nxt["kind"] == "end":
                     await finish()
                 else:

@@ -42,17 +42,19 @@ def _get_client():
 
 
 def _call(prompt: str, tier: str, temperature: float, schema: type[BaseModel] | None,
-          timeout: float | None = None) -> str | None:
+          timeout: float | None = None, quick: bool = False) -> str | None:
     if not available():
         log.info("Gemini key not set; skipping LLM call.")
         return None
-    key = hashlib.sha256(f"{tier}|{temperature}|{schema and schema.__name__}|{prompt}".encode()).hexdigest()
+    key = hashlib.sha256(f"{tier}|{temperature}|{schema and schema.__name__}|{quick}|{prompt}".encode()).hexdigest()
     if key in _cache:
         usage["cache_hits"] += 1
         return _cache[key]
 
     from google.genai import types
     config = types.GenerateContentConfig(temperature=temperature)
+    if quick:   # no "thinking" step: much faster replies for simple, time-critical tasks
+        config.thinking_config = types.ThinkingConfig(thinking_level="minimal")
     if schema is not None:
         config.response_mime_type = "application/json"
         config.response_schema = schema
@@ -90,10 +92,10 @@ def _generate(model: str, prompt: str, config) -> str:
 
 
 def generate_json(prompt: str, schema: type[BaseModel], tier: str = "fast",
-                  temperature: float = 0.2, timeout: float | None = None) -> dict | None:
+                  temperature: float = 0.2, timeout: float | None = None, quick: bool = False) -> dict | None:
     """Ask Gemini for JSON matching a Pydantic schema. Returns a dict or None.
     timeout: seconds the caller can wait in total (None = no limit, for background jobs)."""
-    text = _call(prompt, tier, temperature, schema, timeout)
+    text = _call(prompt, tier, temperature, schema, timeout, quick)
     if text is None:
         return None
     try:

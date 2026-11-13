@@ -189,3 +189,25 @@ def test_create_live_session_endpoint(monkeypatch):
         assert stored["mode"] == "live" and stored["agenda"][0]["id"] == "opening"
     finally:
         app.dependency_overrides.clear()
+
+
+def test_pause_prepares_the_next_question_early(live_env):
+    bb = live_env
+    with TestClient(app).websocket_connect("/interview/live/ws") as ws:
+        ws.send_json({"type": "auth", "token": "good", "session_id": "L1"})
+        ws.receive_json()
+        ws.receive_json()                                           # opening question
+        ws.send_json({"type": "listening", "turn_id": "t1"})
+        ws.send_bytes(b"\x01\x00" * 16000 * 3)
+        ws.send_json({"type": "pause"})                             # quiet: start early
+        ws.send_bytes(b"\x00\x00" * 16000 * 2)                     # 2 more seconds of silence
+        ws.send_json({"type": "answered", "turn_id": "t1", "spoke_since_pause": False})
+        assert ws.receive_json()["type"] == "thinking"
+        nxt = ws.receive_json()
+        assert nxt["type"] == "say" and nxt["turn_id"] == "t2"
+        ws.send_json({"type": "end"})
+        ws.receive_json()
+    live = bb.read_section("u1", "interviews")["sessions"][0]
+    a = live["turns"][0]["answer"]
+    assert a["duration_sec"] == 5.0 and a["transcript"].startswith("I am a final year")   # the early transcript
+    assert [t["status"] for t in live["agenda"][:2]] == ["done", "done"]   # agenda taken from the early run
