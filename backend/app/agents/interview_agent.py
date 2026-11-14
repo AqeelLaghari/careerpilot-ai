@@ -5,6 +5,7 @@ Reads from the Blackboard: "resume" (skills, projects, experience), "questionnai
 Writes: "interviews" (sessions with their questions; answers and scores come later).
 It never calls the other agents; everything it needs is on the Blackboard.
 """
+import logging
 import time
 from collections import Counter
 
@@ -112,17 +113,66 @@ class InterviewAgent:
     # ------------------------------------------------------- live interview (Day 20) --
     def new_live(self, uid: str, minutes: int, role: str | None = None) -> dict:
         """A live interview: the planned questions become the agenda the interviewer follows."""
-        from app.services import interviewer
+        from app.services import interviewer, privacy
         count = interviewer.TOPICS_FOR[minutes] + 1           # + the intro the agenda replaces
         session = self.new_session(uid, count, role)
+        entities = (self.bb.read_section(uid, "resume") or {}).get("entities")
         session.update(mode="live", minutes=minutes, agenda=interviewer.build_agenda(session["questions"], minutes),
-                       turns=[], started_at=None, ended_at=None, status="ready")
+                       turns=[], started_at=None, ended_at=None, status="ready",
+                       private=privacy.terms(entities))           # hidden from Gemini (privacy.scrub)
         self.save_live(uid, session)
         return session
 
     def save_live(self, uid: str, live: dict):
-        """Store the whole live session (replaces the stored copy)."""
+        """Store the whole live session (replaces the stored copy, but never drops its report)."""
         state = self._state(uid)
+        old = next((s for s in state["sessions"] if s["id"] == live["id"]), {})
+        if old.get("report") and not live.get("report"):
+            live["report"] = old["report"]
         state["sessions"] = [live if s["id"] == live["id"] else s for s in state["sessions"]]
         state["updated_at"] = time.time()
         self.bb.write(uid, "interviews", state, agent=AGENT_NAME)
+
+    # ------------------------------------------------------------ report (Day 21) --
+    GRADING_STALE = 600            # s: a "grading" report older than this was interrupted (restart)
+    _grading: set = set()          # session ids being graded in this process
+
+    def needs_report(self, live: dict | None) -> bool:
+        if not live or live.get("mode") != "live" or live.get("status") != "completed":
+            return False
+        rep = live.get("report") or {}
+        if rep.get("status") == "ready":
+            return False
+        if rep.get("status") == "grading" and time.time() - rep.get("started_at", 0) < self.GRADING_STALE:
+            return live["id"] not in self._grading and time.time() - rep.get("started_at", 0) > 30
+        return True
+
+    def _save_report(self, uid: str, session_id: str, report: dict):
+        state = self._state(uid)
+        s = next((x for x in state["sessions"] if x["id"] == session_id), None)
+        if s is None:
+            return
+        s["report"] = report
+        state["updated_at"] = time.time()
+        self.bb.write(uid, "interviews", state, agent=AGENT_NAME)
+
+    def grade_live(self, uid: str, session_id: str) -> dict | None:
+        """Grade a finished live interview and store the report (slow: Gemini; run in a thread)."""
+        from app.services import interview_grader
+        if session_id in self._grading:
+            return None
+        self._grading.add(session_id)
+        try:
+            live = self.session(uid, session_id)
+            if not live or live.get("mode") != "live":
+                return None
+            self._save_report(uid, session_id, {"status": "grading", "started_at": time.time()})
+            try:
+                report = interview_grader.grade(live) | {"graded_at": time.time()}
+            except Exception:
+                logging.getLogger(__name__).exception("Grading failed; using the rule-based report")
+                report = interview_grader.grade(live, use_gemini=False) | {"graded_at": time.time()}
+            self._save_report(uid, session_id, report)
+            return report
+        finally:
+            self._grading.discard(session_id)

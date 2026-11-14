@@ -32,7 +32,7 @@ from starlette.concurrency import run_in_threadpool
 
 from app.agents.interview_agent import NoResumeError
 from app.auth import current_uid, uid_from_token
-from app.routers.interview import _stt, agent
+from app.routers.interview import _stt, agent, start_grading
 from app.services import audio_store, eye_contact, interviewer, speech
 
 router = APIRouter(prefix="/interview", tags=["Interview Coach Agent"])
@@ -130,12 +130,20 @@ async def live_ws(ws: WebSocket):
         if nxt["kind"] == "goodbye":
             await finish()
 
+    finished = False
+
     async def finish():
+        nonlocal finished
+        if finished:                     # e.g. the goodbye ended it and then the app sent "end"
+            await _send(ws, type="ended")
+            return
+        finished = True
         live["status"], live["ended_at"] = "completed", time.time()
         for t in live["agenda"]:
             if t["status"] == "current":
                 t["status"] = "done"
         await save()
+        start_grading(uid, live["id"])   # the report is prepared in the background (Day 21)
         await _send(ws, type="ended")
 
     # start, or carry on after a dropped connection

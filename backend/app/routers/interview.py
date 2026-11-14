@@ -42,7 +42,19 @@ def get_session(session_id: str, uid: str = Depends(current_uid)):
     s = agent.session(uid, session_id)
     if s is None:
         raise HTTPException(404, "No such interview session")
+    if agent.needs_report(s):                    # finished but not graded yet (or interrupted)
+        start_grading(uid, session_id)
+        s["report"] = {"status": "grading"}
+    s.pop("private", None)                       # the private words list stays on the server
     return s
+
+
+# Grading (Day 21): one Gemini call per finished live interview, in the background.
+_grader = ThreadPoolExecutor(max_workers=2, thread_name_prefix="grader")
+
+
+def start_grading(uid: str, session_id: str):
+    _grader.submit(agent.grade_live, uid, session_id)
 
 
 # ------------------------------------------------------------------ live audio (Day 16) --

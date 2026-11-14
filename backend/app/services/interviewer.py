@@ -25,7 +25,7 @@ import time
 
 from pydantic import BaseModel
 
-from app.services import llm
+from app.services import llm, privacy
 
 MAX_FOLLOW_UPS = 2
 WRAP_UP_SECONDS = 75          # less time left than this: start closing
@@ -114,7 +114,7 @@ def _has(text: str, phrases) -> bool:
 def _clean_reaction(text: str | None) -> str:
     """A neutral reaction: Gemini's if it doesn't judge the answer, else a plain one."""
     text = (text or "").strip()
-    if not text or _has(text, VERDICTS + REACTION_EXTRA) or len(text.split()) > 12:
+    if not text or _has(text, VERDICTS + REACTION_EXTRA) or len(text.split()) > 12 or "[" in text:
         return random.choice(REACTIONS)
     return text
 
@@ -124,7 +124,8 @@ def _clean_question(text: str | None) -> str:
     import re
     text = (text or "").strip()
     sentences = [s for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
-    kept = [s for s in sentences if not _has(s, VERDICTS)]
+    # a sentence with a verdict, or with a privacy placeholder like [company], is never spoken
+    kept = [s for s in sentences if not _has(s, VERDICTS) and "[" not in s]
     if not kept:
         return ""
     if len(kept) < len(sentences) and not kept[-1].rstrip().endswith("?"):
@@ -133,12 +134,14 @@ def _clean_question(text: str | None) -> str:
 
 
 def _history(live: dict, limit: int = 8) -> str:
+    """The recent conversation for the prompt, with personal details removed (privacy.py)."""
+    private = live.get("private")
     lines = []
     for turn in live["turns"][-limit:]:
-        lines.append(f"Interviewer: {turn['text']}")
+        lines.append(f"Interviewer: {privacy.scrub(turn['text'], private)}")
         ans = (turn.get("answer") or {}).get("transcript")
         if ans is not None:
-            lines.append(f"Candidate: {ans[:700] or '(said nothing)'}")
+            lines.append(f"Candidate: {privacy.scrub(ans[:700], private) or '(said nothing)'}")
     return "\n".join(lines)
 
 
@@ -182,6 +185,7 @@ def _prompt(live: dict, remaining: float) -> str:
         "Write `question`: ONE clear spoken question ending with '?', max 2 sentences, no lists, no code. "
         "Use plain English.\n"
         "Give `topic_id` of the topic the question belongs to.\n"
+        f"{privacy.NOTE}\n"
         f"TOPICS (in order):\n{topics}\n"
         f"CONVERSATION SO FAR:\n{_history(live)}")
 
@@ -276,10 +280,13 @@ def _goodbye(live: dict, answer: str) -> dict:
     if len(answer.split()) >= 4 and not any(w in answer.lower() for w in ("no question", "no, thank", "nothing")):
         out = llm.generate_json(
             f"You are a friendly interviewer for a {live['role']} position at a typical company. At the end of "
-            f"the interview the candidate asked: \"{answer[:500]}\". Reply in at most 2 short spoken sentences, "
-            "honest and general (you don't know this company's private details; say the team will share "
-            "specifics in the next round if needed).", _Reply, tier="fast", temperature=0.5, timeout=GEMINI_BUDGET)
-        reply = (out or {}).get("reply", "").strip() or "That's a good question; the team will share the details in the next round."
+            f"the interview the candidate asked: \"{privacy.scrub(answer[:500], live.get('private'))}\". Reply in "
+            "at most 2 short spoken sentences, honest and general (you don't know this company's private "
+            f"details; say the team will share specifics in the next round if needed). {privacy.NOTE}",
+            _Reply, tier="fast", temperature=0.5, timeout=GEMINI_BUDGET)
+        reply = (out or {}).get("reply", "").strip()
+        if not reply or "[" in reply:
+            reply = "That's a good question; the team will share the details in the next round."
     return {"kind": "goodbye", "text": _join(reply, GOODBYE), "topic_id": None, "source": "gemini" if reply else "rules"}
 
 

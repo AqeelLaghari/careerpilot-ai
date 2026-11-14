@@ -147,6 +147,8 @@ def live_env(monkeypatch, tmp_path):
     bb = Blackboard(db=None)
     monkeypatch.setattr(interview.agent, "bb", bb)
     monkeypatch.setattr(live_interview, "uid_from_token", lambda t: "u1" if t == "good" else None)
+    graded = []
+    monkeypatch.setattr(live_interview, "start_grading", lambda uid, sid: graded.append(sid))
     monkeypatch.setattr(audio_store, "ROOT", tmp_path / "interviews")
     monkeypatch.setattr(iv.llm, "generate_json", lambda *a, **k: None)
     said = iter(["I am a final year student who built a pipeline with Docker",
