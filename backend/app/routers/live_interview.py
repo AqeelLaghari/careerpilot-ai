@@ -117,6 +117,9 @@ async def live_ws(ws: WebSocket):
     async def say(nxt: dict):
         turn = {"id": f"t{len(live['turns']) + 1}", "topic_id": nxt["topic_id"], "kind": nxt["kind"],
                 "text": nxt["text"], "source": nxt.get("source"), "at": time.time()}
+        if nxt.get("check") and live["turns"]:
+            # the interviewer's silent check of the PREVIOUS answer (mistake / vague) for the report
+            live["turns"][-1]["check"] = {"kind": nxt["check"], "note": nxt.get("note", "")}
         live["turns"].append(turn)
         await _send(ws, type="say", turn_id=turn["id"], text=turn["text"], kind=turn["kind"],
                     remaining_sec=round(interviewer.remaining_seconds(live)))

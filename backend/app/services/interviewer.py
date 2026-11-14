@@ -83,10 +83,53 @@ def _current(live: dict) -> dict | None:
 
 # ---------------------------------------------------------------- Gemini --
 class _Next(BaseModel):
+    check: str           # mistake | vague | fine   (Gemini's silent check of the last answer)
+    note: str            # the suspected mistake / missing detail, for the report (never spoken)
     action: str          # follow_up | next_topic | wrap_up
     reaction: str        # short natural reaction to the answer
     question: str        # what to ask now
     topic_id: str
+
+
+# A real first-round interviewer never says an answer is wrong (or right) during the interview:
+# it probes instead ("Are you sure?", "How is that different from ...?"). These words must
+# never be spoken, whatever Gemini writes.
+# Phrases that say an answer is wrong or right. Questions may still use words like "mistake",
+# "what went wrong" or "what exactly" (normal interview questions), so only whole verdicts are listed.
+VERDICTS = ("that's wrong", "that is wrong", "you're wrong", "you are wrong", "is wrong", "was wrong",
+            "incorrect", "not correct", "isn't correct", "not quite right", "isn't right", "not true",
+            "inaccurate", "that's correct", "that is correct", "you're right", "you are right", "that's right",
+            "that is right", "great answer", "good answer", "excellent answer", "perfect answer", "well done",
+            "spot on")
+# A reaction is a short acknowledgement: anything that sounds like grading is replaced.
+REACTION_EXTRA = ("wrong", "mistake", "mistaken", "correct", "exactly", "perfect", "excellent", "great",
+                  "brilliant", "impressive", "actually", "in fact", "not quite")
+
+
+def _has(text: str, phrases) -> bool:
+    low = " ".join(text.lower().replace("’", "'").split())
+    return any(p in low for p in phrases)
+
+
+def _clean_reaction(text: str | None) -> str:
+    """A neutral reaction: Gemini's if it doesn't judge the answer, else a plain one."""
+    text = (text or "").strip()
+    if not text or _has(text, VERDICTS + REACTION_EXTRA) or len(text.split()) > 12:
+        return random.choice(REACTIONS)
+    return text
+
+
+def _clean_question(text: str | None) -> str:
+    """Drop any sentence that gives a verdict on the answer; '' if no real question is left."""
+    import re
+    text = (text or "").strip()
+    sentences = [s for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
+    kept = [s for s in sentences if not _has(s, VERDICTS)]
+    if not kept:
+        return ""
+    if len(kept) < len(sentences) and not kept[-1].rstrip().endswith("?"):
+        return ""                      # what is left after removing the verdict is not a question
+    return " ".join(kept)
 
 
 def _history(live: dict, limit: int = 8) -> str:
@@ -108,19 +151,36 @@ def _prompt(live: dict, remaining: float) -> str:
         + (f": planned question: {t['question']}" if t.get("question") else "")
         for t in live["agenda"])
     return (
-        f"You are a warm, professional human interviewer running a live spoken interview for a "
-        f"{live['role']} position ({live['level']} level). About {max(0, int(remaining // 60))} min "
+        f"You are a calm, professional human interviewer running a live spoken interview for a "
+        f"{live['role']} position ({live['level']} level), like a real first-round interview: polite, "
+        f"neutral, attentive, not harsh. About {max(0, int(remaining // 60))} min "
         f"{int(remaining % 60)} s are left.\n"
-        "Decide what to say next, based on the candidate's LAST answer:\n"
-        "- follow_up: dig into something specific they just said (a vague claim, an interesting detail, "
-        "a missing result or example). Stay on the same topic. "
+        "FIRST, silently check the candidate's LAST answer and set `check`:\n"
+        "- mistake: it contains a clear technical or factual error (e.g. 'Docker is a virtual machine', "
+        "'HTTP is stateful'). Only when you are sure. The answer is speech-to-text, so a single odd word "
+        "may just be misheard: that is NOT a mistake. Personal claims (their projects, jobs, grades, team "
+        "size) can't be checked: never a mistake.\n"
+        "- vague: no specifics (what THEY did, how, the result, an example).\n"
+        "- fine: otherwise.\n"
+        "Put in `note` one short sentence on the error or missing detail (for the written report, never "
+        "spoken); empty if fine.\n"
+        "THEN decide what to say next:\n"
+        "- follow_up: stay on the same topic and probe. If check is mistake, ALWAYS follow up (when "
+        "follow-ups are left) with a gentle probing question that lets them notice and fix it themselves, "
+        "like a real interviewer: 'Are you sure about that?', 'How is a container different from a virtual "
+        "machine?', 'Can you walk me through that step again?', 'What would happen if ...?'. NEVER say or "
+        "hint that the answer is wrong or right, never give the correct answer, never argue or lecture. If "
+        "check is vague, ask for the specific part (what you did, how, the result). You may also follow up on "
+        "an interesting detail. If you already probed this same point and they kept their answer, don't "
+        "probe it again: move on. "
         f"(Follow-ups used on this topic: {cur['follow_ups'] if cur else 0} of {MAX_FOLLOW_UPS}.)\n"
         "- next_topic: move to the next pending topic in the list. Rephrase its planned question naturally, "
         "and link it to what they said when it fits.\n"
         "- wrap_up: only when time is nearly over.\n"
-        "Write `reaction`: a short natural reaction to their answer (max 12 words, polite and neutral; never "
-        "grade or praise heavily; do not repeat their words back at length). Write `question`: ONE clear "
-        "spoken question, max 2 sentences, no lists, no code. Use plain English.\n"
+        "Write `reaction`: a short neutral acknowledgement (max 10 words, e.g. 'Okay.', 'I see.', 'Alright, "
+        "thank you.'). It must NOT judge the answer: no 'correct', 'exactly', 'great', 'wrong', 'actually'. "
+        "Write `question`: ONE clear spoken question ending with '?', max 2 sentences, no lists, no code. "
+        "Use plain English.\n"
         "Give `topic_id` of the topic the question belongs to.\n"
         f"TOPICS (in order):\n{topics}\n"
         f"CONVERSATION SO FAR:\n{_history(live)}")
@@ -156,23 +216,33 @@ def decide(live: dict, now: float | None = None, use_gemini: bool = True) -> dic
         return _wrap_up(live)
 
     out = _ask_gemini(live, remaining) if use_gemini else None
+    check = _check(out)
+    reaction = _clean_reaction((out or {}).get("reaction"))
+    question = _clean_question((out or {}).get("question"))
     can_follow = cur is not None and cur["follow_ups"] < MAX_FOLLOW_UPS and remaining > FOLLOW_UP_MIN_SECONDS \
         and len(answer.split()) >= 3
-    if out and out.get("action") == "follow_up" and can_follow and out.get("question", "").strip():
+    if out and out.get("action") == "follow_up" and can_follow and question:
         cur["follow_ups"] += 1
-        return {"kind": "follow_up", "text": _join(out.get("reaction"), out["question"]),
-                "topic_id": cur["id"], "source": "gemini"}
+        return {"kind": "follow_up", "text": _join(reaction, question), "topic_id": cur["id"],
+                "source": "gemini"} | check
     if not pending:
-        return _wrap_up(live)
+        return _wrap_up(live) | check
     # next topic: Gemini's choice if it is a pending topic, else the next one in order
     nxt = next((t for t in pending if out and t["id"] == out.get("topic_id")), pending[0])
     _set_current(live, nxt)
-    if out and out.get("action") == "next_topic" and out.get("question", "").strip() and out.get("topic_id") == nxt["id"]:
-        return {"kind": "question", "text": _join(out.get("reaction"), out["question"]), "topic_id": nxt["id"],
-                "source": "gemini"}
-    reaction = (out or {}).get("reaction") or random.choice(REACTIONS)
+    if out and out.get("action") == "next_topic" and question and out.get("topic_id") == nxt["id"]:
+        return {"kind": "question", "text": _join(reaction, question), "topic_id": nxt["id"],
+                "source": "gemini"} | check
     return {"kind": "question", "text": _join(reaction, nxt["question"] or BACKGROUND_QUESTION),
-            "topic_id": nxt["id"], "source": "gemini+plan" if out else "plan"}
+            "topic_id": nxt["id"], "source": "gemini+plan" if out else "plan"} | check
+
+
+def _check(out: dict | None) -> dict:
+    """Gemini's silent check of the last answer, kept for the report (Day 21): {} when fine/unknown."""
+    check = str((out or {}).get("check", "")).strip().lower()
+    if check not in ("mistake", "vague"):
+        return {}
+    return {"check": check, "note": str(out.get("note", "")).strip()[:200]}
 
 
 def start(live: dict) -> dict:

@@ -100,6 +100,40 @@ def test_wrap_up_when_time_is_nearly_over_then_goodbye(monkeypatch):
     assert iv.decide(live)["kind"] == "end"
 
 
+def test_mistake_is_probed_never_called_wrong(monkeypatch):
+    def fake(prompt, schema, **k):
+        return {"check": "mistake", "note": "Docker containers are not virtual machines.",
+                "action": "follow_up", "reaction": "Hmm, that's not quite right.",
+                "question": "That's wrong. How is a container different from a virtual machine?",
+                "topic_id": "opening"}
+    monkeypatch.setattr(iv.llm, "generate_json", fake)
+    live = _live()
+    _say(live, iv.start(live))
+    _answer(live, "Docker is basically a virtual machine that I used for my project")
+    nxt = iv.decide(live)
+    assert nxt["kind"] == "follow_up"
+    assert nxt["text"].endswith("How is a container different from a virtual machine?")
+    assert "wrong" not in nxt["text"].lower() and "not quite" not in nxt["text"].lower()
+    assert nxt["check"] == "mistake" and "virtual machines" in nxt["note"]
+
+
+def test_prompt_asks_for_gentle_probing():
+    live = _live()
+    iv.start(live)
+    p = iv._prompt(live, 300)
+    assert "Are you sure about that?" in p and "NEVER say" in p and "misheard" in p
+
+
+def test_normal_interview_questions_are_not_filtered():
+    for q in ["Tell me about a mistake you made and what went wrong?", "What exactly did you do?",
+              "Can you walk me through that step again?", "Are you sure about that?"]:
+        assert iv._clean_question(q) == q
+    assert iv._clean_question("That is incorrect.") == ""
+    assert iv._clean_question("Good answer. What did you learn from it?") == "What did you learn from it?"
+    assert iv._clean_reaction("Exactly, great!") in iv.REACTIONS
+    assert iv._clean_reaction("I see, thank you.") == "I see, thank you."
+
+
 def test_agenda_size_follows_the_length():
     many = QUESTIONS + [dict(QUESTIONS[2], id=f"x{i}") for i in range(12)]
     assert len(iv.build_agenda(many, 5)) == 2 + iv.TOPICS_FOR[5]
@@ -160,6 +194,24 @@ def test_live_conversation_over_websocket(live_env):
     a1 = live["turns"][0]["answer"]
     assert a1["transcript"].startswith("I am a final year") and a1["vision"]["eye_contact_pct"] == 100
     assert a1["duration_sec"] == 3.0 and a1["metrics"]["word_count"] > 5
+
+
+def test_answer_check_is_saved_for_the_report(live_env, monkeypatch):
+    bb = live_env
+    monkeypatch.setattr(iv.llm, "generate_json", lambda *a, **k: {
+        "check": "vague", "note": "No result or numbers given.", "action": "follow_up", "reaction": "Okay.",
+        "question": "What was the result of that pipeline?", "topic_id": "opening"})
+    with TestClient(app).websocket_connect("/interview/live/ws") as ws:
+        ws.send_json({"type": "auth", "token": "good", "session_id": "L1"})
+        ws.receive_json()
+        ws.receive_json()
+        nxt = _answer_turn(ws, "t1")
+        assert nxt["text"] == "Okay. What was the result of that pipeline?"
+        ws.send_json({"type": "end"})
+        ws.receive_json()
+    turns = bb.read_section("u1", "interviews")["sessions"][0]["turns"]
+    assert turns[0]["check"] == {"kind": "vague", "note": "No result or numbers given."}
+    assert "check" not in turns[1]
 
 
 def test_live_needs_login_and_a_live_session(live_env):

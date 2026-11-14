@@ -1,4 +1,4 @@
-﻿# CareerPilot AI — 30-Day Build Roadmap
+# CareerPilot AI — 30-Day Build Roadmap
 
 Start: Sun 8 Nov 2026 Â· Target finish: Mon 7 Dec 2026
 Budget: Claude Pro ($20) + free tiers only (Firebase Spark, Gemini API free tier, Hugging Face Spaces).
@@ -49,6 +49,7 @@ The mock interview is a real, spoken conversation, not a list of recorded answer
 - **Report:** per-answer grading against key points, speech metrics, eye contact, tips.
 - **Turn end:** 3 s of quiet after speaking (countdown shown from 1 s; background noise = quietest moment of the last 4 s, so soft voices count); the next question is prepared early at the first pause.
 - **Grading (decided 14 Nov 2026):** content 60% (Gemini smart tier, one call per interview: correctness with corrections, relevance, completeness vs key points, specifics, STAR), speaking 20%, presence 20%. Personal claims can't be verified; technical facts are. Rule-based fallback: SBERT match against key points.
+- **Interviewer style (decided 14 Nov 2026):** like a real first round: calm, neutral, never says an answer is right or wrong and never lectures. A clear technical mistake gets a gentle probing follow-up ("Are you sure about that?", "How is a container different from a VM?", "Walk me through that step again"), a vague answer gets "what did you do / what was the result?". Possible mishearings and personal claims are not probed. The silent check (mistake / vague + note) is saved per answer for the Day 21 report, where the corrections are shown.
 - **Urdu interviews (decided 14 Nov 2026, a MAIN feature, not beta):** language choice English / Urdu for the whole interview: questions in Urdu (Roman Urdu subtitles), Urdu voice (Android Google Urdu voice; on web the best available, with a clear fallback), answers in Urdu or mixed Urdu-English, Whisper tuned for Urdu (model size chosen by testing speed vs accuracy), Urdu filler words (matlab, yani, acha, woh...), Urdu pace range, grading and report in Roman Urdu.
 
 ## Folder structure
