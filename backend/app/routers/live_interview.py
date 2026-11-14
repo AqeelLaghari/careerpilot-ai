@@ -60,7 +60,10 @@ def new_live(body: LiveIn, uid: str = Depends(current_uid)):
 
 
 async def _send(ws: WebSocket, **msg):
-    await ws.send_text(json.dumps(msg))
+    try:
+        await ws.send_text(json.dumps(msg))
+    except (WebSocketDisconnect, RuntimeError):
+        pass            # the app already left (e.g. pressed End and went back); state is saved anyway
 
 
 def _process_answer(uid: str, live: dict, file_id: str, pcm: bytes, vision: dict | None) -> dict:

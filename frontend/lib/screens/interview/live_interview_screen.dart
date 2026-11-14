@@ -53,6 +53,7 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
   double _level = 0;
   FaceSample _live = FaceSample.off;
   Map<String, dynamic>? _result; // the finished session
+  bool _resultFailed = false;
   Future<void>? _speech; // the interviewer's current sentence
   bool _pauseSent = false; // told the server "the user went quiet" for this quiet spell
   bool _spokeSincePause = false;
@@ -162,7 +163,7 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
         _speech = _voice.say(m['text'] as String);
         await _speech;
         _camera.baselineEnd();
-        if (!mounted || _stage != _Stage.interviewerSpeaking || _kind == 'goodbye') return;
+        if (!mounted || _finishing || _stage != _Stage.interviewerSpeaking || _kind == 'goodbye') return;
         _turn.reset();
         _pauseSent = false;
         _spokeSincePause = false;
@@ -172,7 +173,9 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
       case 'thinking':
         setState(() => _stage = _Stage.thinking);
       case 'ended':
-        await _speech; // let the goodbye finish first
+        if (!_serverEnded.isCompleted) _serverEnded.complete();
+        if (_finishing) return; // the user pressed End: already closed
+        await _speech; // let the goodbye finish first (the voice always finishes, see Speaker)
         await _finish();
       case 'error':
         _fail(m['message'] as String);
@@ -222,25 +225,41 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
         ],
       ),
     );
-    if (ok != true) return;
-    await _voice.stop();
-    _gaze.stop();
+    if (ok != true || !mounted) return;
     _send({'type': 'end'});
+    await _voice.stop();
+    // Close everything now; don't wait for the server (its "ended" arrives later and is ignored).
+    await _finish(waitForServer: true);
   }
 
-  Future<void> _finish() async {
+  bool _finishing = false;
+  final _serverEnded = Completer<void>();
+
+  /// Camera, microphone and voice off, then the finished screen. Safe to call twice.
+  Future<void> _finish({bool waitForServer = false}) async {
+    if (!_serverEnded.isCompleted && !waitForServer) _serverEnded.complete();
+    if (_finishing) return;
+    _finishing = true;
     _tick?.cancel();
     _gaze.stop();
+    await _voice.stop();
     await _mic?.cancel();
-    await _recorder.stop();
+    _mic = null;
+    try {
+      await _recorder.stop();
+    } catch (_) {}
     _camera.stop();
     _livePoll?.cancel();
     if (!mounted) return;
     setState(() => _stage = _Stage.ended);
+    // Ended early: give the server a moment to save the last answer before reading the result.
+    if (waitForServer) await _serverEnded.future.timeout(const Duration(seconds: 8), onTimeout: () {});
     try {
       final s = await api.get('/interview/sessions/$_sessionId');
       if (mounted) setState(() => _result = s);
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) setState(() => _resultFailed = true);
+    }
   }
 
   static double _loudness(Uint8List chunk) {
@@ -435,11 +454,23 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
   /// (Day 21 adds scores for each answer and an overall report.)
   Widget _ended() {
     final s = _result;
+    final back = FilledButton.icon(
+      onPressed: () => Navigator.of(context).pop(),
+      icon: const Icon(Icons.arrow_back),
+      label: const Text('Back to Interview Coach'),
+    );
     if (s == null) {
-      return _center(const Column(mainAxisSize: MainAxisSize.min, children: [
-        CircularProgressIndicator(),
-        SizedBox(height: 16),
-        Text('Thank you! Preparing your feedback…'),
+      return _center(Column(mainAxisSize: MainAxisSize.min, children: [
+        if (_resultFailed)
+          const Text('The interview has ended, but the report could not be loaded. '
+              'You can find it later under your past interviews.', textAlign: TextAlign.center)
+        else ...const [
+          CircularProgressIndicator(),
+          SizedBox(height: 16),
+          Text('Thank you! Preparing your feedback…'),
+        ],
+        const SizedBox(height: 24),
+        back,
       ]));
     }
     final turns = (s['turns'] as List).cast<Map<String, dynamic>>();
@@ -448,8 +479,13 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 820),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text('${s['role']} interview · ${turns.where((t) => t['answer'] != null).length} answers',
-                style: Theme.of(context).textTheme.titleLarge),
+            Row(children: [
+              Expanded(
+                child: Text('${s['role']} interview · ${turns.where((t) => t['answer'] != null).length} answers',
+                    style: Theme.of(context).textTheme.titleLarge),
+              ),
+              back,
+            ]),
             const SizedBox(height: 12),
             for (final t in turns) ...[
               Text('Interviewer', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
@@ -470,6 +506,8 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
               else
                 const SizedBox(height: 12),
             ],
+            const SizedBox(height: 8),
+            Center(child: back),
           ]),
         ),
       ),

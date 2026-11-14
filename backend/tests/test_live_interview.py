@@ -214,6 +214,22 @@ def test_answer_check_is_saved_for_the_report(live_env, monkeypatch):
     assert "check" not in turns[1]
 
 
+def test_end_then_leave_at_once_still_saves(live_env):
+    bb = live_env
+    with TestClient(app).websocket_connect("/interview/live/ws") as ws:
+        ws.send_json({"type": "auth", "token": "good", "session_id": "L1"})
+        ws.receive_json()
+        ws.receive_json()
+        _answer_turn(ws, "t1")
+        ws.send_json({"type": "end"})                 # the app leaves without reading "ended"
+    for _ in range(50):
+        if bb.read_section("u1", "interviews")["sessions"][0]["status"] == "completed":
+            break
+        time.sleep(0.05)
+    live = bb.read_section("u1", "interviews")["sessions"][0]
+    assert live["status"] == "completed" and live["turns"][0]["answer"]["transcript"]
+
+
 def test_live_needs_login_and_a_live_session(live_env):
     with TestClient(app).websocket_connect("/interview/live/ws") as ws:
         ws.send_json({"type": "auth", "token": "bad", "session_id": "L1"})
