@@ -162,6 +162,28 @@
     calib = { until: performance.now() + (ms || 1500), rows: [] };
   }
 
+  // Live interview: while the interviewer is speaking the user listens and looks at the screen,
+  // so the MIDDLE value (median) of that time becomes "straight ahead" for the next answer.
+  // Re-measured every question, so a bad first calibration (leaning in to click Start, a low
+  // laptop camera) is corrected; the median ignores short glances while listening.
+  let listen = null;
+  const median = (xs) => {
+    const s = [...xs].sort((a, b) => a - b), n = s.length;
+    return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
+  };
+
+  function baselineStart() { listen = []; }
+
+  function baselineEnd() {
+    const rows = listen || [];
+    listen = null;
+    if (rows.length < 8) return 0;                 // under ~0.5 s of a clear face: keep the old one
+    base = {};
+    for (const k of ["h", "v", "open", "yaw", "pitch"]) base[k] = median(rows.map((r) => r[k]));
+    calib = null;
+    return rows.length;
+  }
+
   function raw(lm) {
     let h = 0, v = 0, open = 0, width = 0;
     for (const e of EYES) {
@@ -205,6 +227,7 @@
       return;
     }
     const m = raw(faces[0]);
+    if (listen && faces.length === 1 && m.open > 0.12 && listen.length < 1500) listen.push(m);
     if (!base && !calib) calibrate(1500);          // first time a face is seen
     if (calib) {
       if (faces.length === 1 && m.open > 0.12) calib.rows.push(m);   // skip blinks
@@ -243,7 +266,7 @@
   }
 
   window.cpCamera = {
-    start, track, stop, container,
+    start, track, stop, container, baselineStart, baselineEnd,
     calibrate: () => { base = null; calibrate(1500); },
     latest: () => JSON.stringify(sample),
   };

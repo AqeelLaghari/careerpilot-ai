@@ -10,6 +10,8 @@ class FaceCamera {
   FaceSample latest() => FaceSample.off;
   void stop() {}
   void calibrate() {}
+  void baselineStart() {}
+  void baselineEnd() {}
 
   Widget preview() => const ColoredBox(
         color: Colors.black12,

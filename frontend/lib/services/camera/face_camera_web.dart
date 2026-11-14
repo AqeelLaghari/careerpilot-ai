@@ -18,6 +18,8 @@ extension type _CpCamera._(JSObject _) implements JSObject {
   external JSString latest();
   external void stop();
   external void calibrate();
+  external void baselineStart();
+  external JSNumber baselineEnd();
 }
 
 class FaceCamera {
@@ -50,6 +52,11 @@ class FaceCamera {
 
   /// The next 1.5 s of looking at the screen become the new "straight ahead".
   void calibrate() => _cp?.calibrate();
+
+  /// Live interview: while the interviewer speaks, the user looks at the screen; the middle
+  /// of that time becomes "straight ahead" for the next answer (see face_tracker.js).
+  void baselineStart() => _cp?.baselineStart();
+  void baselineEnd() => _cp?.baselineEnd();
 
   /// The live camera picture. Each view gets its own <video> showing the same camera
   /// stream (moving one video between screens freezes it in Chrome).

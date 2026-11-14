@@ -49,20 +49,24 @@ class FaceSample {
     );
   }
 
-  /// Rough direction for the camera check. (Day 19 replaces this with a calibrated eye-contact score.)
+  // How far (from "straight ahead", -1..+1) counts as looking away. Head limits are wider
+  // than eye limits: people nod and move a little while talking.
+  static const headYawLimit = 0.45, headPitchLimit = 0.55, gazeHLimit = 0.35, gazeVLimit = 0.4;
+
+  /// Where the user is looking, in words (camera check + the live interview light).
   String get direction {
     if (!face) return 'No face in view';
     if (calibrating) return 'Look at the middle of the screen…';
     if (faces > 1) return 'More than one face';
     if (eyesOpen < 0.12) return 'Eyes closed / blinking';
-    if (headYaw < -0.35) return 'Head turned left';
-    if (headYaw > 0.35) return 'Head turned right';
-    if (gazeH < -0.35) return 'Eyes looking left';
-    if (gazeH > 0.35) return 'Eyes looking right';
-    if (headPitch < -0.4) return 'Head tilted up';
-    if (headPitch > 0.4) return 'Head tilted down';
-    if (gazeV < -0.4) return 'Eyes looking up';
-    if (gazeV > 0.4) return 'Eyes looking down';
+    if (headYaw < -headYawLimit) return 'Head turned left';
+    if (headYaw > headYawLimit) return 'Head turned right';
+    if (gazeH < -gazeHLimit) return 'Eyes looking left';
+    if (gazeH > gazeHLimit) return 'Eyes looking right';
+    if (headPitch < -headPitchLimit) return 'Head tilted up';
+    if (headPitch > headPitchLimit) return 'Head tilted down';
+    if (gazeV < -gazeVLimit) return 'Eyes looking up';
+    if (gazeV > gazeVLimit) return 'Eyes looking down';
     return 'Looking at the screen';
   }
 

@@ -16,14 +16,14 @@ class GazeRecorder {
     if (s.faces > 1) return 'M';
     if (s.calibrating) return 'S';
     if (s.eyesOpen < 0.12) return 'B';
-    if (s.headYaw < -0.35) return 'L';
-    if (s.headYaw > 0.35) return 'R';
-    if (s.headPitch < -0.4) return 'U';
-    if (s.headPitch > 0.4) return 'D';
-    if (s.gazeH < -0.35) return 'l';
-    if (s.gazeH > 0.35) return 'r';
-    if (s.gazeV < -0.4) return 'u';
-    if (s.gazeV > 0.4) return 'd';
+    if (s.headYaw < -FaceSample.headYawLimit) return 'L';
+    if (s.headYaw > FaceSample.headYawLimit) return 'R';
+    if (s.headPitch < -FaceSample.headPitchLimit) return 'U';
+    if (s.headPitch > FaceSample.headPitchLimit) return 'D';
+    if (s.gazeH < -FaceSample.gazeHLimit) return 'l';
+    if (s.gazeH > FaceSample.gazeHLimit) return 'r';
+    if (s.gazeV < -FaceSample.gazeVLimit) return 'u';
+    if (s.gazeV > FaceSample.gazeVLimit) return 'd';
     return 'S';
   }
 

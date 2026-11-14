@@ -158,8 +158,10 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
           _subtitle = m['text'] as String;
           _remaining = (m['remaining_sec'] as num).toInt().clamp(0, widget.minutes * 60);
         });
+        _camera.baselineStart(); // listening = looking at the screen: re-measure "straight ahead"
         _speech = _voice.say(m['text'] as String);
         await _speech;
+        _camera.baselineEnd();
         if (!mounted || _stage != _Stage.interviewerSpeaking || _kind == 'goodbye') return;
         _turn.reset();
         _pauseSent = false;
