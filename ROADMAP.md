@@ -118,15 +118,27 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - [x] **Day 20**: Live conversation loop (Gemini interviewer: follow-ups, gentle probing of mistakes, time keeping, 5/10/15 min, planned-question fallback) + live video interview screen (camera full screen, subtitles, End). Answer grading moved to Day 21.
 - [ ] **Day 21**: Answer grading (correctness with corrections, key points, STAR) + combined interview score (content 60 / speaking 20 / presence 20) + final report screen. **Milestone 3: full live mock interview** (may use a Week 4 buffer day)
 
-## Week 4: Integration, evaluation, deployment
-- [ ] **Day 22**: Orchestrator synthesis; dashboard shows everything, live refresh; ATS score history across uploads; AI bullet rewriter button (Gemini fast tier, on click only)
-- [ ] **Day 23**: Evaluation: parsing F1 on 25 labelled resumes; FAISS latency; WebSocket latency
-- [ ] **Day 24**: **Urdu interviews** (full feature, see "Live video interview") + error handling / bug fixing
-- [ ] **Day 25**: Deploy backend to Hugging Face Spaces
-- [ ] **Day 26**: Deploy web to Firebase Hosting; build Android APK
-- [ ] **Day 27**: Pilot test with 5 to 10 classmates (Google Form feedback)
-- [ ] **Day 28**: Fix pilot feedback
-- [ ] **Day 29**: README, architecture diagrams, results tables for the report
-- [ ] **Day 30**: Demo video + defense rehearsal
+## Week 4+: DevOps, accounts, design, evaluation, deployment (re-planned 15 Nov 2026, still before 7 Dec)
+- [ ] **Day 22**: **DevOps foundation** (see "DevOps" below): GitHub Actions CI (backend tests + coverage, flutter analyze/test, ruff + dart format, gitleaks secret scan), backend Dockerfile + docker-compose (image built in CI), pre-commit hooks (formatting, block .env / firebase-key), Dependabot, PR + issue templates, feature-branch + pull-request workflow, GitHub Projects board
+- [ ] **Day 23**: **Accounts & profile**: new login / sign-up design, Continue with Google, password rules (live checklist + strength bar), forgot password, email verification, 3-step profile setup (student / graduate / professional, university, degree, semester or graduation year, city, target role, links), profile photo (resized on device, stored in Firestore: Firebase Storage is not free), "My profile" page; profile details pre-fill the questionnaire and the interviewer greeting
+- [ ] **Day 24**: **New look**: design system (Inter/Poppins font, palette, cards, skeleton loading, empty states, animations, dark mode), left sidebar on web (photo, name, university) / bottom tabs on phone, profile dropdown menu (profile, target role, settings: theme / voice / language, help, log out with confirm), new dashboard (score tiles, "your next step", ATS score history chart, recent activity) = orchestrator synthesis with live refresh; AI bullet rewriter button (Gemini fast, on click only)
+- [ ] **Day 25**: Restyle Resume, Career, Jobs, Interview and the report in the new look
+- [ ] **Day 26**: Evaluation: parsing F1 on 25 labelled resumes (needs non-tech CVs); FAISS latency; WebSocket / interviewer latency
+- [ ] **Day 27**: **Urdu interviews** (full feature, see "Live video interview") + error handling / bug fixing
+- [ ] **Day 28**: **CD backend**: Docker image auto-deployed to Hugging Face Spaces by GitHub Actions on push to main (secrets in GitHub / HF), /debug endpoints off in production, structured logs, UptimeRobot monitoring of /health
+- [ ] **Day 29**: **CD web + mobile**: auto-deploy to Firebase Hosting; Android APK built by GitHub Actions and attached to a GitHub Release (tag v1.0.0, release notes)
+- [ ] **Day 30**: Pilot test with 5 to 10 classmates (Google Form feedback)
+- [ ] **Day 31**: Fix pilot feedback
+- [ ] **Day 32**: README (with CI badges), architecture + **CI/CD pipeline diagrams**, results tables for the report
+- [ ] **Day 33**: Demo video + defense rehearsal
+
+## DevOps (decided 15 Nov 2026; the team's DevOps member does the hands-on parts from his own GitHub account)
+- **CI (GitHub Actions, free):** every push / pull request runs pytest with coverage, flutter analyze + test, ruff and dart format checks, gitleaks; status badges in the README.
+- **Containers:** backend Dockerfile (Python 3.11, Whisper, spaCy, SBERT models) + docker-compose for one-command local runs; the same image deploys to Hugging Face Spaces.
+- **CD:** main → Hugging Face Spaces (backend) and Firebase Hosting (web); tag vX.Y.Z → APK built and attached to a GitHub Release.
+- **Workflow:** feature branches → pull request → CI must pass → review → merge; PR / issue templates; GitHub Projects board; semantic versioning; Dependabot updates. Branch protection needs a public repo (free) or a paid plan.
+- **Quality and security:** pre-commit hooks (format, block secrets), secret scanning, secrets only in GitHub / HF secret stores and git-ignored files.
+- **Monitoring:** UptimeRobot on /health, structured logs, request timing; debug endpoints disabled in production.
+- **Docs:** pipeline diagram, screenshots of pipeline runs, DevOps section in the report.
 
 If you fall behind, cut these first: Android APK → roadmap auto-update → Gemini fallback in parsing.
