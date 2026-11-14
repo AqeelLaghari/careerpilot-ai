@@ -114,9 +114,9 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - [x] **Day 16**: WebSocket endpoint; Flutter records and streams audio chunks
 - [x] **Day 17**: faster-whisper transcription, WPM, filler-word counter
 - [x] **Day 18**: Live camera preview for the whole interview + MediaPipe Face Landmarker in Flutter Web (JS interop), iris position
-- [ ] **Day 19**: Eye-contact score + gaze-away log; AI voice (flutter_tts) + automatic end-of-answer (silence) detection
-- [ ] **Day 20**: Live conversation loop (Gemini interviewer: follow-ups, time keeping, 5/10/15 min, planned-question fallback) + answer grading + combined interview score
-- [ ] **Day 21**: Live video interview screen + final report. **Milestone 3: full live mock interview** (may use a Week 4 buffer day)
+- [x] **Day 19**: Eye-contact score + gaze-away log; AI voice (flutter_tts) + automatic end-of-answer (silence) detection
+- [x] **Day 20**: Live conversation loop (Gemini interviewer: follow-ups, gentle probing of mistakes, time keeping, 5/10/15 min, planned-question fallback) + live video interview screen (camera full screen, subtitles, End). Answer grading moved to Day 21.
+- [ ] **Day 21**: Answer grading (correctness with corrections, key points, STAR) + combined interview score (content 60 / speaking 20 / presence 20) + final report screen. **Milestone 3: full live mock interview** (may use a Week 4 buffer day)
 
 ## Week 4: Integration, evaluation, deployment
 - [ ] **Day 22**: Orchestrator synthesis; dashboard shows everything, live refresh; ATS score history across uploads; AI bullet rewriter button (Gemini fast tier, on click only)
