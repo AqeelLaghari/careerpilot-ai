@@ -134,6 +134,48 @@ def test_normal_interview_questions_are_not_filtered():
     assert iv._clean_reaction("I see, thank you.") == "I see, thank you."
 
 
+def test_greets_by_name_and_university_from_the_cv():
+    ents = {"name": "MUHAMMAD AQEEL LAGHARI",
+            "education": [{"degree_level": "Intermediate", "institution": "Adamjee College", "end_year": 2021},
+                          {"degree_level": "Bachelors", "institution": "BAHRIA UNIVERSITY KARACHI",
+                           "field": "Software Engineering", "end_year": 2027, "expected": False}]}
+    who = iv.candidate_info(ents, year=2026)
+    assert who == {"first_name": "Aqeel", "full_name": "MUHAMMAD AQEEL LAGHARI",
+                   "university": "Bahria University Karachi", "subject": "Software Engineering", "studying": True}
+    text = iv.opening_text("Data Scientist", who)
+    assert text.startswith("Hello Aqeel, and thank you for joining.")
+    assert "you're studying Software Engineering at Bahria University Karachi" in text
+    assert "what you've been learning there" in text and "who you are" not in text
+    graduate = iv.opening_text("Data Scientist", who | {"studying": False})
+    assert "you studied Software Engineering at Bahria University Karachi" in graduate
+    # nothing usable in the CV: the general greeting
+    assert iv.candidate_info({"name": "Curriculum Vitae"}) == {}
+    assert iv.opening_text("Data Scientist", {}).startswith("Hello, and thank you")
+    assert iv.candidate_info({"education": [{"institution": "NED University", "end_year": 2020}]},
+                             year=2026)["studying"] is False
+    # no years on the CV: the questionnaire decides, otherwise neutral wording
+    no_years = {"education": [{"institution": "NED University", "field": "Civil Engineering"}]}
+    assert iv.candidate_info(no_years, 2026, {"career_stage": {"value": "student"}})["studying"] is True
+    unknown = iv.candidate_info(no_years, 2026)
+    assert unknown["studying"] is None
+    assert "I can see your Civil Engineering degree at NED University on your CV." in iv.opening_text("X", unknown)
+
+
+def test_name_and_university_hidden_from_gemini(monkeypatch):
+    from app.services import privacy
+    seen = []
+    monkeypatch.setattr(iv.llm, "generate_json", lambda p, *a, **k: seen.append(p))
+    ents = {"name": "Aqeel Laghari", "education": [{"institution": "BAHRIA UNIVERSITY KARACHI", "end_year": 2027,
+                                                     "field": "Software Engineering"}]}
+    live = _live() | {"candidate": iv.candidate_info(ents, 2026), "private": privacy.terms(ents)}
+    first = iv.start(live)
+    assert "Aqeel" in first["text"] and "Bahria" in first["text"]          # spoken to the user
+    _say(live, first)
+    _answer(live, "Yes I am Aqeel and at Bahria University Karachi I learned machine learning")
+    iv.decide(live)
+    assert seen and "Aqeel" not in seen[0] and "Bahria" not in seen[0] and "[university]" in seen[0]
+
+
 def test_agenda_size_follows_the_length():
     many = QUESTIONS + [dict(QUESTIONS[2], id=f"x{i}") for i in range(12)]
     assert len(iv.build_agenda(many, 5)) == 2 + iv.TOPICS_FOR[5]

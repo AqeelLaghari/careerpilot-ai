@@ -75,6 +75,9 @@ def _process_answer(uid: str, live: dict, file_id: str, pcm: bytes, vision: dict
     audio_store.save_answer(uid, live["id"], file_id, pcm)
     path = audio_store.answer_path(uid, live["id"], file_id)
     terms = [x for t in live["agenda"] for x in (t.get("skill"), t.get("project")) if x]
+    # the candidate's own name and university, so Whisper spells them right (runs locally)
+    who = live.get("candidate") or {}
+    terms = [x for x in (who.get("full_name"), who.get("university"), who.get("subject")) if x] + terms
     try:
         r = speech.process(str(path), live["role"], terms, fast=True)
         m = dict(r["metrics"])

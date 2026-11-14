@@ -37,11 +37,83 @@ REACTIONS = ["Thank you.", "Okay, thanks for that.", "Alright.", "Got it, thank 
              "That's helpful, thank you.", "Okay."]
 
 
-def opening_text(role: str) -> str:
-    return (f"Hello, and thank you for joining. I'll be your interviewer today for the {role} position. "
-            "This will feel like a normal conversation, so just answer naturally. "
-            "To start, could you tell me a little about yourself: who you are, where you're studying "
-            "or studied, and what experience you have so far?")
+PREFIXES = {"muhammad", "mohammad", "muhammed", "mohammed", "mohd", "md", "m", "syed", "sayed", "syeda", "mr",
+            "mrs", "ms", "miss", "dr", "engr", "hafiz", "rana", "malik", "ch", "chaudhry"}
+NOT_A_NAME = {"resume", "cv", "curriculum", "vitae", "profile", "summary", "contact"}
+
+
+def _title(text: str) -> str:
+    """'BAHRIA UNIVERSITY KARACHI' -> 'Bahria University Karachi' (short acronyms like NED stay)."""
+    if not text.isupper():
+        return text
+    out = []
+    for w in text.split():
+        if w in ("OF", "AND", "THE", "FOR"):
+            out.append(w.lower())
+        elif w.isalpha() and len(w) <= 4:          # NED, IBA, FAST, NUST, UET: keep as acronyms
+            out.append(w)
+        else:
+            out.append(w.capitalize())
+    return " ".join(out)
+
+
+def candidate_info(entities: dict | None, year: int | None = None, answers: dict | None = None) -> dict:
+    """What a real interviewer would know from the CV before the call: the first name to
+    use, the university, the subject and whether they are still studying. These are used in
+    the interviewer's own (fixed) sentences and as Whisper hints; never sent to Gemini."""
+    e = entities or {}
+    out: dict = {}
+    parts = [p.strip(".,") for p in str(e.get("name") or "").split()]
+    if 1 <= len(parts) <= 5 and all(p.replace("-", "").replace("'", "").isalpha() for p in parts) \
+            and not any(p.lower() in NOT_A_NAME for p in parts):
+        names = [p for p in parts if p.lower() not in PREFIXES] or parts
+        out["first_name"] = names[0].capitalize() if names[0].isupper() or names[0].islower() else names[0]
+        out["full_name"] = " ".join(parts)
+    # the most recent university-level education with a named institution
+    order = {"PhD": 3, "Masters": 2, "Bachelors": 1}
+    edu = [x for x in e.get("education") or [] if x.get("institution")]
+    if edu:
+        best = max(edu, key=lambda x: (order.get(x.get("degree_level"), 0), x.get("end_year") or 0))
+        out["university"] = _title(str(best["institution"]).strip())[:80]
+        if best.get("field"):
+            out["subject"] = _title(str(best["field"]).strip())[:60]
+        year = year or time.localtime().tm_year
+        val = lambda k: ((answers or {}).get(k) or {}).get("value")
+        if best.get("expected") or best.get("end_year"):
+            out["studying"] = bool(best.get("expected") or best["end_year"] >= year)
+        elif val("career_stage") or val("graduation_year"):          # no years on the CV: the questionnaire
+            grad = val("graduation_year")
+            out["studying"] = val("career_stage") == "student" or (isinstance(grad, (int, float)) and grad >= year)
+        else:
+            out["studying"] = None                                    # unknown: neutral wording
+    return out
+
+
+def opening_text(role: str, who: dict | None = None) -> str:
+    """The first thing the interviewer says. With the CV details it greets the candidate by
+    name and mentions their university, like a real interviewer who has read the CV."""
+    who = who or {}
+    name = who.get("first_name")
+    uni, subject = who.get("university"), who.get("subject")
+    hello = f"Hello {name}, and thank you for joining." if name else "Hello, and thank you for joining."
+    intro = (f"{hello} I'll be your interviewer today for the {role} position. "
+             "This will feel like a normal conversation, so just answer naturally. ")
+    if not uni:
+        return intro + ("To start, could you tell me a little about yourself: who you are, where you're studying "
+                        "or studied, and what experience you have so far?")
+    what = f"{subject} at {uni}" if subject else f"at {uni}"
+    if who.get("studying") is None:                 # the CV has no years: don't guess
+        degree = f"your {subject} degree at {uni}" if subject else f"your studies at {uni}"
+        return intro + (f"I can see {degree} on your CV. To start, could you tell me a little about yourself: "
+                        "what you've learned during your studies, what interests you most, and what experience "
+                        "you have so far?")
+    if who.get("studying"):
+        return intro + (f"I can see from your CV that you're studying {what}. To start, could you tell me a "
+                        "little about yourself: what you've been learning there, what interests you most, and "
+                        "what experience you have so far?")
+    return intro + (f"I can see from your CV that you studied {what}. To start, could you tell me a little "
+                    "about yourself: what you learned during your studies, what you enjoyed most, and what "
+                    "experience you have so far?")
 
 
 BACKGROUND_QUESTION = ("Could you tell me a bit more about your studies and any work, internship or project "
@@ -252,7 +324,8 @@ def _check(out: dict | None) -> dict:
 def start(live: dict) -> dict:
     """The first thing the interviewer says."""
     _set_current(live, live["agenda"][0])
-    return {"kind": "question", "text": opening_text(live["role"]), "topic_id": "opening", "source": "rules"}
+    return {"kind": "question", "text": opening_text(live["role"], live.get("candidate")), "topic_id": "opening",
+            "source": "rules"}
 
 
 def _set_current(live: dict, topic: dict):

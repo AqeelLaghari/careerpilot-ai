@@ -119,9 +119,11 @@ class InterviewAgent:
         count = interviewer.TOPICS_FOR[minutes] + 1           # + the intro the agenda replaces
         session = self.new_session(uid, count, role)
         entities = (self.bb.read_section(uid, "resume") or {}).get("entities")
+        answers = (self.bb.read_section(uid, "questionnaire") or {}).get("answers", {})
         session.update(mode="live", minutes=minutes, agenda=interviewer.build_agenda(session["questions"], minutes),
                        turns=[], started_at=None, ended_at=None, status="ready",
-                       private=privacy.terms(entities))           # hidden from Gemini (privacy.scrub)
+                       private=privacy.terms(entities),           # hidden from Gemini (privacy.scrub)
+                       candidate=interviewer.candidate_info(entities, answers=answers))  # greeting: name + university
         self.save_live(uid, session)
         return session
 

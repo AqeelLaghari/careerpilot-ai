@@ -27,6 +27,10 @@ def terms(entities: dict | None) -> list[dict]:
     for part in re.split(r"[,/|]", loc):
         if len(part.strip()) >= 3:
             out.append(["[place]", part.strip()])
+    for edu in e.get("education") or []:
+        inst = str(edu.get("institution") or "").strip()
+        if len(inst) >= 3:
+            out.append(["[university]", inst])
     for job in e.get("experience") or []:
         company = str(job.get("company") or "").strip()
         if len(company) >= 3:
