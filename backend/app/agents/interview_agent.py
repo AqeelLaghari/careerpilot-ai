@@ -67,7 +67,9 @@ class InterviewAgent:
         """Newest first, short form."""
         return [{"id": s["id"], "created_at": s["created_at"], "role": s["role"], "level": s["level"],
                  "questions": len(s["questions"]), "status": s["status"], "source": s["source"],
-                 "mode": s.get("mode", "practice"), "minutes": s.get("minutes")}
+                 "mode": s.get("mode", "practice"), "minutes": s.get("minutes"),
+                 "score": (s.get("report") or {}).get("overall"),
+                 "answered": sum(1 for t in s.get("turns", []) if t.get("answer"))}
                 for s in reversed(self._state(uid)["sessions"])]
 
     def session(self, uid: str, session_id: str) -> dict | None:
@@ -166,6 +168,9 @@ class InterviewAgent:
             live = self.session(uid, session_id)
             if not live or live.get("mode") != "live":
                 return None
+            if "private" not in live:              # interviews from before Day 21: same privacy filter
+                from app.services import privacy
+                live["private"] = privacy.terms((self.bb.read_section(uid, "resume") or {}).get("entities"))
             self._save_report(uid, session_id, {"status": "grading", "started_at": time.time()})
             try:
                 report = interview_grader.grade(live) | {"graded_at": time.time()}

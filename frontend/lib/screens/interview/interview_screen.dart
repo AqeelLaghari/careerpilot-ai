@@ -5,6 +5,7 @@ import '../../theme.dart';
 import '../career/career_screen.dart' show EmptyHint;
 import 'answer_screen.dart';
 import 'camera_check_screen.dart';
+import 'interview_report.dart';
 import 'live_interview_screen.dart';
 import 'speech_report.dart';
 
@@ -19,6 +20,7 @@ class InterviewScreen extends StatefulWidget {
 
 class _InterviewScreenState extends State<InterviewScreen> {
   List<Map<String, dynamic>> _sessions = [];
+  List<Map<String, dynamic>> _live = []; // finished live interviews, newest first
   Map<String, dynamic>? _session;
   bool _loading = true;
   bool _generating = false;
@@ -37,12 +39,14 @@ class _InterviewScreenState extends State<InterviewScreen> {
 
   Future<void> _loadSessions() async {
     try {
-      final list = (await api.getList('/interview/sessions')).cast<Map<String, dynamic>>();
+      final all = (await api.getList('/interview/sessions')).cast<Map<String, dynamic>>();
+      final list = all.where((x) => x['mode'] != 'live').toList(); // practice sets
       Map<String, dynamic>? latest;
       if (list.isNotEmpty) latest = await api.get('/interview/sessions/${list.first['id']}');
       if (!mounted) return;
       setState(() {
         _sessions = list;
+        _live = all.where((x) => x['mode'] == 'live' && x['status'] == 'completed').toList();
         _session = latest;
         _error = null;
       });
@@ -121,8 +125,39 @@ class _InterviewScreenState extends State<InterviewScreen> {
                 label: const Text('Start interview'),
               ),
             ]),
+            if (_live.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Text('Past interviews', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              for (final x in _live.take(5))
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  leading: _scoreBadge(x['score'] as num?),
+                  title: Text('${x['role']} · ${x['minutes']} min · ${x['answered'] ?? 0} answers'),
+                  subtitle: Text(_date(x['created_at'] as num)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () async {
+                    await Navigator.of(context).push(MaterialPageRoute(
+                      builder: (ctx) => Scaffold(
+                        appBar: AppBar(title: const Text('Interview report')),
+                        body: InterviewReport(sessionId: x['id'] as String, onBack: () => Navigator.of(ctx).pop()),
+                      ),
+                    ));
+                    _loadSessions(); // the score may be ready now
+                  },
+                ),
+            ],
           ]),
         ),
+      );
+
+  Widget _scoreBadge(num? score) => CircleAvatar(
+        radius: 18,
+        backgroundColor: score == null ? Colors.grey.shade200 : AppColors.forScore(score).withValues(alpha: 0.15),
+        child: Text(score == null ? '…' : '${score.round()}',
+            style: TextStyle(
+                fontWeight: FontWeight.bold, color: score == null ? Colors.grey : AppColors.forScore(score))),
       );
 
   @override
