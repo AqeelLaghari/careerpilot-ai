@@ -29,42 +29,71 @@
   ];
   const NOSE = 1, CHEEK_A = 234, CHEEK_B = 454, BROW_MID = 168, CHIN = 152;
 
-  let stream = null, video = null, box = null, landmarker = null, loop = null;
+  // `video` is the HIDDEN video MediaPipe reads; it stays in one place for the whole session.
+  // Every camera picture on screen is its OWN <video> showing the same camera stream (like two
+  // TVs on one channel). Nothing is ever moved between screens: Chrome freezes a <video> that
+  // is moved to another place on the page (the lobby -> full-screen interview bug).
+  let stream = null, video = null, landmarker = null, loop = null;
+  const shown = new Set();                       // on-screen <video> elements
   let sample = { status: "off" };
   let frames = 0, fpsStart = 0, fps = 0, lastRun = 0;
 
-  function makeBox() {
-    if (box) return box;
-    box = document.createElement("div");
-    box.style.cssText = "width:100%;height:100%;background:#000;overflow:hidden;border-radius:12px;";
+  function keepPlaying(v) {
+    v.muted = true;
+    v.autoplay = true;
+    v.setAttribute("playsinline", "");
+    v.addEventListener("pause", () => {
+      if (stream) [0, 150, 500].forEach((ms) => setTimeout(() => {
+        if (stream && v.paused) v.play().catch(() => {});
+      }, ms));
+    });
+  }
+
+  function trackerVideo() {
+    if (video) return video;
     video = document.createElement("video");
-    video.setAttribute("playsinline", "");
-    video.muted = true;
-    video.autoplay = true;
+    keepPlaying(video);
+    // on the page (so the browser keeps decoding it) but invisible and not clickable
+    video.style.cssText = "position:fixed;left:0;top:0;width:4px;height:3px;opacity:0.01;pointer-events:none;z-index:-1;";
+    document.body.appendChild(video);
+    return video;
+  }
+
+  function attach(v) {
+    if (stream && v.srcObject !== stream) v.srcObject = stream;
+    if (stream) v.play().catch(() => {});
+  }
+
+  // A new on-screen camera picture (Flutter asks for one per camera view).
+  function container() {
+    for (const v of shown) if (!v.isConnected && v.dataset.used) shown.delete(v);   // old screens
+    const box = document.createElement("div");
+    box.style.cssText = "width:100%;height:100%;background:#000;overflow:hidden;border-radius:12px;";
+    const v = document.createElement("video");
+    keepPlaying(v);
     // mirror it, like a selfie camera; measurements are converted to the same view
-    video.style.cssText = "width:100%;height:100%;object-fit:cover;transform:scaleX(-1);";
-    box.appendChild(video);
-    // Chrome PAUSES a video when it is moved to another place on the page (Flutter does this
-    // when the screen changes, e.g. preview -> full-screen interview). Keep it playing.
-    video.addEventListener("pause", () => { if (stream) resume(); });
+    v.style.cssText = "width:100%;height:100%;object-fit:cover;transform:scaleX(-1);";
+    box.appendChild(v);
+    shown.add(v);
+    // start playing once Flutter has put it on the page
+    attach(v);
+    let tries = 0;
+    const wait = setInterval(() => {
+      if (v.isConnected) { v.dataset.used = "1"; attach(v); clearInterval(wait); }
+      else if (++tries > 50) clearInterval(wait);              // 10 s
+    }, 200);
     return box;
   }
 
-  function resume() {
-    // try now and again shortly after: the element may still be moving between parents
-    [0, 100, 400].forEach((ms) => setTimeout(() => {
-      if (stream && video && video.paused) video.play().catch(() => {});
-    }, ms));
-  }
-
   async function start() {
-    makeBox();
+    trackerVideo();
     if (stream) return "ok";
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" }, audio: false,
       });
-      video.srcObject = stream;
+      attach(video);
+      shown.forEach(attach);
       await video.play().catch(() => {});
       // If the camera is unplugged or blocked later, say so
       stream.getVideoTracks()[0].addEventListener("ended", () => { sample = { status: "camera_ended" }; });
@@ -208,13 +237,14 @@
     if (stream) stream.getTracks().forEach((t) => t.stop());
     stream = null;
     if (video) video.srcObject = null;
+    shown.forEach((v) => { v.srcObject = null; });
+    shown.clear();
     sample = { status: "off" };
   }
 
   window.cpCamera = {
-    start, track, stop,
+    start, track, stop, container,
     calibrate: () => { base = null; calibrate(1500); },
-    container: () => { const b = makeBox(); resume(); return b; },
     latest: () => JSON.stringify(sample),
   };
 })();

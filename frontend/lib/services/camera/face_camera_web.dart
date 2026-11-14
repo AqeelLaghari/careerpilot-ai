@@ -51,8 +51,8 @@ class FaceCamera {
   /// The next 1.5 s of looking at the screen become the new "straight ahead".
   void calibrate() => _cp?.calibrate();
 
-  /// The live camera picture. The same video element is reused, so the camera keeps
-  /// running when the screen rebuilds.
+  /// The live camera picture. Each view gets its own <video> showing the same camera
+  /// stream (moving one video between screens freezes it in Chrome).
   Widget preview() {
     if (!_registered) {
       ui_web.platformViewRegistry.registerViewFactory(_viewType, (int id) => _cp!.container());
