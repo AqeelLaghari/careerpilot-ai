@@ -17,7 +17,7 @@ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0
 google-genai==3.*
 python-dateutil==2.*
 pandas==2.*
-sentence-transformers>=3,<6
+sentence-transformers>=6.3.0,<7
 faiss-cpu>=1.8
 networkx>=3
 faster-whisper==1.2.*       # Day 17: speech-to-text (Whisper on CPU, int8)
