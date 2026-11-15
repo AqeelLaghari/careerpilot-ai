@@ -1,0 +1,67 @@
+# Builds the backend Docker image and smoke-tests it: the container must start and answer
+# /health, and the debug endpoints must not exist in production. Runs when backend files change.
+name: Docker
+
+on:
+  push:
+    branches: [main]
+    paths: ["backend/**", ".github/workflows/docker.yml"]
+  pull_request:
+    paths: ["backend/**", ".github/workflows/docker.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build + smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          load: true             # keep it on the runner for the smoke test (not pushed anywhere)
+          tags: careerpilot-backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Start container
+        run: docker run -d --name api -p 7860:7860 careerpilot-backend:ci
+
+      - name: Wait for /health
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fs http://localhost:7860/health > health.json; then
+              echo "Up after ${i}x2 s"; cat health.json; exit 0
+            fi
+            sleep 2
+          done
+          echo "Container did not become healthy"; docker logs api; exit 1
+
+      - name: Check production settings
+        run: |
+          grep -q '"environment":"production"' health.json
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:7860/debug/state/someone)
+          echo "debug endpoint answered HTTP $code"
+          test "$code" = "404"
+
+      - name: Image size
+        if: always()
+        run: |
+          docker image ls careerpilot-backend:ci --format '{{.Size}}' \
+            | awk '{print "### Docker image size: " $1}' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Container logs
+        if: always()
+        run: docker logs api 2>&1 | tail -n 60

@@ -1,0 +1,13 @@
+# Secret scanning rules (used by CI and pre-commit). Uses gitleaks' standard rules, plus
+# one documented exception.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known public values"
+paths = [
+  # Firebase web/Android client config. Firebase API keys identify the project and are meant
+  # to be shipped inside the app; access is protected by Firebase Auth and Firestore rules
+  # (all client access to Firestore is denied: only the backend uses it).
+  '''frontend/lib/firebase_options\.dart''',
+]

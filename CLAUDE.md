@@ -20,4 +20,5 @@ The plan lives in `ROADMAP.md`. Check which day is next and update the checkboxe
 
 ## Conventions
 - Secrets live in `backend/.env` and `backend/firebase-key.json` (both git-ignored). Never print or commit them.
-- Commit after every working step. Push to GitHub (`origin main`) at the end of each roadmap day; the user approved this. Run `git pull` first if teammates may have pushed.
+- Commit after every working step. Since Day 22 (DevOps): work on a branch (`feature/…`, `fix/…`, `devops/…`), push the branch, open a pull request, merge into `main` only when CI is green (see CONTRIBUTING.md). Run `git pull` on `main` first if teammates may have pushed.
+- Pre-commit hooks run on every commit (ruff, dart format, gitleaks, secret-file block); keep `ruff check` and `dart format` clean. The repo is public.
