@@ -88,7 +88,8 @@ def test_summary_tiles_chart_and_activity():
     assert s["tiles"]["ats"] == {"score": 72, "grade": "Good", "change": 17, "top_fix": "Add numbers to your bullets."}
     assert s["tiles"]["match"] == {"role": "Data Analyst", "score": 64, "basis": "target"}
     assert s["tiles"]["roadmap"]["percent"] == 33 and s["tiles"]["roadmap"]["next_task"]["title"] == "SQL part 2"
-    assert s["tiles"]["interviews"] == {"count": 2, "last": 71, "best": 71, "last_role": "Data Analyst"}
+    assert s["tiles"]["interviews"] == {"count": 2, "average": 64, "last": 71, "best": 71,
+                                         "last_role": "Data Analyst"}
     assert [p["score"] for p in s["ats_history"]] == [55, 72]
     times = [a["at"] for a in s["activity"]]
     assert times == sorted(times, reverse=True) and len(s["activity"]) <= dash.ACTIVITY_LIMIT
@@ -185,3 +186,8 @@ def test_dashboard_and_bullet_endpoints(client):
     r = c.post("/resume/rewrite", json={"bullet": "Worked on the shop website"})
     assert r.status_code == 200 and r.json()["versions"] == ["Developed the shop website"]
     assert c.post("/resume/rewrite", json={"bullet": "hi"}).status_code == 422
+
+
+def test_interview_tile_ignores_zero_scores():
+    tile = dash._interview_tile(_interviews(60, 0, 80))
+    assert tile["count"] == 2 and tile["average"] == 70 and tile["last"] == 80

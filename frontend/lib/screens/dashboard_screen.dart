@@ -517,22 +517,22 @@ class _InterviewTile extends StatelessWidget {
         onTap: onTap,
       );
     }
-    final last = t['last'] as num;
+    final avg = (t['average'] ?? t['last']) as num;
     return _Tile(
       icon: Icons.videocam_outlined,
-      label: 'Last interview score',
-      value: '$last',
+      label: 'Average interview score',
+      value: '$avg',
       unit: '/100',
       badge: _Badge(
-        last >= 70
+        avg >= 70
             ? 'Strong'
-            : last >= 50
+            : avg >= 50
             ? 'Fair'
             : 'Keep practising',
-        AppColors.forScore(last),
+        AppColors.forScore(avg),
       ),
-      progress: last / 100,
-      caption: '$count interview${count == 1 ? '' : 's'} · best ${t['best']}/100',
+      progress: avg / 100,
+      caption: '$count interview${count == 1 ? '' : 's'} · best ${t['best']} · last ${t['last']}',
       onTap: onTap,
     );
   }

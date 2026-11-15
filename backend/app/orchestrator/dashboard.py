@@ -50,13 +50,15 @@ def _roadmap_tile(plan: dict | None, now: float) -> dict | None:
 
 
 def _graded(interviews: dict) -> list[dict]:
-    return [s for s in interviews.get("sessions", []) if (s.get("report") or {}).get("overall") is not None]
+    """Interviews with a real score (0 means nothing was actually answered, so it is left out)."""
+    return [s for s in interviews.get("sessions", []) if ((s.get("report") or {}).get("overall") or 0) > 0]
 
 
 def _interview_tile(interviews: dict) -> dict:
     graded = _graded(interviews)
     scores = [s["report"]["overall"] for s in graded]
-    return {"count": len(graded), "last": scores[-1] if scores else None, "best": max(scores) if scores else None,
+    return {"count": len(graded), "average": round(sum(scores) / len(scores)) if scores else None,
+            "last": scores[-1] if scores else None, "best": max(scores) if scores else None,
             "last_role": graded[-1].get("role") if graded else None}
 
 
