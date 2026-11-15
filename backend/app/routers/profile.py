@@ -78,8 +78,10 @@ def get_photo(uid: str = Depends(current_uid)):
     f = blackboard.read_file(uid, "photo")
     if not f:
         raise HTTPException(404, "No photo")
+    # no-store: every account uses this same URL, so a cached copy would show the photo of
+    # whoever was logged in before (the app loads it once per login, ~30 KB, so no cache is needed)
     return Response(content=bytes(f["data"]), media_type=f.get("type") or "image/jpeg",
-                    headers={"Cache-Control": "private, max-age=3600"})
+                    headers={"Cache-Control": "no-store"})
 
 
 @router.delete("/photo")

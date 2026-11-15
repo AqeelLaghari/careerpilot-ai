@@ -110,6 +110,7 @@ def test_photo_api(client):
     assert r.status_code == 200 and r.json()["has_photo"]
     got = c.get("/profile/photo")
     assert got.content == JPEG and got.headers["content-type"] == "image/jpeg"
+    assert got.headers["cache-control"] == "no-store"      # never show another account's cached photo
     assert c.get("/profile").json()["has_photo"] is True
     assert c.put("/profile/photo", json={"image": "not base64!"}).status_code == 422
     assert c.put("/profile/photo", json={"image": base64.b64encode(b"GIF89a").decode()}).status_code == 422
