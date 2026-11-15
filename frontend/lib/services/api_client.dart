@@ -45,6 +45,19 @@ class ApiClient {
     return jsonDecode(res.body) as List<dynamic>;
   }
 
+  Future<Map<String, dynamic>> put(String path, Map<String, dynamic> body) async {
+    final res = await _send(http.put(Uri.parse('$apiBaseUrl$path'), headers: await _headers(), body: jsonEncode(body)));
+    return _decode(res);
+  }
+
+  /// Raw bytes (e.g. the profile photo); null on 404.
+  Future<List<int>?> getBytes(String path) async {
+    final res = await _send(http.get(Uri.parse('$apiBaseUrl$path'), headers: await _headers()));
+    if (res.statusCode == 404) return null;
+    if (res.statusCode >= 400) _decode(res);
+    return res.bodyBytes;
+  }
+
   Future<Map<String, dynamic>> delete(String path) async {
     final res = await _send(http.delete(Uri.parse('$apiBaseUrl$path'), headers: await _headers()));
     return _decode(res);
@@ -70,10 +83,31 @@ class ApiClient {
   Map<String, dynamic> _decode(http.Response res) {
     final data = res.body.isEmpty ? <String, dynamic>{} : jsonDecode(res.body);
     if (res.statusCode >= 400) {
-      throw Exception('API error ${res.statusCode}: ${data is Map ? data['detail'] : data}');
+      final detail = data is Map ? data['detail'] : data;
+      if (detail is Map) {
+        // {"message": ..., "errors": {"field": "what is wrong"}} (e.g. the profile form)
+        throw ApiException(
+          res.statusCode,
+          '${detail['message'] ?? 'Request failed'}',
+          (detail['errors'] as Map?)?.map((k, v) => MapEntry('$k', '$v')) ?? const {},
+        );
+      }
+      throw ApiException(res.statusCode, '$detail');
     }
     return data as Map<String, dynamic>;
   }
+}
+
+/// An error answer from the backend. [fieldErrors] says what is wrong with each form field.
+class ApiException implements Exception {
+  ApiException(this.statusCode, this.message, [this.fieldErrors = const {}]);
+  final int statusCode;
+  final String message;
+  final Map<String, String> fieldErrors;
+
+  // Older screens show '$e' and strip the "API error 404: " prefix, so keep that format.
+  @override
+  String toString() => 'API error $statusCode: $message';
 }
 
 final api = ApiClient();

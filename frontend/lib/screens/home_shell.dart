@@ -1,6 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../widgets/account_menu.dart';
 import 'career/career_screen.dart';
 import 'dashboard_screen.dart';
 import 'interview/interview_screen.dart';
@@ -23,16 +23,7 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('CareerPilot AI'),
-        actions: [
-          IconButton(
-            tooltip: 'Log out',
-            icon: const Icon(Icons.logout),
-            onPressed: () => FirebaseAuth.instance.signOut(),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('CareerPilot AI'), actions: const [AccountMenu(), SizedBox(width: 8)]),
       body: _pages[_tab],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,
