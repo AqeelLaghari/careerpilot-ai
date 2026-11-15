@@ -336,7 +336,7 @@ class _JobCard extends StatelessWidget {
                   for (final s in matched)
                     Chip(
                       label: Text(s, style: const TextStyle(fontSize: 12)),
-                      avatar: const Icon(Icons.check, size: 14, color: AppColors.good),
+                      avatar: Icon(Icons.check, size: 14, color: AppColors.good),
                       visualDensity: VisualDensity.compact,
                     ),
                   for (final s in missing)

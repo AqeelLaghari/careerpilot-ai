@@ -21,16 +21,71 @@ Future<void> main() async {
   runApp(const CareerPilotApp());
 }
 
-class CareerPilotApp extends StatelessWidget {
+/// The app root. Light or dark comes from the user's setting (Day 24); before login it is
+/// always light. "System" follows the computer's / phone's own dark-mode switch.
+class CareerPilotApp extends StatefulWidget {
   const CareerPilotApp({super.key});
 
   @override
+  State<CareerPilotApp> createState() => _CareerPilotAppState();
+}
+
+class _CareerPilotAppState extends State<CareerPilotApp> with WidgetsBindingObserver {
+  bool? _wasDark;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() => setState(() {}); // the system switched light/dark
+
+  bool get _dark {
+    if (!profileStore.loaded) return false;
+    return switch (profileStore.themeMode) {
+      ThemeMode.dark => true,
+      ThemeMode.light => false,
+      ThemeMode.system => WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark,
+    };
+  }
+
+  /// Screens read their colours from AppColors, which only change on a rebuild, so after a
+  /// light/dark switch every widget is rebuilt once (screens keep their state).
+  void _repaintAll() {
+    void mark(Element e) {
+      e.markNeedsBuild();
+      e.visitChildren(mark);
+    }
+
+    (context as Element).visitChildren(mark);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'CareerPilot AI',
-      debugShowCheckedModeBanner: false,
-      theme: buildTheme(),
-      home: const AuthGate(),
+    return ListenableBuilder(
+      listenable: profileStore,
+      builder: (context, _) {
+        final dark = _dark;
+        if (_wasDark != null && _wasDark != dark) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => _repaintAll());
+        }
+        _wasDark = dark;
+        return MaterialApp(
+          title: 'CareerPilot AI',
+          debugShowCheckedModeBanner: false,
+          theme: buildTheme(dark: dark),
+          themeAnimationDuration: Duration.zero,
+          home: const AuthGate(),
+        );
+      },
     );
   }
 }

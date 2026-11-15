@@ -104,7 +104,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                     Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(color: AppColors.brand.withValues(alpha: 0.08), shape: BoxShape.circle),
-                      child: const Icon(Icons.mark_email_unread_outlined, size: 44, color: AppColors.brand),
+                      child: Icon(Icons.mark_email_unread_outlined, size: 44, color: AppColors.brand),
                     ),
                     const SizedBox(height: 20),
                     Text(

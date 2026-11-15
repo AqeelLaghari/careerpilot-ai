@@ -66,7 +66,7 @@ class QuestionnaireBanner extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          const Icon(Icons.quiz_outlined, color: AppColors.brand, size: 36),
+          Icon(Icons.quiz_outlined, color: AppColors.brand, size: 36),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -169,9 +169,9 @@ class CareerMatchTile extends StatelessWidget {
           spacing: 6,
           children: [
             Text('${match['postings_analysed']} postings', style: const TextStyle(fontSize: 12)),
-            if (isTarget) const Text('· your target', style: TextStyle(fontSize: 12, color: AppColors.good)),
+            if (isTarget) Text('· your target', style: TextStyle(fontSize: 12, color: AppColors.good)),
             if (match['interest_match'] == true)
-              const Text('· matches your interests', style: TextStyle(fontSize: 12, color: AppColors.brand)),
+              Text('· matches your interests', style: TextStyle(fontSize: 12, color: AppColors.brand)),
           ],
         ),
         childrenPadding: const EdgeInsets.only(left: 8, bottom: 12),
@@ -365,9 +365,8 @@ class RoadmapSummaryCard extends StatelessWidget {
                   ),
                   Expanded(child: Text(sk['name'] as String)),
                   if (sk['kind'] == 'foundation')
-                    const Text('foundation ', style: TextStyle(fontSize: 11, color: AppColors.brand)),
-                  if (sk['kind'] == 'improve')
-                    const Text('improve ', style: TextStyle(fontSize: 11, color: AppColors.warn)),
+                    Text('foundation ', style: TextStyle(fontSize: 11, color: AppColors.brand)),
+                  if (sk['kind'] == 'improve') Text('improve ', style: TextStyle(fontSize: 11, color: AppColors.warn)),
                   Text('${sk['hours']} h', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 ],
               ),
@@ -408,7 +407,7 @@ class RoadmapSummaryCard extends StatelessWidget {
     children: [
       Text(
         value,
-        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.brand),
+        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.brand),
       ),
       Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
     ],
@@ -484,7 +483,7 @@ class _JobDescriptionCardState extends State<JobDescriptionCard> {
               ),
             ],
           ),
-          if (_error != null) Text(_error!, style: const TextStyle(color: AppColors.bad)),
+          if (_error != null) Text(_error!, style: TextStyle(color: AppColors.bad)),
           if (r != null) ...[
             const Divider(height: 24),
             Row(

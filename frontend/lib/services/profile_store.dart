@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:image/image.dart' as img;
 
 import 'api_client.dart';
@@ -37,9 +38,43 @@ class ProfileStore extends ChangeNotifier {
     return (words.first[0] + (words.length > 1 ? words.last[0] : '')).toUpperCase();
   }
 
-  /// "BS Software Engineering · Bahria University"
+  /// Degree and university, e.g. "BS Software Engineering · NED University"
   String get subtitle =>
       [profile['degree'], profile['university']].whereType<String>().where((s) => s.isNotEmpty).join(' · ');
+
+  // ---- app settings (Day 24), saved in the account so they follow the user ----
+  static const defaultSettings = {'theme': 'system', 'voice': 'female', 'speech_rate': 'normal', 'language': 'en'};
+
+  Map<String, dynamic> get settings => {...defaultSettings, ...?(profile['settings'] as Map?)?.cast<String, dynamic>()};
+
+  String setting(String name) => '${settings[name]}';
+
+  ThemeMode get themeMode => switch (setting('theme')) {
+    'dark' => ThemeMode.dark,
+    'light' => ThemeMode.light,
+    _ => ThemeMode.system,
+  };
+
+  /// Change one setting: shown at once, then saved; put back if saving fails.
+  Future<void> saveSetting(String name, String value) async {
+    final before = settings;
+    profile = {
+      ...profile,
+      'settings': {...before, name: value},
+    };
+    notifyListeners();
+    try {
+      final r = await api.put('/profile', {
+        'settings': {name: value},
+      });
+      profile = (r['profile'] as Map).cast<String, dynamic>();
+    } catch (_) {
+      profile = {...profile, 'settings': before};
+      notifyListeners();
+      rethrow;
+    }
+    notifyListeners();
+  }
 
   /// Google's photo, used when no photo was uploaded.
   String? get googlePhotoUrl => FirebaseAuth.instance.currentUser?.photoURL;

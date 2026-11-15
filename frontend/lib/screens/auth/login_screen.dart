@@ -272,10 +272,10 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.error_outline, color: AppColors.bad, size: 20),
+                Icon(Icons.error_outline, color: AppColors.bad, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(_error!, style: const TextStyle(color: AppColors.bad)),
+                  child: Text(_error!, style: TextStyle(color: AppColors.bad)),
                 ),
               ],
             ),
@@ -347,7 +347,7 @@ class PasswordChecklist extends StatelessWidget {
   const PasswordChecklist({super.key, required this.password, required this.name, required this.email});
   final String password, name, email;
 
-  static const _colours = [Colors.grey, AppColors.bad, AppColors.warn, Color(0xFF65A30D), AppColors.good];
+  static final _colours = [Colors.grey, AppColors.bad, AppColors.warn, Color(0xFF65A30D), AppColors.good];
 
   @override
   Widget build(BuildContext context) {
@@ -416,7 +416,7 @@ class _BrandPanel extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.brand, AppColors.brandMid, AppColors.brandLight],
+          colors: [AppColors.navy, AppColors.navyMid, AppColors.navyLight],
         ),
       ),
       child: Stack(

@@ -374,7 +374,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                         label: Text('${i + 1}'),
                         selected: i == _index,
                         avatar: _saved.containsKey(_questions[i]['id'])
-                            ? const Icon(Icons.check_circle, size: 16, color: AppColors.good)
+                            ? Icon(Icons.check_circle, size: 16, color: AppColors.good)
                             : null,
                         onSelected: (recording || busy) ? null : (_) => _go(i),
                       ),
@@ -415,7 +415,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                   ],
                 ),
                 if (_speaking)
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.only(top: 8),
                     child: Row(
                       children: [
@@ -429,7 +429,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                 if (recording) ...[
                   Row(
                     children: [
-                      const Icon(Icons.fiber_manual_record, color: AppColors.bad, size: 18),
+                      Icon(Icons.fiber_manual_record, color: AppColors.bad, size: 18),
                       const SizedBox(width: 6),
                       Text('Recording ${_mmss(_elapsed)}', style: const TextStyle(fontWeight: FontWeight.w600)),
                       const Spacer(),
@@ -463,7 +463,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                 else if (!recording && _results[_q['id']]?['error'] != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: Text(_results[_q['id']]!['error'] as String, style: const TextStyle(color: AppColors.warn)),
+                    child: Text(_results[_q['id']]!['error'] as String, style: TextStyle(color: AppColors.warn)),
                   )
                 else if (!recording && _results[_q['id']] != null)
                   Card(
@@ -482,7 +482,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Row(
                       children: [
-                        const Icon(Icons.check_circle, color: AppColors.good),
+                        Icon(Icons.check_circle, color: AppColors.good),
                         const SizedBox(width: 6),
                         Text(
                           savedSecs > 0
@@ -495,7 +495,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                 if (_message != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: Text(_message!, style: const TextStyle(color: AppColors.warn)),
+                    child: Text(_message!, style: TextStyle(color: AppColors.warn)),
                   ),
                 Wrap(
                   spacing: 12,

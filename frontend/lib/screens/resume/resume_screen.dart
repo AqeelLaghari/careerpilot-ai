@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/api_client.dart';
 import '../../theme.dart';
+import 'bullet_coach.dart';
 import 'resume_widgets.dart';
 
 /// Resume Intelligence screen: upload a PDF → ATS score, fixes, extracted profile.
@@ -109,7 +110,7 @@ class _ResumeScreenState extends State<ResumeScreen> {
     decoration: BoxDecoration(color: AppColors.bad.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12)),
     child: Row(
       children: [
-        const Icon(Icons.error_outline, color: AppColors.bad),
+        Icon(Icons.error_outline, color: AppColors.bad),
         const SizedBox(width: 8),
         Expanded(child: Text(_error!)),
       ],
@@ -134,6 +135,7 @@ class _ResumeScreenState extends State<ResumeScreen> {
                 children: [for (final f in (ats['top_fixes'] as List).cast<Map<String, dynamic>>()) FixTile(fix: f)],
               ),
       ),
+      BulletCoach(key: ValueKey(r['uploaded_at'])), // reloads after a new upload
       SectionCard(
         title: 'Score breakdown',
         icon: Icons.analytics_outlined,

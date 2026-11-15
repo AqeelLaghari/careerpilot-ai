@@ -132,7 +132,7 @@ class AboutYouSection extends StatelessWidget {
             if (e['status'] != null)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
-                child: Text(e['status']!, style: const TextStyle(color: AppColors.bad, fontSize: 12)),
+                child: Text(e['status']!, style: TextStyle(color: AppColors.bad, fontSize: 12)),
               ),
             const SizedBox(height: 18),
             Autocomplete<String>(
@@ -362,7 +362,7 @@ class _PhotoPickerState extends State<PhotoPicker> {
               if (profileStore.photo != null)
                 TextButton(
                   onPressed: _busy ? null : profileStore.removePhoto,
-                  child: const Text('Remove', style: TextStyle(color: AppColors.bad)),
+                  child: Text('Remove', style: TextStyle(color: AppColors.bad)),
                 ),
             ],
           ),

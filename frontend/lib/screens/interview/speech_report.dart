@@ -28,7 +28,7 @@ class SpeechReport extends StatelessWidget {
         TextSpan(
           text: '$word ',
           style: marked
-              ? const TextStyle(color: AppColors.warn, fontWeight: FontWeight.bold, backgroundColor: Color(0x22F59E0B))
+              ? TextStyle(color: AppColors.warn, fontWeight: FontWeight.bold, backgroundColor: Color(0x22F59E0B))
               : null,
         ),
       );
@@ -70,7 +70,7 @@ class SpeechReport extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.tips_and_updates_outlined, size: 16, color: AppColors.brand),
+              Icon(Icons.tips_and_updates_outlined, size: 16, color: AppColors.brand),
               const SizedBox(width: 6),
               Expanded(child: Text(t)),
             ],
@@ -145,7 +145,7 @@ class SpeechReport extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.tips_and_updates_outlined, size: 16, color: AppColors.brand),
+                  Icon(Icons.tips_and_updates_outlined, size: 16, color: AppColors.brand),
                   const SizedBox(width: 6),
                   Expanded(child: Text(t)),
                 ],

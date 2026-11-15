@@ -89,7 +89,7 @@ class _CameraCheckScreenState extends State<CameraCheckScreen> {
                         : _camera.preview(),
                   ),
                   const SizedBox(height: 12),
-                  if (_problem != null && _started) Text(_problem!, style: const TextStyle(color: AppColors.warn)),
+                  if (_problem != null && _started) Text(_problem!, style: TextStyle(color: AppColors.warn)),
                   if (_started) _status(),
                 ],
               ),
@@ -112,10 +112,10 @@ class _CameraCheckScreenState extends State<CameraCheckScreen> {
       );
     }
     if (s.status == 'camera_ended') {
-      return const Text('The camera stopped. Check that it is connected.', style: TextStyle(color: AppColors.bad));
+      return Text('The camera stopped. Check that it is connected.', style: TextStyle(color: AppColors.bad));
     }
     if (s.status == 'error') {
-      return Text('Face tracking error: ${s.error}', style: const TextStyle(color: AppColors.bad));
+      return Text('Face tracking error: ${s.error}', style: TextStyle(color: AppColors.bad));
     }
     final good = s.lookingAtScreen;
     return Column(

@@ -308,7 +308,7 @@ class _AnswerCard extends StatelessWidget {
   final Map<String, dynamic> turn;
   final Map<String, dynamic> grade;
 
-  static const _verdicts = {
+  static final _verdicts = {
     'correct': ('Correct', AppColors.good),
     'partly_correct': ('Partly correct', AppColors.warn),
     'incorrect': ('Has mistakes', AppColors.bad),
@@ -386,7 +386,7 @@ class _AnswerCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('You said: ${f['said']}', style: const TextStyle(color: AppColors.bad)),
+                    Text('You said: ${f['said']}', style: TextStyle(color: AppColors.bad)),
                     const SizedBox(height: 4),
                     Text('Correct: ${f['correct']}', style: const TextStyle(fontWeight: FontWeight.w600)),
                   ],
@@ -417,7 +417,7 @@ class _AnswerCard extends StatelessWidget {
                 data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                 child: ExpansionTile(
                   tilePadding: EdgeInsets.zero,
-                  title: const Text('See a stronger answer', style: TextStyle(color: AppColors.brand)),
+                  title: Text('See a stronger answer', style: TextStyle(color: AppColors.brand)),
                   childrenPadding: const EdgeInsets.only(bottom: 8),
                   children: [
                     Container(
@@ -437,7 +437,7 @@ class _AnswerCard extends StatelessWidget {
                 data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                 child: ExpansionTile(
                   tilePadding: EdgeInsets.zero,
-                  title: const Text('How you spoke and eye contact', style: TextStyle(color: AppColors.brand)),
+                  title: Text('How you spoke and eye contact', style: TextStyle(color: AppColors.brand)),
                   children: [
                     SpeechReport(
                       transcript: transcript,
