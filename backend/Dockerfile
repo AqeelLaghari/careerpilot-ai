@@ -7,7 +7,7 @@
 # Secrets (Gemini key, Firebase key) are NEVER copied into the image: they are passed in
 # at run time as environment variables / a mounted file (see docker-compose.yml).
 
-FROM python:3.11-slim
+FROM python:3.15-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
