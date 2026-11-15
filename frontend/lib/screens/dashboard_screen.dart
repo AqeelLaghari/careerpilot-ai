@@ -142,11 +142,11 @@ class _Content extends StatelessWidget {
     final chart = _Panel(
       title: 'ATS score history',
       subtitle: 'Your CV score each time you uploaded it',
-      child: _AtsChart(points: history),
+      child: _AtsChart(points: history, height: wideBottom ? 300 : 220),
     );
     final recent = _Panel(
       title: 'Recent activity',
-      child: _Activity(items: activity),
+      child: _Activity(items: activity.take(_activityShown).toList()),
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -539,6 +539,9 @@ class _InterviewTile extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------- panels --
+/// Recent activity rows on the dashboard: 5 fill about the same height as the chart next to them.
+const _activityShown = 5;
+
 class _Panel extends StatelessWidget {
   const _Panel({required this.title, required this.child, this.subtitle});
   final String title;
@@ -667,8 +670,9 @@ class _Activity extends StatelessWidget {
 /// One line: the ATS score of each upload (evenly spaced, oldest left). Hover or tap a
 /// point for its score and date.
 class _AtsChart extends StatefulWidget {
-  const _AtsChart({required this.points});
+  const _AtsChart({required this.points, this.height = 220});
   final List<Map> points;
+  final double height;
 
   @override
   State<_AtsChart> createState() => _AtsChartState();
@@ -699,10 +703,10 @@ class _AtsChartState extends State<_AtsChart> {
       );
     }
     return SizedBox(
-      height: 220,
+      height: widget.height,
       child: LayoutBuilder(
         builder: (context, box) {
-          final size = Size(box.maxWidth, 220);
+          final size = Size(box.maxWidth, widget.height);
           void pick(Offset p) => setState(() => _hover = _nearest(p, size));
           return MouseRegion(
             onHover: (e) => pick(e.localPosition),
