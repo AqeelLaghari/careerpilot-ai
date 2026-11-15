@@ -12,7 +12,7 @@ from collections import Counter
 from app.orchestrator.blackboard import Blackboard
 from app.services import career_matcher, market_model
 from app.services import interview_questions as iq
-from app.services.profile import build_profile
+from app.services.profile import build_profile, merged_answers
 
 AGENT_NAME = "interview_agent"
 KEEP_SESSIONS = 10          # older sessions are dropped (one Firestore doc per user: max 1 MB)
@@ -48,7 +48,7 @@ class InterviewAgent:
         if not resume:
             raise NoResumeError("Upload a resume first")
         profile, answers = build_profile(resume["entities"], self.bb.read_section(uid, "questionnaire"),
-                                         self.bb.read_section(uid, "roadmap"))
+                                         self.bb.read_section(uid, "roadmap"), self.bb.read_section(uid, "profile"))
         role = self._role(uid, profile, role) or (profile.get("headline") or "professional")
         coverage = market_model.keyword_coverage([s["name"] for s in profile.get("skills", [])], role)
         state = self._state(uid)
@@ -119,11 +119,12 @@ class InterviewAgent:
         count = interviewer.TOPICS_FOR[minutes] + 1           # + the intro the agenda replaces
         session = self.new_session(uid, count, role)
         entities = (self.bb.read_section(uid, "resume") or {}).get("entities")
-        answers = (self.bb.read_section(uid, "questionnaire") or {}).get("answers", {})
+        account = self.bb.read_section(uid, "profile")
+        answers = merged_answers(self.bb.read_section(uid, "questionnaire"), account)
         session.update(mode="live", minutes=minutes, agenda=interviewer.build_agenda(session["questions"], minutes),
                        turns=[], started_at=None, ended_at=None, status="ready",
-                       private=privacy.terms(entities),           # hidden from Gemini (privacy.scrub)
-                       candidate=interviewer.candidate_info(entities, answers=answers))  # greeting: name + university
+                       private=privacy.terms(entities, account),  # hidden from Gemini (privacy.scrub)
+                       candidate=interviewer.candidate_info(entities, answers=answers, account=account))
         self.save_live(uid, session)
         return session
 
@@ -172,7 +173,8 @@ class InterviewAgent:
                 return None
             if "private" not in live:              # interviews from before Day 21: same privacy filter
                 from app.services import privacy
-                live["private"] = privacy.terms((self.bb.read_section(uid, "resume") or {}).get("entities"))
+                live["private"] = privacy.terms((self.bb.read_section(uid, "resume") or {}).get("entities"),
+                                                self.bb.read_section(uid, "profile"))
             self._save_report(uid, session_id, {"status": "grading", "started_at": time.time()})
             try:
                 report = interview_grader.grade(live) | {"graded_at": time.time()}

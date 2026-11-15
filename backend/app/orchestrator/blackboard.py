@@ -22,6 +22,7 @@ class Blackboard:
     def __init__(self, db=None):
         self._db = db          # Firestore client, or None for memory-only
         self._cache: dict[str, dict] = {}
+        self._files: dict[str, dict | None] = {}
         self._lock = threading.Lock()
 
     @property
@@ -68,3 +69,33 @@ class Blackboard:
                 merge=[section, f"_meta.{section}", "_version"],
             )
         return self.read(uid)
+
+    # ---- small files (Day 23: the profile photo) ----
+    # Kept OUT of the main user document (Firestore limit: 1 MB per document) in
+    # users/{uid}/files/{name}. Firebase Storage would need a paid plan.
+    FILES = ("photo",)
+
+    def read_file(self, uid: str, name: str) -> dict | None:
+        """{"data": bytes, "type": "image/jpeg", "updated_at": ...} or None."""
+        key = f"{uid}/{name}"
+        with self._lock:
+            if key in self._files:
+                return self._files[key]
+        doc = None
+        if self._db is not None:
+            snap = self._doc(uid).collection("files").document(name).get()
+            doc = snap.to_dict() if snap.exists else None
+        with self._lock:
+            self._files[key] = doc
+        return doc
+
+    def write_file(self, uid: str, name: str, data: bytes | None, kind: str = "") -> None:
+        """Store (or with data=None delete) one small file."""
+        if name not in self.FILES:
+            raise ValueError(f"Unknown file '{name}'")
+        doc = None if data is None else {"data": data, "type": kind, "updated_at": time.time()}
+        if self._db is not None:
+            ref = self._doc(uid).collection("files").document(name)
+            ref.delete() if doc is None else ref.set(doc)
+        with self._lock:
+            self._files[f"{uid}/{name}"] = doc

@@ -14,12 +14,21 @@ NOTE = ("Words in [square brackets] were removed for privacy. Never say or guess
         "'your company', 'your university' or just 'you' instead.")
 
 
-def terms(entities: dict | None) -> list[dict]:
-    """[{"p": placeholder, "w": word}, ...] from the CV: name parts, location, company names.
-    (Dicts, not pairs: Firestore can't store lists inside lists.)"""
-    e = entities or {}
+def terms(entities: dict | None, account: dict | None = None) -> list[dict]:
+    """[{"p": placeholder, "w": word}, ...] from the CV and the account profile: name parts,
+    location, universities, company names. (Dicts, not pairs: Firestore can't store lists
+    inside lists.)"""
+    e = dict(entities or {})
+    a = account or {}
+    e["education"] = list(e.get("education") or []) + ([{"institution": a["university"]}] if a.get("university") else [])
     out = []
-    for part in re.split(r"\s+", str(e.get("name") or "")):
+    if a.get("city"):
+        out.append(["[place]", a["city"]])
+    for key in ("linkedin", "github"):
+        if a.get(key):
+            out.append(["[link]", a[key]])
+            out.append(["[link]", a[key].split("://", 1)[-1]])
+    for part in re.split(r"\s+", f"{e.get('name') or ''} {a.get('full_name') or ''}"):
         part = part.strip(".,")
         if len(part) >= 3:
             out.append(["[name]", part])
