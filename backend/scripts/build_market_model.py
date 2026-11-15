@@ -19,8 +19,8 @@ import re
 import sys
 import time
 from collections import Counter, defaultdict
-from itertools import combinations
 from datetime import datetime, timezone
+from itertools import combinations
 from pathlib import Path
 
 import pandas as pd
@@ -42,7 +42,8 @@ COMPANY_COLS = ["company_name", "company", "employer", "company_id"]
 GENERIC_TITLES = {"Manager", "Director", "Engineer", "Associate", "Specialist", "Consultant", "Analyst",
                   "Coordinator", "Supervisor", "Assistant", "Representative", "Technician", "Intern",
                   "Administrator", "Officer", "Executive", "Advisor", "Lead", "Partner", "Agent", "Operator",
-                  "Worker", "Professional", "Clerk", "Developer", "Technical", "Owner", "President", "Vice President", "Team Member"}
+                  "Worker", "Professional", "Clerk", "Developer", "Technical", "Owner", "President",
+                  "Vice President", "Team Member"}
 TIME_COLS = ["listed_time", "original_listed_time", "post_date", "posted_date", "date_posted", "first_seen"]
 TITLE_WORD_RE = re.compile(r"\b[A-Z][a-z]+\b")
 CAMEL_PART_RE = re.compile(r"[A-Z][a-z0-9]*|[a-z0-9]+")
@@ -152,7 +153,7 @@ def learn_prerequisites(skill_n: Counter, pair_n: Counter, categories: dict | No
                 by_after[b].append({"before": a, "after": b, "p_before_given_after": round(p_a_b, 3),
                                     "p_after_given_before": round(p_b_a, 3), "postings_together": n_xy})
     edges = []
-    for b, lst in by_after.items():
+    for lst in by_after.values():
         edges += sorted(lst, key=lambda e: -e["p_before_given_after"])[:per_skill]
     return sorted(edges, key=lambda e: (e["after"], -e["p_before_given_after"]))
 
@@ -223,7 +224,7 @@ def build(limit: int | None, min_postings: int, half_life_days: float, top_k: in
         top = scored[:top_k]
         mx = top[0][2]
         cat_votes = Counter()
-        for s, f, sc in top[:10]:
+        for s, _f, sc in top[:10]:
             if categories[s] != "soft_skills":
                 cat_votes[categories[s]] += sc
         out_roles[r] = {

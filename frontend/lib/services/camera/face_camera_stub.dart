@@ -14,7 +14,7 @@ class FaceCamera {
   void baselineEnd() {}
 
   Widget preview() => const ColoredBox(
-        color: Colors.black12,
-        child: Center(child: Text('Camera check works in the web app for now.')),
-      );
+    color: Colors.black12,
+    child: Center(child: Text('Camera check works in the web app for now.')),
+  );
 }

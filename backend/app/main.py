@@ -7,10 +7,11 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth import current_uid
-from app.services import llm
+from app.config import APP_ENV, APP_VERSION
 from app.deps import blackboard
 from app.orchestrator.blackboard import SECTIONS
 from app.routers import career, interview, jobs, live_interview, market, questionnaire, resume, roadmap
+from app.services import llm
 
 logging.basicConfig(level=logging.INFO)
 
@@ -45,7 +46,7 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="CareerPilot AI", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="CareerPilot AI", version=APP_VERSION, lifespan=lifespan)
 
 # Lets the Flutter web app (running on a different port) call this API.
 app.add_middleware(
@@ -68,8 +69,11 @@ app.include_router(live_interview.router)
 
 @app.get("/health")
 def health():
+    """Used by Docker / CI smoke tests and uptime monitoring."""
     return {
         "status": "ok",
+        "version": APP_VERSION,
+        "environment": APP_ENV,
         "firestore_connected": blackboard.persistent,
         "gemini_key_set": llm.available(),
         "gemini_models": llm.MODELS,
@@ -83,15 +87,16 @@ def me(uid: str = Depends(current_uid)):
     return {"uid": uid, "state": blackboard.read(uid)}
 
 
-# --- Temporary test endpoints (removed before deployment, Day 25) ---
+# --- Debug endpoints: development only (they have no login check). In production
+# (APP_ENV=production, set by the Docker image) they don't exist at all. ---
+if APP_ENV != "production":
 
-@app.get("/debug/state/{uid}")
-def debug_read(uid: str):
-    return blackboard.read(uid)
+    @app.get("/debug/state/{uid}")
+    def debug_read(uid: str):
+        return blackboard.read(uid)
 
-
-@app.post("/debug/state/{uid}/{section}")
-def debug_write(uid: str, section: str, data: dict):
-    if section not in SECTIONS:
-        raise HTTPException(400, f"section must be one of {SECTIONS}")
-    return blackboard.write(uid, section, data, agent="debug")
+    @app.post("/debug/state/{uid}/{section}")
+    def debug_write(uid: str, section: str, data: dict):
+        if section not in SECTIONS:
+            raise HTTPException(400, f"section must be one of {SECTIONS}")
+        return blackboard.write(uid, section, data, agent="debug")

@@ -103,6 +103,7 @@ def test_interview_endpoints():
 
 def test_slow_gemini_falls_back_to_templates_within_the_budget(monkeypatch):
     import time
+
     from app.services import llm
     monkeypatch.setattr(llm, "available", lambda: True)
     monkeypatch.setattr(llm, "_generate", lambda model, prompt, config: time.sleep(3) or "{}")

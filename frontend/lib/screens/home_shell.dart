@@ -18,13 +18,7 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _tab = 0;
 
-  final _pages = const [
-    DashboardScreen(),
-    ResumeScreen(),
-    CareerScreen(),
-    JobsScreen(),
-    InterviewScreen(),
-  ];
+  final _pages = const [DashboardScreen(), ResumeScreen(), CareerScreen(), JobsScreen(), InterviewScreen()];
 
   @override
   Widget build(BuildContext context) {

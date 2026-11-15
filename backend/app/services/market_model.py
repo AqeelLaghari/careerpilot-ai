@@ -41,7 +41,9 @@ _NOISE = {
 _ACRONYMS = {"ux": "UX", "ui": "UI", "ui/ux": "UI/UX", "ux/ui": "UX/UI", "hr": "HR", "it": "IT", "qa": "QA",
              "ai": "AI", "ml": "ML", "bi": "BI", "seo": "SEO", "sql": "SQL", "aws": "AWS", "rn": "RN",
              "lpn": "LPN", "cna": "CNA", "hvac": "HVAC", "plc": "PLC", "erp": "ERP", "crm": "CRM", "ios": "iOS",
-             "and": "and", "of": "of", "for": "for", "in": "in", "devops": "DevOps", "fullstack": "Full Stack", "backend": "Backend", "frontend": "Frontend", "cad": "CAD", "ehs": "EHS", "hse": "HSE", "cdl": "CDL", "sap": "SAP", "net": ".NET", "dotnet": ".NET"}
+             "and": "and", "of": "of", "for": "for", "in": "in", "devops": "DevOps", "fullstack": "Full Stack",
+             "backend": "Backend", "frontend": "Frontend", "cad": "CAD", "ehs": "EHS", "hse": "HSE", "cdl": "CDL",
+             "sap": "SAP", "net": ".NET", "dotnet": ".NET"}
 
 
 def normalize_title(title: str) -> str:
@@ -185,10 +187,10 @@ def _rank_by_meaning(title: str, model: dict) -> list[tuple[str, float, float]]:
     profile_cos = {}
     if index is not None:
         sims, ids = index.search(q.reshape(1, -1), len(idx_names))
-        profile_cos = {idx_names[i]: float(s) for s, i in zip(sims[0], ids[0]) if i >= 0}
+        profile_cos = {idx_names[i]: float(s) for s, i in zip(sims[0], ids[0], strict=False) if i >= 0}
     words = set(_expand(title).split())
     ranked = []
-    for name, nc in zip(names, name_cos):
+    for name, nc in zip(names, name_cos, strict=False):
         rw = set(_expand(name).split())
         pc = profile_cos.get(name, 0.0)
         score = NAME_W * float(nc) + PROFILE_W * pc + WORDS_W * len(words & rw) / len(words | rw)

@@ -14,7 +14,6 @@ Overall score (0-100) = content 60% + speaking 20% + presence 20%
 Without camera data the weights become content 75% + speaking 25%.
 """
 import logging
-import math
 
 from pydantic import BaseModel
 
@@ -130,7 +129,10 @@ def _clean_grade(g: dict, item: dict) -> dict:
     if len(item["answer"].split()) < MIN_WORDS:
         score = 0
     verdict = g.get("verdict") if g.get("verdict") in ("correct", "partly_correct", "incorrect", "no_facts") else "no_facts"
-    short = lambda xs, n, m: [str(x)[:m] for x in (xs or []) if str(x).strip()][:n]
+
+    def short(xs, n, m):
+        return [str(x)[:m] for x in (xs or []) if str(x).strip()][:n]
+
     fixes = [{"said": str(f.get("said", ""))[:200], "correct": str(f.get("correct", ""))[:300]}
              for f in (g.get("corrections") or []) if isinstance(f, dict) and f.get("correct")][:4]
     return {"score": score, "verdict": verdict, "corrections": fixes, "covered": short(g.get("covered"), 5, 120),
@@ -150,7 +152,7 @@ def _fallback_grade(item: dict) -> dict:
     if item["key_points"]:
         from app.services import embeddings
         vecs = embeddings.embed([item["answer"]] + item["key_points"])
-        for point, sim in zip(item["key_points"], (vecs[1:] @ vecs[0]).tolist()):
+        for point, sim in zip(item["key_points"], (vecs[1:] @ vecs[0]).tolist(), strict=False):
             (covered if sim >= 0.35 else missing).append(point)
         coverage = len(covered) / len(item["key_points"])
     else:

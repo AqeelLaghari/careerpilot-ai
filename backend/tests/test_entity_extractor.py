@@ -1,5 +1,9 @@
 from app.services.entity_extractor import (
-    extract_education, extract_entities, extract_experience, find_skills, total_experience_months,
+    extract_education,
+    extract_entities,
+    extract_experience,
+    find_skills,
+    total_experience_months,
 )
 
 

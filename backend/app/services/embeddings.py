@@ -46,4 +46,4 @@ def build_index(vectors: np.ndarray):
 def search(index, query: np.ndarray, k: int) -> list[tuple[int, float]]:
     """Top-k (row id, cosine similarity) for ONE query vector."""
     sims, ids = index.search(query.reshape(1, -1), min(k, index.ntotal))
-    return [(int(i), float(s)) for i, s in zip(ids[0], sims[0]) if i >= 0]
+    return [(int(i), float(s)) for i, s in zip(ids[0], sims[0], strict=False) if i >= 0]

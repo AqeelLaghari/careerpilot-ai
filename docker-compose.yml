@@ -1,0 +1,24 @@
+# Run the whole backend with one command (needs Docker Desktop):
+#
+#   docker compose up --build        -> http://localhost:8000/health
+#   docker compose down              -> stop it
+#
+# Secrets stay on your computer: the .env file and the Firebase key are passed in at run
+# time, never built into the image.
+services:
+  backend:
+    build: ./backend
+    image: careerpilot-backend:local
+    ports:
+      - "8000:7860"              # the Flutter app talks to http://localhost:8000 as before
+    env_file:
+      - ./backend/.env
+    environment:
+      APP_ENV: development       # keep debug endpoints on for local work
+    volumes:
+      - ./backend/firebase-key.json:/home/user/app/firebase-key.json:ro
+      - backend-data:/home/user/app/data/raw   # interview audio, learned skills (kept between restarts)
+    restart: unless-stopped
+
+volumes:
+  backend-data:

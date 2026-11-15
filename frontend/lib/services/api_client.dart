@@ -13,16 +13,17 @@ class ApiClient {
   /// Never spin forever: after this the screen shows an error with "Try again".
   static const timeout = Duration(seconds: 60);
 
-  Future<http.Response> _send(Future<http.Response> request) => request.timeout(timeout,
-      onTimeout: () => throw Exception('The server is taking too long. If it was just started, '
-          'it may still be loading its AI models (up to a minute). Please try again.'));
+  Future<http.Response> _send(Future<http.Response> request) => request.timeout(
+    timeout,
+    onTimeout: () => throw Exception(
+      'The server is taking too long. If it was just started, '
+      'it may still be loading its AI models (up to a minute). Please try again.',
+    ),
+  );
 
   Future<Map<String, String>> _headers() async {
     final token = await FirebaseAuth.instance.currentUser?.getIdToken();
-    return {
-      'Content-Type': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
-    };
+    return {'Content-Type': 'application/json', if (token != null) 'Authorization': 'Bearer $token'};
   }
 
   Future<Map<String, dynamic>> get(String path) async {
@@ -31,11 +32,9 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body) async {
-    final res = await _send(http.post(
-      Uri.parse('$apiBaseUrl$path'),
-      headers: await _headers(),
-      body: jsonEncode(body),
-    ));
+    final res = await _send(
+      http.post(Uri.parse('$apiBaseUrl$path'), headers: await _headers(), body: jsonEncode(body)),
+    );
     return _decode(res);
   }
 

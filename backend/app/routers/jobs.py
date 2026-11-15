@@ -16,7 +16,7 @@ def jobs(q: str | None = Query(default=None, max_length=80), limit: int = Query(
     try:
         return agent.jobs(uid, query=(q or "").strip() or None, limit=limit)
     except NoResumeError as e:
-        raise HTTPException(404, str(e))
+        raise HTTPException(404, str(e)) from e
 
 
 @router.get("/status")

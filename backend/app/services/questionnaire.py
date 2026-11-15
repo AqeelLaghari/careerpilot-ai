@@ -318,7 +318,7 @@ def validate(q: dict, value):
         try:
             n = float(value)
         except (TypeError, ValueError):
-            raise AnswerError("Enter a number")
+            raise AnswerError("Enter a number") from None
         if not q["min"] <= n <= q["max"]:
             raise AnswerError(f"Enter a number between {q['min']} and {q['max']}")
         return int(n) if q.get("step") is None else n

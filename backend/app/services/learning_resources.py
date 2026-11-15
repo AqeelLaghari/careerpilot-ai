@@ -107,7 +107,7 @@ def videos_for(skills: list[str]) -> dict[str, list[dict]]:
             missing.append(s)
     if missing and YOUTUBE_API_KEY:
         with ThreadPoolExecutor(max_workers=6) as pool:
-            for s, vids in zip(missing, pool.map(youtube_search, missing)):
+            for s, vids in zip(missing, pool.map(youtube_search, missing), strict=False):
                 if vids:                                    # cache only real results
                     _cache_put(s, vids)
                     result[s] = vids

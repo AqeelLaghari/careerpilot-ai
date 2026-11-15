@@ -1,0 +1,23 @@
+name: Feature / task
+description: A new feature, roadmap task or improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What should be built?
+    validations:
+      required: true
+  - type: input
+    id: day
+    attributes:
+      label: Roadmap day (if any)
+      placeholder: e.g. Day 23
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when...
+      description: How do we know it is finished?
+      placeholder: |
+        - [ ] ...
+        - [ ] tests added, CI green

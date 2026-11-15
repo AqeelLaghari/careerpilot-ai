@@ -16,3 +16,6 @@ YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "").strip()                # free
 HIMALAYAS_API_KEY = os.getenv("HIMALAYAS_API_KEY", "").strip()
 # Firebase user IDs (comma separated) allowed to manage learned skills
 ADMIN_UIDS = {u.strip() for u in os.getenv("ADMIN_UIDS", "").split(",") if u.strip()}   # optional: higher rate limit
+# "development" on laptops; the Docker image sets "production" (debug endpoints are then switched off)
+APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
+APP_VERSION = os.getenv("APP_VERSION", "0.3.0")

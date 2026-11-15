@@ -30,11 +30,16 @@ class ScoreGauge extends StatelessWidget {
               valueColor: AlwaysStoppedAnimation(color),
             ),
             Center(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Text('${(value * 100).round()}',
-                    style: TextStyle(fontSize: size * 0.28, fontWeight: FontWeight.bold, color: color)),
-                Text(label, style: Theme.of(context).textTheme.labelLarge),
-              ]),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${(value * 100).round()}',
+                    style: TextStyle(fontSize: size * 0.28, fontWeight: FontWeight.bold, color: color),
+                  ),
+                  Text(label, style: Theme.of(context).textTheme.labelLarge),
+                ],
+              ),
             ),
           ],
         ),
@@ -53,19 +58,24 @@ class SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
               if (icon != null) ...[Icon(icon, size: 20, color: AppColors.brand), const SizedBox(width: 8)],
               Expanded(child: Text(title, style: Theme.of(context).textTheme.titleMedium)),
               ?trailing,
-            ]),
-            const SizedBox(height: 12),
-            child,
-          ]),
-        ),
-      );
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    ),
+  );
 }
 
 /// One "top fix": severity bar, the fix text, and points available.
@@ -84,22 +94,28 @@ class FixTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border(left: BorderSide(color: color, width: 4)),
       ),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(fix['label'] as String, style: const TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            Text(fix['fix'] as String),
-          ]),
-        ),
-        const SizedBox(width: 8),
-        Chip(
-          label: Text('+${fix['points_available']} pts'),
-          backgroundColor: color.withValues(alpha: 0.15),
-          labelStyle: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
-          visualDensity: VisualDensity.compact,
-        ),
-      ]),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(fix['label'] as String, style: const TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Text(fix['fix'] as String),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Chip(
+            label: Text('+${fix['points_available']} pts'),
+            backgroundColor: color.withValues(alpha: 0.15),
+            labelStyle: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -170,24 +186,31 @@ class SkillGroups extends StatelessWidget {
       groups.putIfAbsent(s['category'] as String, () => []).add(s);
     }
     final ordered = groups.entries.toList()..sort((a, b) => b.value.length.compareTo(a.value.length));
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      for (final g in ordered) ...[
-        Text(_pretty(g.key), style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.grey.shade700)),
-        const SizedBox(height: 6),
-        Wrap(spacing: 6, runSpacing: 6, children: [
-          for (final s in g.value)
-            Tooltip(
-              message: 'Mentioned ${s['mentions']}× in: ${(s['sections'] as List).join(', ')}',
-              child: Chip(
-                label: Text(s['name'] as String),
-                backgroundColor: AppColors.brand.withValues(alpha: 0.08),
-                visualDensity: VisualDensity.compact,
-              ),
-            ),
-        ]),
-        const SizedBox(height: 12),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final g in ordered) ...[
+          Text(_pretty(g.key), style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.grey.shade700)),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final s in g.value)
+                Tooltip(
+                  message: 'Mentioned ${s['mentions']}× in: ${(s['sections'] as List).join(', ')}',
+                  child: Chip(
+                    label: Text(s['name'] as String),
+                    backgroundColor: AppColors.brand.withValues(alpha: 0.08),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+        ],
       ],
-    ]);
+    );
   }
 }
 
@@ -197,23 +220,28 @@ class RoleMatchCard extends StatelessWidget {
   final Map<String, dynamic>? match;
 
   Widget _bar(BuildContext context, String label, num value, String hint) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
             Expanded(child: Text(label)),
             Text('${value.round()}%', style: const TextStyle(fontWeight: FontWeight.w600)),
-          ]),
-          const SizedBox(height: 4),
-          LinearProgressIndicator(
-            value: value / 100,
-            minHeight: 6,
-            borderRadius: BorderRadius.circular(3),
-            color: AppColors.forScore(value),
-            backgroundColor: Colors.grey.shade200,
-          ),
-          Text(hint, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        ]),
-      );
+          ],
+        ),
+        const SizedBox(height: 4),
+        LinearProgressIndicator(
+          value: value / 100,
+          minHeight: 6,
+          borderRadius: BorderRadius.circular(3),
+          color: AppColors.forScore(value),
+          backgroundColor: Colors.grey.shade200,
+        ),
+        Text(hint, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      ],
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -231,53 +259,68 @@ class RoleMatchCard extends StatelessWidget {
     return SectionCard(
       title: 'Role match',
       icon: Icons.track_changes,
-      trailing: Text('${score.round()}%',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.forScore(score))),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(m['role'] as String, style: Theme.of(context).textTheme.titleLarge),
-        Text(
-          '${m['basis'] == 'target role' ? 'Your target role' : 'Your best-fit role'} · '
-          'learned from ${m['postings_analysed']} job postings',
-          style: const TextStyle(color: Colors.grey),
-        ),
-        if (m['better_fit'] is Map) ...[
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-                color: AppColors.brand.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
-            child: Row(children: [
-              const Icon(Icons.lightbulb_outline, size: 18),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text('This CV fits ${m['better_fit']['role']} better '
-                    '(${(m['better_fit']['score'] as num).round()}%). '
-                    'You can change your target role in the Career tab.'),
-              ),
-            ]),
+      trailing: Text(
+        '${score.round()}%',
+        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.forScore(score)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(m['role'] as String, style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            '${m['basis'] == 'target role' ? 'Your target role' : 'Your best-fit role'} · '
+            'learned from ${m['postings_analysed']} job postings',
+            style: const TextStyle(color: Colors.grey),
           ),
-        ],
-        const SizedBox(height: 12),
-        _bar(context, 'Keyword match', m['keyword'] as num, 'Top skills employers ask for in this role'),
-        _bar(context, 'Meaning match', m['semantic'] as num, 'How close your profile is in meaning (AI)'),
-        if (missing.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          const Text('Skills to add (if you have them):', style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 6),
-          Wrap(spacing: 6, runSpacing: 6, children: [
-            for (final s in missing)
-              Chip(
-                label: Text(s, style: const TextStyle(fontSize: 12)),
-                avatar: const Icon(Icons.add, size: 16),
-                visualDensity: VisualDensity.compact,
+          if (m['better_fit'] is Map) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.brand.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
               ),
-          ]),
+              child: Row(
+                children: [
+                  const Icon(Icons.lightbulb_outline, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'This CV fits ${m['better_fit']['role']} better '
+                      '(${(m['better_fit']['score'] as num).round()}%). '
+                      'You can change your target role in the Career tab.',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          _bar(context, 'Keyword match', m['keyword'] as num, 'Top skills employers ask for in this role'),
+          _bar(context, 'Meaning match', m['semantic'] as num, 'How close your profile is in meaning (AI)'),
+          if (missing.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            const Text('Skills to add (if you have them):', style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final s in missing)
+                  Chip(
+                    label: Text(s, style: const TextStyle(fontSize: 12)),
+                    avatar: const Icon(Icons.add, size: 16),
+                    visualDensity: VisualDensity.compact,
+                  ),
+              ],
+            ),
+          ],
+          if (matched.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text('Already showing: ${matched.join(', ')}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          ],
         ],
-        if (matched.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text('Already showing: ${matched.join(', ')}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        ],
-      ]),
+      ),
     );
   }
 }

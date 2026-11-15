@@ -16,7 +16,7 @@ def upload_resume(file: UploadFile = File(...), uid: str = Depends(current_uid))
     try:
         return agent.process(uid, data, file.filename or "resume.pdf")
     except PDFError as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from e
 
 
 @router.get("")

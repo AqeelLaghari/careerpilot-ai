@@ -20,7 +20,7 @@ def _run(fn, *args):
     try:
         return fn(*args)
     except NoResumeError as e:
-        raise HTTPException(404, str(e))
+        raise HTTPException(404, str(e)) from e
 
 
 @router.get("")

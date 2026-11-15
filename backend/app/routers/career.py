@@ -22,7 +22,7 @@ def _run(fn, *args):
     try:
         out = fn(*args)
     except NoResumeError as e:
-        raise HTTPException(404, str(e))
+        raise HTTPException(404, str(e)) from e
     if out is None:
         raise HTTPException(503, "Market model not built yet, or role not found")
     return out

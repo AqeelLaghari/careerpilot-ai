@@ -24,16 +24,10 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final auth = FirebaseAuth.instance;
       if (_isSignUp) {
-        final cred = await auth.createUserWithEmailAndPassword(
-          email: _email.text.trim(),
-          password: _password.text,
-        );
+        final cred = await auth.createUserWithEmailAndPassword(email: _email.text.trim(), password: _password.text);
         await cred.user?.updateDisplayName(_name.text.trim());
       } else {
-        await auth.signInWithEmailAndPassword(
-          email: _email.text.trim(),
-          password: _password.text,
-        );
+        await auth.signInWithEmailAndPassword(email: _email.text.trim(), password: _password.text);
       }
       // No navigation needed: main.dart listens for login and switches screens.
     } on FirebaseAuthException catch (e) {
@@ -57,10 +51,8 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Icon(Icons.rocket_launch, size: 56, color: theme.colorScheme.primary),
                 const SizedBox(height: 12),
-                Text('CareerPilot AI',
-                    textAlign: TextAlign.center, style: theme.textTheme.headlineMedium),
-                Text('Your 24/7 AI career counselor',
-                    textAlign: TextAlign.center, style: theme.textTheme.bodyMedium),
+                Text('CareerPilot AI', textAlign: TextAlign.center, style: theme.textTheme.headlineMedium),
+                Text('Your 24/7 AI career counselor', textAlign: TextAlign.center, style: theme.textTheme.bodyMedium),
                 const SizedBox(height: 32),
                 if (_isSignUp) ...[
                   TextField(
@@ -80,7 +72,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: true,
                   onSubmitted: (_) => _submit(),
                   decoration: const InputDecoration(
-                      labelText: 'Password (min 6 characters)', border: OutlineInputBorder()),
+                    labelText: 'Password (min 6 characters)',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),

@@ -1,0 +1,36 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part of the app?
+      options: [Resume / ATS, Career matches, Roadmap, Jobs, Interview Coach, Login / profile, Dashboard, Backend / API, Other]
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options: [Web (Chrome), Web (other browser), Android]
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. See error
+  - type: textarea
+    id: logs
+    attributes:
+      label: Screenshots or error messages
+      description: Never paste API keys, tokens or personal CV details here.

@@ -119,6 +119,7 @@ def test_live_postings_reweight_role_keywords(learner):
 
 def test_admin_endpoints_need_admin(learner, monkeypatch):
     from fastapi.testclient import TestClient
+
     from app import config
     from app.auth import current_uid
     from app.main import app

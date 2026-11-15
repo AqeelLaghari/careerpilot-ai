@@ -1,0 +1,44 @@
+# Checks that run automatically on your computer before every `git commit`.
+# One-time setup (inside the backend venv):
+#   pip install -r backend/requirements-dev.txt
+#   pre-commit install
+# Run on all files by hand:  pre-commit run --all-files
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: detect-private-key
+      - id: check-added-large-files
+        args: ["--maxkb=2048"]          # the market model JSON is ~1.5 MB; anything bigger is a mistake
+
+  - repo: local
+    hooks:
+      - id: no-secret-files
+        name: Block secret files (.env, Firebase key)
+        language: fail
+        entry: "Secret file staged! These must never be committed:"
+        files: '(^|/)(\.env|.*\.env|firebase-key\.json|.*service-account.*\.json|google-services\.json)$'
+        exclude: '\.env\.example$'
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.10
+    hooks:
+      - id: ruff
+        files: ^backend/
+        args: ["--fix"]
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+
+  - repo: local
+    hooks:
+      - id: dart-format
+        name: dart format
+        language: system
+        entry: dart format
+        files: ^frontend/(lib|test)/.*\.dart$

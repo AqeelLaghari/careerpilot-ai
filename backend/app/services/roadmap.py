@@ -340,7 +340,7 @@ def build_roadmap(profile: dict, role: str, answers: dict | None = None, top_n: 
     videos = learning_resources.videos_for(names)                     # cached YouTube searches
     docs = [(ideas.get(n) or {}).get("docs_url") or None for n in names]
     docs_ok = learning_resources.check_urls(docs)                     # drop links that don't open
-    for i, doc, ok in zip(items, docs, docs_ok):
+    for i, doc, ok in zip(items, docs, docs_ok, strict=False):
         idea = ideas.get(i["name"]) or {}
         i["project"] = (idea.get("project") or _fallback_project(i["name"], role_name)).rstrip(".")
         i["tip"] = idea.get("tip")

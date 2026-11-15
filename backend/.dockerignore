@@ -1,0 +1,24 @@
+# Never put these in the Docker image
+.env
+*.env
+firebase-key.json
+*service-account*.json
+
+# Local / generated files
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+data/raw/
+data/*.index
+data/role_index.json
+models/
+
+# Not needed to run the server
+tests/
+scripts/
+requirements-dev.txt
+Dockerfile
+.dockerignore
