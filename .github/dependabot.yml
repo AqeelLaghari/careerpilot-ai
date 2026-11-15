@@ -1,5 +1,9 @@
 # Dependabot: GitHub checks our libraries every week and opens a pull request when an update
 # (especially a security fix) is available. CI then tests the update before anyone merges it.
+#
+# Major version jumps (e.g. pandas 2 -> 3) often break code, and the stack is fixed on
+# Python 3.11 and our Flutter version, so only minor/patch updates are proposed. Security fixes
+# still arrive through GitHub's Dependabot security alerts.
 version: 2
 updates:
   - package-ecosystem: pip
@@ -11,6 +15,9 @@ updates:
     groups:
       python-minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     labels: [dependencies, backend]
 
   - package-ecosystem: pub
@@ -22,6 +29,9 @@ updates:
     groups:
       flutter-minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     labels: [dependencies, frontend]
 
   - package-ecosystem: github-actions
@@ -37,4 +47,7 @@ updates:
     directory: /backend
     schedule:
       interval: monthly
+    ignore:
+      - dependency-name: python
+        versions: [">=3.12"]       # the project is fixed on Python 3.11
     labels: [dependencies, docker]
