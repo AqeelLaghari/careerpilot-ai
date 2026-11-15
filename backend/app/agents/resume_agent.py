@@ -25,6 +25,7 @@ from app.services.person import person_key, resume_person_key
 
 AGENT_NAME = "resume_agent"
 BETTER_FIT_GAP = 25          # points: suggest the best-fit role when the target is this far behind
+HISTORY_LIMIT = 20           # ATS scores kept for the dashboard chart (Day 24)
 log = logging.getLogger(__name__)
 
 
@@ -37,16 +38,19 @@ class ResumeAgent:
         entities = extract_entities(parsed["sections"], parsed["text"])
         ats = score_resume(parsed, entities)
         key = person_key(parsed["contact"], entities)
-        old_key = resume_person_key(self.bb.read_section(uid, "resume"))
+        old = self.bb.read_section(uid, "resume") or {}
+        old_key = resume_person_key(old)
         same_person = not (key and old_key and key != old_key)
         ats["role_match"] = self._role_match(uid, entities, use_target=same_person)
+        now = time.time()
 
         result = {
             "entities": entities,
             "ats": ats,
             "filename": filename,
             "person_key": key,
-            "uploaded_at": time.time(),
+            "uploaded_at": now,
+            "history": score_history(old if same_person else {}, ats, filename, now),
             "text": parsed["text"],
             "sections": parsed["sections"],
             "headings_found": parsed["headings_found"],
@@ -76,3 +80,14 @@ class ResumeAgent:
         except Exception:
             log.exception("Role match failed; ATS report continues without it")
             return None
+
+
+def score_history(old: dict, ats: dict, filename: str, now: float) -> list[dict]:
+    """The ATS score of every upload, oldest first (a different person's CV starts a new list).
+    CVs uploaded before Day 24 have no list yet: their last score becomes the first point."""
+    history = list(old.get("history") or [])
+    if not history and (old.get("ats") or {}).get("readability_score") is not None:
+        history = [{"at": old.get("uploaded_at"), "score": old["ats"]["readability_score"],
+                    "filename": old.get("filename")}]
+    history.append({"at": now, "score": ats["readability_score"], "filename": filename})
+    return history[-HISTORY_LIMIT:]

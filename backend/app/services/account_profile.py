@@ -14,6 +14,12 @@ STATUSES = {"student": "Student", "graduate": "Fresh graduate", "professional": 
 # account status -> the questionnaire's "career_stage" answer
 STAGE_FOR = {"student": "student", "graduate": "fresh_graduate", "professional": "working"}
 
+# App settings (Day 24), saved with the profile so they follow the user to every device.
+# Urdu interviews arrive on Day 27; until then the app shows that option as "coming soon".
+SETTINGS = {"theme": ("system", "light", "dark"), "voice": ("female", "male"),
+            "speech_rate": ("slow", "normal", "fast"), "language": ("en", "ur")}
+DEFAULT_SETTINGS = {"theme": "system", "voice": "female", "speech_rate": "normal", "language": "en"}
+
 LIMITS = {"full_name": 80, "university": 120, "degree": 120, "city": 60, "target_role": 80}
 NAME_RE = re.compile(r"^[^\W\d_]+(?:[ .'\-]+[^\W\d_]+)*\.?$")    # letters, spaces, . ' - (any alphabet)
 PHONE_RE = re.compile(r"^\+?[\d\s\-()]{7,20}$")
@@ -83,6 +89,19 @@ def clean(update: dict, current: dict | None = None, year: int | None = None) ->
                 out[key] = (v if not v or v.startswith("http") else "https://" + v) or None
         elif key == "completed":
             out[key] = bool(value)
+        elif key == "settings":
+            if not isinstance(value, dict):
+                errors[key] = "Settings must be a list of name: choice pairs"
+                continue
+            merged = DEFAULT_SETTINGS | (out.get("settings") or {})
+            for name, choice in value.items():
+                if name not in SETTINGS:
+                    errors[f"settings.{name}"] = "Unknown setting"
+                elif choice not in SETTINGS[name]:
+                    errors[f"settings.{name}"] = f"Choose one of: {', '.join(SETTINGS[name])}"
+                else:
+                    merged[name] = choice
+            out[key] = merged
         else:
             errors[key] = "Unknown field"
     if errors:
