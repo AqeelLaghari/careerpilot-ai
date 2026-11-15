@@ -84,7 +84,12 @@ class ProfileStore extends ChangeNotifier {
     profile = (r['profile'] as Map).cast<String, dynamic>();
     suggested = (r['suggested'] as Map? ?? {}).cast<String, dynamic>();
     statuses = (r['statuses'] as Map? ?? statuses).cast<String, String>();
-    photo = r['has_photo'] == true ? _bytes(await api.getBytes('/profile/photo')) : null;
+    // the uid and version in the address make each account's (and each new) photo a different
+    // URL, so the browser can never hand back a photo cached for another account
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    photo = r['has_photo'] == true
+        ? _bytes(await api.getBytes('/profile/photo?u=$uid&v=${profile['photo_version']}'))
+        : null;
     loaded = true;
     notifyListeners();
   }
