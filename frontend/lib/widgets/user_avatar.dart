@@ -41,9 +41,9 @@ class UserAvatar extends StatelessWidget {
     );
   }
 
-  /// A stable colour per name, so the same person always gets the same circle.
+  /// A stable navy shade per name, so the same person always gets the same circle.
   static Color _colourFor(String name) {
-    const colours = [AppColors.brand, Color(0xFF0E7490), Color(0xFF7C3AED), Color(0xFFBE185D), Color(0xFF15803D)];
+    const colours = [AppColors.brand, AppColors.brandMid, AppColors.brandLight, AppColors.brandSoft];
     return colours[name.codeUnits.fold(0, (a, b) => a + b) % colours.length];
   }
 }

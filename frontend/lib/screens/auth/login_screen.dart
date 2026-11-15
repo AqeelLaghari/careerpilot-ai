@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../services/password_rules.dart';
 import '../../theme.dart';
@@ -426,28 +427,35 @@ class _BrandPanel extends StatelessWidget {
             bottom: -120,
             child: Opacity(opacity: 0.07, child: BrandLogo.icon(size: 560, white: true)),
           ),
-          Padding(padding: const EdgeInsets.all(48), child: _content(features)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 56, vertical: 40),
+            child: LayoutBuilder(builder: (context, box) => _content(features, box.maxWidth)),
+          ),
         ],
       ),
     );
   }
 
-  Widget _content(List<(IconData, String, String)> features) {
+  /// Logo first and big, then the headline, the tagline and what the app does.
+  Widget _content(List<(IconData, String, String)> features, double width) {
+    // the horizontal logo is ~4.3x wider than tall: let it take ~75% of the panel width
+    final logoHeight = (width * 0.75 / 4.3).clamp(56.0, 120.0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const BrandLogo.horizontal(size: 44, white: true),
-        const Spacer(),
-        const Text(
-          'Your 24/7 AI\ncareer counselor',
-          style: TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.w800, height: 1.15),
+        const Spacer(flex: 2),
+        BrandLogo.horizontal(size: logoHeight, white: true),
+        const SizedBox(height: 28),
+        Text(
+          'Your 24/7 AI career counselor',
+          style: GoogleFonts.inter(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w600),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Text(
           'From CV to interview-ready, in one place.',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 16),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 16),
         ),
-        const SizedBox(height: 36),
+        const SizedBox(height: 40),
         for (final (icon, title, text) in features)
           Padding(
             padding: const EdgeInsets.only(bottom: 18),
@@ -478,7 +486,7 @@ class _BrandPanel extends StatelessWidget {
               ],
             ),
           ),
-        const Spacer(),
+        const Spacer(flex: 3),
         Text(
           'Bahria University Karachi · Final Year Project 2025-26',
           style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12),
