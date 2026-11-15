@@ -141,4 +141,7 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - **Monitoring:** UptimeRobot on /health, structured logs, request timing; debug endpoints disabled in production.
 - **Docs:** pipeline diagram, screenshots of pipeline runs, DevOps section in the report.
 
+## Future work (not in this FYP; for the report's "Future work" section)
+- **Recruiter accounts** (decided 15 Nov 2026: not now): recruiters post jobs, search and shortlist candidates by ATS score / skills / interview results, invite candidates to an AI screening interview. Accounts in this FYP are for students, fresh graduates and working professionals.
+
 If you fall behind, cut these first: Android APK → roadmap auto-update → Gemini fallback in parsing.
