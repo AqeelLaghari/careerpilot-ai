@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/account_menu.dart';
+import '../widgets/brand.dart';
 import 'career/career_screen.dart';
 import 'dashboard_screen.dart';
 import 'interview/interview_screen.dart';
@@ -23,7 +24,10 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('CareerPilot AI'), actions: const [AccountMenu(), SizedBox(width: 8)]),
+      appBar: AppBar(
+        title: const BrandLogo.horizontal(size: 30, white: true),
+        actions: const [AccountMenu(), SizedBox(width: 8)],
+      ),
       body: _pages[_tab],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/password_rules.dart';
 import '../../theme.dart';
+import '../../widgets/brand.dart';
 
 /// Log in / create an account (Day 23): Google sign-in, or email + password with password
 /// rules, show/hide, confirm, and "Forgot password?". After sign-up Firebase emails a
@@ -177,12 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (!wide) ...[
-          const Icon(Icons.rocket_launch, size: 48, color: AppColors.brand),
-          const SizedBox(height: 8),
-          Text('CareerPilot AI', textAlign: TextAlign.center, style: theme.textTheme.headlineSmall),
-          const SizedBox(height: 24),
-        ],
+        if (!wide) ...[const Center(child: BrandLogo.horizontal(size: 46)), const SizedBox(height: 28)],
         Text(
           _signUp ? 'Create your account' : 'Welcome back',
           style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
@@ -419,71 +415,75 @@ class _BrandPanel extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1E3A8A), Color(0xFF2563EB), Color(0xFF0E7490)],
+          colors: [AppColors.brand, AppColors.brandMid, AppColors.brandLight],
         ),
       ),
-      padding: const EdgeInsets.all(48),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          const Row(
-            children: [
-              Icon(Icons.rocket_launch, color: Colors.white, size: 32),
-              SizedBox(width: 10),
-              Text(
-                'CareerPilot AI',
-                style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
-              ),
-            ],
+          // the "C" mark as a large, faint watermark (like the brand wallpaper)
+          Positioned(
+            right: -140,
+            bottom: -120,
+            child: Opacity(opacity: 0.07, child: BrandLogo.icon(size: 560, white: true)),
           ),
-          const Spacer(),
-          const Text(
-            'Your 24/7 AI\ncareer counselor',
-            style: TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.w800, height: 1.15),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'From CV to interview-ready, in one place.',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 16),
-          ),
-          const SizedBox(height: 36),
-          for (final (icon, title, text) in features)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 18),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(icon, color: Colors.white, size: 22),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
-                        ),
-                        Text(text, style: TextStyle(color: Colors.white.withValues(alpha: 0.8))),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          const Spacer(),
-          Text(
-            'Bahria University Karachi · Final Year Project 2025-26',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12),
-          ),
+          Padding(padding: const EdgeInsets.all(48), child: _content(features)),
         ],
       ),
+    );
+  }
+
+  Widget _content(List<(IconData, String, String)> features) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const BrandLogo.horizontal(size: 44, white: true),
+        const Spacer(),
+        const Text(
+          'Your 24/7 AI\ncareer counselor',
+          style: TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.w800, height: 1.15),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'From CV to interview-ready, in one place.',
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 16),
+        ),
+        const SizedBox(height: 36),
+        for (final (icon, title, text) in features)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 18),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
+                      ),
+                      Text(text, style: TextStyle(color: Colors.white.withValues(alpha: 0.8))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        const Spacer(),
+        Text(
+          'Bahria University Karachi · Final Year Project 2025-26',
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12),
+        ),
+      ],
     );
   }
 }

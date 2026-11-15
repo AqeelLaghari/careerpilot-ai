@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../services/api_client.dart';
 import '../../services/profile_store.dart';
 import '../../theme.dart';
+import '../../widgets/brand.dart';
 import 'profile_form.dart';
 
 /// After creating an account (step 1): step 2 "About you" and step 3 "Career goals" (optional).
@@ -94,9 +95,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.rocket_launch, color: AppColors.brand),
-                      const SizedBox(width: 8),
-                      Text('CareerPilot AI', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                      const BrandLogo.horizontal(size: 30),
                       const Spacer(),
                       TextButton(onPressed: () => FirebaseAuth.instance.signOut(), child: const Text('Log out')),
                     ],

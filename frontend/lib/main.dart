@@ -13,6 +13,7 @@ import 'screens/profile/profile_setup_screen.dart';
 import 'services/api_client.dart';
 import 'services/profile_store.dart';
 import 'theme.dart';
+import 'widgets/brand.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -111,7 +112,7 @@ class _Loading extends StatelessWidget {
   const _Loading();
 
   @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: CircularProgressIndicator()));
+  Widget build(BuildContext context) => const BrandLoading();
 }
 
 /// The backend couldn't be reached (e.g. not started yet).

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../screens/profile/my_profile_screen.dart';
 import '../services/profile_store.dart';
 import '../theme.dart';
+import 'brand.dart';
 import 'user_avatar.dart';
 
 /// The user's photo + name in the top bar; click for the account menu (Day 23).
@@ -38,7 +39,7 @@ class AccountMenu extends StatelessWidget {
     context: context,
     applicationName: 'CareerPilot AI',
     applicationVersion: 'Final Year Project 2025-26',
-    applicationIcon: const Icon(Icons.rocket_launch, color: AppColors.brand, size: 36),
+    applicationIcon: const BrandLogo.icon(size: 48),
     children: const [
       Text(
         'Your 24/7 AI career counselor: ATS resume check, career matches and roadmap, remote jobs, '

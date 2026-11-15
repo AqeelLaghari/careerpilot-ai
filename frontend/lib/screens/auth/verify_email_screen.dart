@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../theme.dart';
+import '../../widgets/brand.dart';
 
 /// "Check your inbox" (Day 23): a new email/password account must click the link Firebase
 /// emailed before using the app (the backend checks this too). Checks every few seconds, so
@@ -98,6 +99,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    const BrandLogo.horizontal(size: 32),
+                    const SizedBox(height: 28),
                     Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(color: AppColors.brand.withValues(alpha: 0.08), shape: BoxShape.circle),

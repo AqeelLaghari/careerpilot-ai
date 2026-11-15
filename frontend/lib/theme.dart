@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 /// One place for the app's look. Every screen uses these colours and shapes.
 class AppColors {
-  static const brand = Color(0xFF1E3A8A); // deep blue
+  static const brand = Color(0xFF011A42); // the logo's navy (branding/LogoPNG.png)
+  static const brandMid = Color(0xFF0F2F66); // lighter navy for gradients
+  static const brandLight = Color(0xFF1D4E89);
   static const good = Color(0xFF16A34A);
   static const warn = Color(0xFFF59E0B);
   static const bad = Color(0xFFDC2626);
