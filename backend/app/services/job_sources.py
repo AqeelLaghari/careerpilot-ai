@@ -28,7 +28,7 @@ from app.config import HIMALAYAS_API_KEY
 
 log = logging.getLogger(__name__)
 
-UA = "CareerPilot-AI/1.0 (university final-year project; remote jobs for Pakistani students)"
+UA = "CareerPilot-AI/1.0 (remote jobs for Pakistani students)"
 TIMEOUT = 25
 PK_UTC = 5
 SOURCES = {

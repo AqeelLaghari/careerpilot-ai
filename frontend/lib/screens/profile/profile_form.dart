@@ -152,7 +152,7 @@ class AboutYouSection extends StatelessWidget {
                     data.status == 'professional' ? 'University / college (last studied)' : 'University / college',
                     Icons.account_balance_outlined,
                     e['university'],
-                    hint: 'Start typing, e.g. Bahria',
+                    hint: 'Start typing to search',
                   ),
                 );
               },
