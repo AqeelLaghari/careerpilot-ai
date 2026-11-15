@@ -3,7 +3,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app import config
-
 from app.auth import current_uid
 from app.deps import blackboard
 from app.services import market_learning, market_model
@@ -93,7 +92,7 @@ def market_learned_status(name: str, body: _Status, _: str = Depends(require_adm
     try:
         s = market_learning.set_status(name, body.status, body.category)
     except ValueError as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from e
     if s is None:
         raise HTTPException(404, f"No learned skill called '{name}'")
     return s

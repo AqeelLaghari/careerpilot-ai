@@ -35,7 +35,8 @@ for j in e["experience"]:
     print(f"  - {j['title']} @ {j['company']} | {j['start']} – {j['end']} | {j['months']} months | {len(j['bullets'])} bullets")
 print("\nEDUCATION:")
 for d in e["education"]:
-    print(f"  - [{d['degree_level']}] {d['degree']} | field: {d['field']} | {d['institution']} | {d['end_year']} | CGPA {d['cgpa']}")
+    print(f"  - [{d['degree_level']}] {d['degree']} | field: {d['field']} | {d['institution']} | "
+          f"{d['end_year']} | CGPA {d['cgpa']}")
 print("\nPROJECTS:")
 for p in e["projects"]:
     print(f"  - {p['title']}  →  {', '.join(p['skills'])}")

@@ -19,7 +19,7 @@ def build(body: RoadmapIn | None = None, uid: str = Depends(current_uid)):
     try:
         plan = agent.build_roadmap(uid, body.role if body else None)
     except NoResumeError as e:
-        raise HTTPException(404, str(e))
+        raise HTTPException(404, str(e)) from e
     if plan is None:
         raise HTTPException(503, "Market model not built yet, or role not found")
     return plan
@@ -44,9 +44,9 @@ def tick(task_id: str, body: TaskIn, uid: str = Depends(current_uid)):
     try:
         plan = agent.update_task(uid, task_id, body.done)
     except KeyError:
-        raise HTTPException(404, f"No task '{task_id}' in your roadmap")
+        raise HTTPException(404, f"No task '{task_id}' in your roadmap") from None
     except NoResumeError as e:
-        raise HTTPException(404, str(e))
+        raise HTTPException(404, str(e)) from e
     if plan is None:
         raise HTTPException(404, "No roadmap yet")
     return plan

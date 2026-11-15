@@ -60,8 +60,7 @@ class _CareerScreenState extends State<CareerScreen> {
   }
 
   Future<void> _openQuestionnaire() async {
-    final changed = await Navigator.push<bool>(
-        context, MaterialPageRoute(builder: (_) => const QuestionnaireScreen()));
+    final changed = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const QuestionnaireScreen()));
     if (changed == true) _load();
   }
 
@@ -97,7 +96,9 @@ class _CareerScreenState extends State<CareerScreen> {
 
   Future<void> _openRoadmap() async {
     final changed = await Navigator.push<bool>(
-        context, MaterialPageRoute(builder: (_) => RoadmapScreen(initial: _roadmap!)));
+      context,
+      MaterialPageRoute(builder: (_) => RoadmapScreen(initial: _roadmap!)),
+    );
     if (changed == true) _load(); // finished skills change your matches
   }
 
@@ -149,47 +150,57 @@ class _CareerScreenState extends State<CareerScreen> {
         icon: Icons.explore_outlined,
         child: matches.isEmpty
             ? const Text('No matches yet.')
-            : Column(children: [
-                for (final (i, m) in matches.indexed)
-                  CareerMatchTile(
-                    rank: i + 1,
-                    match: m,
-                    isTarget: m['role'] == target,
-                    busy: _busyRole == m['role'],
-                    onSetTarget: () => _setTarget(m['role'] as String),
-                  ),
-              ]),
+            : Column(
+                children: [
+                  for (final (i, m) in matches.indexed)
+                    CareerMatchTile(
+                      rank: i + 1,
+                      match: m,
+                      isTarget: m['role'] == target,
+                      busy: _busyRole == m['role'],
+                      onSetTarget: () => _setTarget(m['role'] as String),
+                    ),
+                ],
+              ),
       ),
     ];
     final right = <Widget>[
-      RoadmapSummaryCard(
-          roadmap: _roadmap, building: _buildingRoadmap, onBuild: _buildRoadmap, onOpen: _openRoadmap),
+      RoadmapSummaryCard(roadmap: _roadmap, building: _buildingRoadmap, onBuild: _buildRoadmap, onOpen: _openRoadmap),
       const JobDescriptionCard(),
     ];
 
     return RefreshIndicator(
       onRefresh: _load,
-      child: ListView(padding: const EdgeInsets.all(16), children: [
-        if (wide)
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Expanded(child: Column(children: left)),
-            const SizedBox(width: 16),
-            Expanded(child: Column(children: right)),
-          ])
-        else ...[...left, ...right],
-        if (_quiz != null && _quiz!['completed'] == true)
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: () async {
-                await api.delete('/questionnaire');
-                _openQuestionnaire();
-              },
-              icon: const Icon(Icons.restart_alt, size: 18),
-              label: const Text('Redo the questionnaire'),
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          if (wide)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: Column(children: left)),
+                const SizedBox(width: 16),
+                Expanded(child: Column(children: right)),
+              ],
+            )
+          else ...[
+            ...left,
+            ...right,
+          ],
+          if (_quiz != null && _quiz!['completed'] == true)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () async {
+                  await api.delete('/questionnaire');
+                  _openQuestionnaire();
+                },
+                icon: const Icon(Icons.restart_alt, size: 18),
+                label: const Text('Redo the questionnaire'),
+              ),
             ),
-          ),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -204,19 +215,21 @@ class EmptyHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: Column(children: [
-              Icon(icon, size: 72, color: AppColors.brand.withValues(alpha: 0.7)),
-              const SizedBox(height: 16),
-              Text(title, style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
-              const SizedBox(height: 8),
-              Text(text, textAlign: TextAlign.center),
-              if (action != null) ...[const SizedBox(height: 16), action!],
-            ]),
-          ),
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: Column(
+          children: [
+            Icon(icon, size: 72, color: AppColors.brand.withValues(alpha: 0.7)),
+            const SizedBox(height: 16),
+            Text(title, style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
+            const SizedBox(height: 8),
+            Text(text, textAlign: TextAlign.center),
+            if (action != null) ...[const SizedBox(height: 16), action!],
+          ],
         ),
-      );
+      ),
+    ),
+  );
 }

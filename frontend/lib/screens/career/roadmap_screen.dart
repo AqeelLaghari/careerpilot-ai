@@ -54,25 +54,29 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
   }
 
   void _celebrate(String skill, Map<String, dynamic>? mc) => showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          icon: const Icon(Icons.emoji_events, color: AppColors.warn, size: 48),
-          title: Text('$skill learned!'),
-          content: Text(mc == null
-              ? '$skill is now part of your profile.'
-              : '$skill is now part of your profile.\n\n'
-                  'Your ${mc['role']} match: ${mc['before']}% → ${mc['after']}%'),
-          actions: [FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Keep going'))],
-        ),
-      );
+    context: context,
+    builder: (_) => AlertDialog(
+      icon: const Icon(Icons.emoji_events, color: AppColors.warn, size: 48),
+      title: Text('$skill learned!'),
+      content: Text(
+        mc == null
+            ? '$skill is now part of your profile.'
+            : '$skill is now part of your profile.\n\n'
+                  'Your ${mc['role']} match: ${mc['before']}% → ${mc['after']}%',
+      ),
+      actions: [FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Keep going'))],
+    ),
+  );
 
   Future<void> _replan() async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Re-plan?'),
-        content: const Text('Builds a fresh plan from your current profile and questionnaire answers. '
-            'Skills you finished are skipped, and ticks on tasks that are still in the plan are kept.'),
+        content: const Text(
+          'Builds a fresh plan from your current profile and questionnaire answers. '
+          'Skills you finished are skipped, and ticks on tasks that are still in the plan are kept.',
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Re-plan')),
@@ -116,7 +120,10 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
                 onPressed: _replanning ? null : _replan,
                 icon: _replanning
                     ? const SizedBox(
-                        width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
                     : const Icon(Icons.autorenew),
               ),
             ],
@@ -124,7 +131,10 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white70,
               indicatorColor: Colors.white,
-              tabs: [Tab(text: 'Weekly plan'), Tab(text: 'Skills')],
+              tabs: [
+                Tab(text: 'Weekly plan'),
+                Tab(text: 'Skills'),
+              ],
             ),
           ),
           body: Center(
@@ -141,16 +151,19 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
   // ----------------------------------------------------------- weekly plan --
   Widget _weeksTab() {
     final current = _progress['current_week'] as int?;
-    return ListView(padding: const EdgeInsets.all(16), children: [
-      _progressCard(),
-      for (final w in _weeks) _weekCard(w, current),
-      if (((_plan['later'] as List?) ?? []).isNotEmpty)
-        SectionCard(
-          title: 'After this plan',
-          icon: Icons.more_time,
-          child: Text((_plan['later'] as List).map((l) => (l as Map)['name']).join(', ')),
-        ),
-    ]);
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _progressCard(),
+        for (final w in _weeks) _weekCard(w, current),
+        if (((_plan['later'] as List?) ?? []).isNotEmpty)
+          SectionCard(
+            title: 'After this plan',
+            icon: Icons.more_time,
+            child: Text((_plan['later'] as List).map((l) => (l as Map)['name']).join(', ')),
+          ),
+      ],
+    );
   }
 
   Widget _progressCard() {
@@ -163,26 +176,42 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(children: [
-          ScoreGauge(score: p['percent'] as num, label: 'done', size: 96),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Icon(p['status'] == 'behind' ? Icons.warning_amber : Icons.check_circle_outline, color: color),
-                const SizedBox(width: 6),
-                Expanded(child: Text(p['message'] as String, style: TextStyle(color: color, fontWeight: FontWeight.w600))),
-              ]),
-              const SizedBox(height: 8),
-              Text('${p['hours_done']} of ${p['hours_total']} hours · '
-                  '${p['tasks_done']}/${p['tasks_total']} tasks · '
-                  '${p['skills_completed']} skill(s) learned'),
-              const SizedBox(height: 4),
-              Text((_plan['summary'] as Map)['message'] as String,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            ]),
-          ),
-        ]),
+        child: Row(
+          children: [
+            ScoreGauge(score: p['percent'] as num, label: 'done', size: 96),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(p['status'] == 'behind' ? Icons.warning_amber : Icons.check_circle_outline, color: color),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          p['message'] as String,
+                          style: TextStyle(color: color, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${p['hours_done']} of ${p['hours_total']} hours · '
+                    '${p['tasks_done']}/${p['tasks_total']} tasks · '
+                    '${p['skills_completed']} skill(s) learned',
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    (_plan['summary'] as Map)['message'] as String,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -195,7 +224,9 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
     return Card(
       shape: isCurrent
           ? RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.brand, width: 2))
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: AppColors.brand, width: 2),
+            )
           : null,
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -207,8 +238,10 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
             child: finished ? const Icon(Icons.check) : Text('${w['week']}'),
           ),
           title: Text('Week ${w['week']}${isCurrent ? '  ·  this week' : ''}'),
-          subtitle: Text('$done/${tasks.length} tasks · ${w['hours']} h · '
-              '${tasks.map((t) => t['skill']).toSet().join(', ')}'),
+          subtitle: Text(
+            '$done/${tasks.length} tasks · ${w['hours']} h · '
+            '${tasks.map((t) => t['skill']).toSet().join(', ')}',
+          ),
           children: [for (final t in tasks) _taskTile(t)],
         ),
       ),
@@ -226,10 +259,13 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
       value: t['done'] == true,
       onChanged: saving ? null : (v) => _toggle(t, v ?? false),
       secondary: Icon(icon, color: Colors.grey),
-      title: Text(t['title'] as String,
-          style: TextStyle(
-              decoration: t['done'] == true ? TextDecoration.lineThrough : null,
-              color: t['done'] == true ? Colors.grey : null)),
+      title: Text(
+        t['title'] as String,
+        style: TextStyle(
+          decoration: t['done'] == true ? TextDecoration.lineThrough : null,
+          color: t['done'] == true ? Colors.grey : null,
+        ),
+      ),
       subtitle: Text('${t['hours']} h · ${t['skill']}'),
       controlAffinity: ListTileControlAffinity.trailing,
     );
@@ -239,20 +275,27 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
   Widget _skillsTab() {
     final completed = _completed;
     final done = ((_plan['completed_skills'] as List?) ?? []).cast<Map<String, dynamic>>();
-    return ListView(padding: const EdgeInsets.all(16), children: [
-      const Padding(
-        padding: EdgeInsets.only(bottom: 8),
-        child: Text('In learning order. Foundations come before the skills that need them.',
-            style: TextStyle(color: Colors.grey)),
-      ),
-      for (final (i, s) in _skills.indexed) _skillCard(i + 1, s, completed.contains(s['name'])),
-      if (done.any((c) => !_skills.any((s) => s['name'] == c['name'])))
-        SectionCard(
-          title: 'Learned in earlier plans',
-          icon: Icons.emoji_events_outlined,
-          child: Text(done.where((c) => !_skills.any((s) => s['name'] == c['name'])).map((c) => c['name']).join(', ')),
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(bottom: 8),
+          child: Text(
+            'In learning order. Foundations come before the skills that need them.',
+            style: TextStyle(color: Colors.grey),
+          ),
         ),
-    ]);
+        for (final (i, s) in _skills.indexed) _skillCard(i + 1, s, completed.contains(s['name'])),
+        if (done.any((c) => !_skills.any((s) => s['name'] == c['name'])))
+          SectionCard(
+            title: 'Learned in earlier plans',
+            icon: Icons.emoji_events_outlined,
+            child: Text(
+              done.where((c) => !_skills.any((s) => s['name'] == c['name'])).map((c) => c['name']).join(', '),
+            ),
+          ),
+      ],
+    );
   }
 
   Widget _skillCard(int n, Map<String, dynamic> s, bool learned) {
@@ -269,13 +312,24 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
             child: learned ? const Icon(Icons.check) : Text('$n'),
           ),
           title: Text(s['name'] as String),
-          subtitle: Text([
-            switch (kind) { 'foundation' => 'Foundation', 'improve' => 'Improve', _ => 'New skill' },
-            if (s['level'] != null)
-              switch (s['level'] as int) { 1 => 'Basic', 2 => 'Core', 3 => 'Advanced', _ => 'Whole field' },
-            '${s['hours']} h',
-            if (share != null) 'in ${(share * 100).round()}% of postings',
-          ].join(' · ')),
+          subtitle: Text(
+            [
+              switch (kind) {
+                'foundation' => 'Foundation',
+                'improve' => 'Improve',
+                _ => 'New skill',
+              },
+              if (s['level'] != null)
+                switch (s['level'] as int) {
+                  1 => 'Basic',
+                  2 => 'Core',
+                  3 => 'Advanced',
+                  _ => 'Whole field',
+                },
+              '${s['hours']} h',
+              if (share != null) 'in ${(share * 100).round()}% of postings',
+            ].join(' · '),
+          ),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           expandedCrossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -294,21 +348,25 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
                 subtitle: Text('YouTube · ${v['channel']}'),
                 onTap: () => _open(v['url'] as String),
               ),
-            Wrap(spacing: 8, runSpacing: 8, children: [
-              for (final r in (s['resources'] as List).cast<Map<String, dynamic>>().where((r) => r['channel'] == null))
-                ActionChip(
-                  avatar: Icon(
-                      switch (r['type']) {
-                        'video' => Icons.play_circle_outline,
-                        'course' => Icons.school_outlined,
-                        'projects' => Icons.lightbulb_outline,
-                        _ => Icons.article_outlined,
-                      },
-                      size: 18),
-                  label: Text(r['title'] as String, style: const TextStyle(fontSize: 12)),
-                  onPressed: () => _open(r['url'] as String),
-                ),
-            ]),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final r in (s['resources'] as List).cast<Map<String, dynamic>>().where(
+                  (r) => r['channel'] == null,
+                ))
+                  ActionChip(
+                    avatar: Icon(switch (r['type']) {
+                      'video' => Icons.play_circle_outline,
+                      'course' => Icons.school_outlined,
+                      'projects' => Icons.lightbulb_outline,
+                      _ => Icons.article_outlined,
+                    }, size: 18),
+                    label: Text(r['title'] as String, style: const TextStyle(fontSize: 12)),
+                    onPressed: () => _open(r['url'] as String),
+                  ),
+              ],
+            ),
           ],
         ),
       ),

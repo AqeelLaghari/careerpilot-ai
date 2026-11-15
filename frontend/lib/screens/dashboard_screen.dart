@@ -23,8 +23,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Text('Welcome, ${user?.displayName ?? user?.email ?? ''}',
-              style: Theme.of(context).textTheme.headlineSmall),
+          Text('Welcome, ${user?.displayName ?? user?.email ?? ''}', style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 16),
           FutureBuilder<Map<String, dynamic>>(
             future: _me,
@@ -46,8 +45,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: ListTile(
                   leading: const Icon(Icons.check_circle, color: Colors.green),
                   title: const Text('Connected to CareerPilot backend'),
-                  subtitle: Text('User ID: ${data['uid']}\n'
-                      'Sections saved: ${(data['state'] as Map).keys.where((k) => !k.startsWith('_')).join(', ').ifEmpty('none yet')}'),
+                  subtitle: Text(
+                    'User ID: ${data['uid']}\n'
+                    'Sections saved: ${(data['state'] as Map).keys.where((k) => !k.startsWith('_')).join(', ').ifEmpty('none yet')}',
+                  ),
                 ),
               );
             },

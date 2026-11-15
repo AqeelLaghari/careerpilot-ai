@@ -17,11 +17,11 @@ Grows over Days 9-11:
 import time
 
 from app.orchestrator.blackboard import Blackboard
-from app.services.profile import build_profile
 from app.services import career_matcher, live_jobs
-from app.services import roadmap as rm
 from app.services import questionnaire as qn
+from app.services import roadmap as rm
 from app.services.person import resume_person_key
+from app.services.profile import build_profile
 
 AGENT_NAME = "career_agent"
 RESET_GAP = 40      # old data without a person key: reset if the target is this far behind the best fit

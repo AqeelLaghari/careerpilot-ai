@@ -78,7 +78,10 @@ def candidate_info(entities: dict | None, year: int | None = None, answers: dict
         if best.get("field"):
             out["subject"] = _title(str(best["field"]).strip())[:60]
         year = year or time.localtime().tm_year
-        val = lambda k: ((answers or {}).get(k) or {}).get("value")
+
+        def val(k):
+            return ((answers or {}).get(k) or {}).get("value")
+
         if best.get("expected") or best.get("end_year"):
             out["studying"] = bool(best.get("expected") or best["end_year"] >= year)
         elif val("career_stage") or val("graduation_year"):          # no years on the CV: the questionnaire

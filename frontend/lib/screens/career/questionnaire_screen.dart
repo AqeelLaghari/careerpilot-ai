@@ -107,7 +107,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     setState(() => _sending = true);
     try {
       final r = await api.post('/questionnaire/answers', {
-        'answers': {q['id']: _value(q)}
+        'answers': {q['id']: _value(q)},
       });
       final err = (r['errors'] as Map)[q['id']];
       if (err != null) {
@@ -136,84 +136,100 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
         appBar: AppBar(title: const Text('A few quick questions')),
         body: _loading
             ? const Center(child: CircularProgressIndicator())
-            : Column(children: [
-                LinearProgressIndicator(
-                  value: total == 0 ? 1 : _answered / total,
-                  minHeight: 6,
-                  color: AppColors.good,
-                  backgroundColor: Colors.grey.shade200,
-                ),
-                Expanded(
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 640),
-                      child: q == null ? _done() : _question(q, total),
+            : Column(
+                children: [
+                  LinearProgressIndicator(
+                    value: total == 0 ? 1 : _answered / total,
+                    minHeight: 6,
+                    color: AppColors.good,
+                    backgroundColor: Colors.grey.shade200,
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 640),
+                        child: q == null ? _done() : _question(q, total),
+                      ),
                     ),
                   ),
-                ),
-              ]),
+                ],
+              ),
       ),
     );
   }
 
   Widget _done() => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.check_circle, size: 72, color: AppColors.good),
-          const SizedBox(height: 12),
-          Text(_questions.isEmpty ? 'All done!' : 'That\'s it for now',
-              style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          Text(
-            _questions.isEmpty
-                ? 'Your career matches and roadmap now use your answers.'
-                : 'You skipped ${_skipped.length} question(s). You can answer them later from the Career tab.',
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-          FilledButton(onPressed: () => Navigator.pop(context, _changed), child: const Text('Back to Career')),
-        ]),
-      );
+    padding: const EdgeInsets.all(24),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.check_circle, size: 72, color: AppColors.good),
+        const SizedBox(height: 12),
+        Text(_questions.isEmpty ? 'All done!' : 'That\'s it for now', style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: 8),
+        Text(
+          _questions.isEmpty
+              ? 'Your career matches and roadmap now use your answers.'
+              : 'You skipped ${_skipped.length} question(s). You can answer them later from the Career tab.',
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 20),
+        FilledButton(onPressed: () => Navigator.pop(context, _changed), child: const Text('Back to Career')),
+      ],
+    ),
+  );
 
   Widget _question(Map<String, dynamic> q, int total) {
     final t = Theme.of(context).textTheme;
-    return ListView(padding: const EdgeInsets.all(20), children: [
-      Text('Question ${_answered + 1} of $total', style: const TextStyle(color: Colors.grey)),
-      const SizedBox(height: 8),
-      Text(q['text'] as String, style: t.headlineSmall),
-      if (q['why'] != null) ...[
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        Text('Question ${_answered + 1} of $total', style: const TextStyle(color: Colors.grey)),
         const SizedBox(height: 8),
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Icon(Icons.info_outline, size: 18, color: Colors.grey),
-          const SizedBox(width: 6),
-          Expanded(child: Text(q['why'] as String, style: const TextStyle(color: Colors.grey))),
-        ]),
-      ],
-      const SizedBox(height: 20),
-      _input(q),
-      if (_error != null) ...[
-        const SizedBox(height: 12),
-        Text(_error!, style: const TextStyle(color: AppColors.bad)),
-      ],
-      const SizedBox(height: 24),
-      Row(children: [
-        TextButton(
-          onPressed: _sending ? null : () => setState(() {
-            _skipped.add(q['id'] as String);
-            _resetInput();
-          }),
-          child: const Text('Skip'),
+        Text(q['text'] as String, style: t.headlineSmall),
+        if (q['why'] != null) ...[
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.info_outline, size: 18, color: Colors.grey),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(q['why'] as String, style: const TextStyle(color: Colors.grey)),
+              ),
+            ],
+          ),
+        ],
+        const SizedBox(height: 20),
+        _input(q),
+        if (_error != null) ...[
+          const SizedBox(height: 12),
+          Text(_error!, style: const TextStyle(color: AppColors.bad)),
+        ],
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            TextButton(
+              onPressed: _sending
+                  ? null
+                  : () => setState(() {
+                      _skipped.add(q['id'] as String);
+                      _resetInput();
+                    }),
+              child: const Text('Skip'),
+            ),
+            const Spacer(),
+            FilledButton.icon(
+              onPressed: _sending || !_ready(q) ? null : () => _submit(q),
+              icon: _sending
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.arrow_forward),
+              label: const Text('Next'),
+            ),
+          ],
         ),
-        const Spacer(),
-        FilledButton.icon(
-          onPressed: _sending || !_ready(q) ? null : () => _submit(q),
-          icon: _sending
-              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Icon(Icons.arrow_forward),
-          label: const Text('Next'),
-        ),
-      ]),
-    ]);
+      ],
+    );
   }
 
   // One input widget per question type
@@ -222,69 +238,82 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     switch (q['type']) {
       case 'single':
       case 'role':
-        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          RadioGroup<String>(
-            groupValue: _single,
-            onChanged: (v) => setState(() {
-              _single = v;
-              _textCtrl.clear();
-            }),
-            child: Column(children: [
-              for (final o in options)
-                RadioListTile<String>(
-                  value: o['value'] as String,
-                  title: Text(o['label'] as String),
-                  contentPadding: EdgeInsets.zero,
-                ),
-            ]),
-          ),
-          if (q['allow_other'] == true)
-            TextField(
-              controller: _textCtrl,
-              decoration: const InputDecoration(labelText: 'Or type another role', border: OutlineInputBorder()),
-              onChanged: (_) => setState(() => _single = null),
-            ),
-        ]);
-      case 'multi':
-        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            for (final o in options)
-              FilterChip(
-                label: Text(o['label'] as String),
-                selected: _multi.contains(o['value']),
-                onSelected: (on) => setState(() {
-                  final v = o['value'] as String;
-                  if (on) {
-                    final max = q['max_choices'] as int?;
-                    if (max == null || _multi.length < max) _multi.add(v);
-                  } else {
-                    _multi.remove(v);
-                  }
-                }),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            RadioGroup<String>(
+              groupValue: _single,
+              onChanged: (v) => setState(() {
+                _single = v;
+                _textCtrl.clear();
+              }),
+              child: Column(
+                children: [
+                  for (final o in options)
+                    RadioListTile<String>(
+                      value: o['value'] as String,
+                      title: Text(o['label'] as String),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                ],
               ),
-          ]),
-          if (q['max_choices'] != null) ...[
-            const SizedBox(height: 6),
-            Text('Choose up to ${q['max_choices']}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-          ],
-          if (q['allow_other'] == true) ...[
-            const SizedBox(height: 12),
-            TextField(
-              controller: _textCtrl,
-              decoration: const InputDecoration(
-                  labelText: 'Others (comma-separated)', border: OutlineInputBorder()),
-              onChanged: (_) => setState(() {}),
             ),
+            if (q['allow_other'] == true)
+              TextField(
+                controller: _textCtrl,
+                decoration: const InputDecoration(labelText: 'Or type another role', border: OutlineInputBorder()),
+                onChanged: (_) => setState(() => _single = null),
+              ),
           ],
-          const SizedBox(height: 6),
-          const Text('Select none and press Next if none apply.', style: TextStyle(color: Colors.grey, fontSize: 12)),
-        ]);
+        );
+      case 'multi':
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final o in options)
+                  FilterChip(
+                    label: Text(o['label'] as String),
+                    selected: _multi.contains(o['value']),
+                    onSelected: (on) => setState(() {
+                      final v = o['value'] as String;
+                      if (on) {
+                        final max = q['max_choices'] as int?;
+                        if (max == null || _multi.length < max) _multi.add(v);
+                      } else {
+                        _multi.remove(v);
+                      }
+                    }),
+                  ),
+              ],
+            ),
+            if (q['max_choices'] != null) ...[
+              const SizedBox(height: 6),
+              Text('Choose up to ${q['max_choices']}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+            ],
+            if (q['allow_other'] == true) ...[
+              const SizedBox(height: 12),
+              TextField(
+                controller: _textCtrl,
+                decoration: const InputDecoration(labelText: 'Others (comma-separated)', border: OutlineInputBorder()),
+                onChanged: (_) => setState(() {}),
+              ),
+            ],
+            const SizedBox(height: 6),
+            const Text('Select none and press Next if none apply.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+          ],
+        );
       case 'number':
         return TextField(
           controller: _textCtrl,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
-              labelText: 'Between ${q['min']} and ${q['max']}', border: const OutlineInputBorder()),
+            labelText: 'Between ${q['min']} and ${q['max']}',
+            border: const OutlineInputBorder(),
+          ),
           onChanged: (_) => setState(() {}),
         );
       case 'text':
@@ -296,30 +325,36 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
         );
       case 'rating':
         final scale = (q['scale'] as List).cast<String>();
-        return Column(children: [
-          for (final skill in (q['items'] as List).cast<String>())
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(skill, style: const TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 6),
-                SegmentedButton<String>(
-                  segments: [
-                    for (final l in scale) ButtonSegment(value: l, label: Text(l[0].toUpperCase() + l.substring(1))),
+        return Column(
+          children: [
+            for (final skill in (q['items'] as List).cast<String>())
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(skill, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 6),
+                    SegmentedButton<String>(
+                      segments: [
+                        for (final l in scale)
+                          ButtonSegment(value: l, label: Text(l[0].toUpperCase() + l.substring(1))),
+                      ],
+                      emptySelectionAllowed: true,
+                      selected: {if (_rating[skill] != null) _rating[skill]!},
+                      onSelectionChanged: (s) => setState(() {
+                        if (s.isEmpty) {
+                          _rating.remove(skill);
+                        } else {
+                          _rating[skill] = s.first;
+                        }
+                      }),
+                    ),
                   ],
-                  emptySelectionAllowed: true,
-                  selected: {if (_rating[skill] != null) _rating[skill]!},
-                  onSelectionChanged: (s) => setState(() {
-                    if (s.isEmpty) {
-                      _rating.remove(skill);
-                    } else {
-                      _rating[skill] = s.first;
-                    }
-                  }),
                 ),
-              ]),
-            ),
-        ]);
+              ),
+          ],
+        );
     }
     return Text('Unsupported question type: ${q['type']}');
   }

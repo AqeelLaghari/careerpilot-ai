@@ -87,6 +87,7 @@ def test_unknown_role_returns_none(built_model):
 
 def test_market_endpoints(built_model):
     from fastapi.testclient import TestClient
+
     from app.main import app
     client = TestClient(app)
     info = client.get("/market/info").json()

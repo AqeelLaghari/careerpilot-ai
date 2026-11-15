@@ -62,10 +62,10 @@ def two_column_pdf() -> bytes:
 
 
 # ---- no real SBERT model in tests: a tiny deterministic bag-of-words embedder ----
-import re as _re
-import zlib as _zlib
+import re as _re  # noqa: E402  (kept next to the helper that uses them)
+import zlib as _zlib  # noqa: E402
 
-import numpy as _np
+import numpy as _np  # noqa: E402
 
 
 def fake_embed(texts):

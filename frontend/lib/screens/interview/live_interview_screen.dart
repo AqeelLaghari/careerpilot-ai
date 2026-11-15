@@ -119,21 +119,27 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
     setState(() => _stage = _Stage.connecting);
     try {
       // One microphone stream for the whole interview; audio is only sent while answering.
-      final stream = await _recorder.startStream(const RecordConfig(
-        encoder: AudioEncoder.pcm16bits,
-        sampleRate: 16000,
-        numChannels: 1,
-        echoCancel: true,
-        noiseSuppress: true,
-      ));
+      final stream = await _recorder.startStream(
+        const RecordConfig(
+          encoder: AudioEncoder.pcm16bits,
+          sampleRate: 16000,
+          numChannels: 1,
+          echoCancel: true,
+          noiseSuppress: true,
+        ),
+      );
       _mic = stream.listen(_onAudio);
-      final ws = WebSocketChannel.connect(Uri.parse('${apiBaseUrl.replaceFirst(RegExp(r'^http'), 'ws')}/interview/live/ws'));
+      final ws = WebSocketChannel.connect(
+        Uri.parse('${apiBaseUrl.replaceFirst(RegExp(r'^http'), 'ws')}/interview/live/ws'),
+      );
       _ws = ws;
       await ws.ready;
-      ws.stream.listen((d) => _onMessage(jsonDecode(d as String) as Map<String, dynamic>),
-          onDone: () {
-            if (_stage != _Stage.ended && _stage != _Stage.failed) _fail('The connection to the server was lost.');
-          });
+      ws.stream.listen(
+        (d) => _onMessage(jsonDecode(d as String) as Map<String, dynamic>),
+        onDone: () {
+          if (_stage != _Stage.ended && _stage != _Stage.failed) _fail('The connection to the server was lost.');
+        },
+      );
       final token = await FirebaseAuth.instance.currentUser?.getIdToken();
       _send({'type': 'auth', 'token': token ?? '', 'session_id': _sessionId});
       _tick = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -269,15 +275,18 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
     final inCall = {_Stage.interviewerSpeaking, _Stage.listening, _Stage.thinking, _Stage.connecting}.contains(_stage);
     return Scaffold(
       backgroundColor: inCall ? Colors.black : null,
-      appBar: inCall
-          ? null
-          : AppBar(title: Text(_stage == _Stage.ended ? 'Interview report' : 'Live interview')),
+      appBar: inCall ? null : AppBar(title: Text(_stage == _Stage.ended ? 'Interview report' : 'Live interview')),
       body: switch (_stage) {
-        _Stage.preparing => _center(const Column(mainAxisSize: MainAxisSize.min, children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Preparing your interview from your CV…'),
-          ])),
+        _Stage.preparing => _center(
+          const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Preparing your interview from your CV…'),
+            ],
+          ),
+        ),
         _Stage.lobby => _lobby(),
         _Stage.failed => _center(Text(_error ?? 'Something went wrong', textAlign: TextAlign.center)),
         _Stage.ended => _ended(),
@@ -286,21 +295,32 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
     );
   }
 
-  Widget _center(Widget child) =>
-      Center(child: Padding(padding: const EdgeInsets.all(24), child: child));
+  Widget _center(Widget child) => Center(
+    child: Padding(padding: const EdgeInsets.all(24), child: child),
+  );
 
-  Widget _lobby() => ListView(padding: const EdgeInsets.all(16), children: [
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 640),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+  Widget _lobby() => ListView(
+    padding: const EdgeInsets.all(16),
+    children: [
+      Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
               AspectRatio(aspectRatio: 4 / 3, child: FaceCamera.supported ? _camera.preview() : const SizedBox()),
               const SizedBox(height: 8),
-              Text(_live.status == 'ready' ? _live.direction : 'Starting camera…',
-                  textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
+              Text(
+                _live.status == 'ready' ? _live.direction : 'Starting camera…',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.grey),
+              ),
               const SizedBox(height: 16),
-              Text('${widget.minutes}-minute interview · $_role', style: Theme.of(context).textTheme.titleLarge,
-                  textAlign: TextAlign.center),
+              Text(
+                '${widget.minutes}-minute interview · $_role',
+                style: Theme.of(context).textTheme.titleLarge,
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 8),
               const Text(
                 'The interviewer will speak to you. Answer naturally, like a real interview. '
@@ -314,10 +334,12 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
                 icon: const Icon(Icons.call),
                 label: const Padding(padding: EdgeInsets.all(12), child: Text('Join interview')),
               ),
-            ]),
+            ],
           ),
         ),
-      ]);
+      ),
+    ],
+  );
 
   /// Video-call layout: big camera, subtitles at the bottom, small status on top.
   Widget _call() {
@@ -330,112 +352,149 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
       _ => 'Interviewer is thinking…',
     };
     return SafeArea(
-      child: Stack(children: [
-        Positioned.fill(child: FaceCamera.supported ? _camera.preview() : const ColoredBox(color: Colors.black)),
-        // top bar: interviewer status, time left, end
-        Positioned(
-          left: 12,
-          right: 12,
-          top: 12,
-          child: Row(children: [
-            _pill(Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(
-                _stage == _Stage.interviewerSpeaking
-                    ? Icons.graphic_eq
-                    : listening
-                        ? Icons.mic
-                        : Icons.more_horiz,
-                size: 18,
-                color: listening ? AppColors.good : Colors.white,
-              ),
-              const SizedBox(width: 6),
-              Text(status, style: const TextStyle(color: Colors.white)),
-            ])),
-            const Spacer(),
-            _pill(Text(_mmss(_remaining), style: const TextStyle(color: Colors.white, fontFeatures: []))),
-            const SizedBox(width: 8),
-            FilledButton.icon(
-              style: FilledButton.styleFrom(backgroundColor: AppColors.bad),
-              onPressed: _endEarly,
-              icon: const Icon(Icons.call_end, size: 18),
-              label: const Text('End'),
-            ),
-          ]),
-        ),
-        // eye-contact light
-        if (_live.status == 'ready')
+      child: Stack(
+        children: [
+          Positioned.fill(child: FaceCamera.supported ? _camera.preview() : const ColoredBox(color: Colors.black)),
+          // top bar: interviewer status, time left, end
           Positioned(
             left: 12,
-            top: 60,
-            child: _pill(Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.circle, size: 10, color: _live.lookingAtScreen ? AppColors.good : AppColors.warn),
-              const SizedBox(width: 6),
-              Text(_live.lookingAtScreen ? 'Good eye contact' : _live.direction,
-                  style: const TextStyle(color: Colors.white, fontSize: 12)),
-            ])),
-          ),
-        // subtitles + answer controls
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Color(0xCC000000)],
-              ),
-            ),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              if (_subtitle.isNotEmpty)
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 900),
-                  child: Text(
-                    _subtitle,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: _stage == _Stage.interviewerSpeaking ? 1 : 0.7),
-                      fontSize: 20,
-                      height: 1.35,
-                      shadows: const [Shadow(blurRadius: 4)],
-                    ),
+            right: 12,
+            top: 12,
+            child: Row(
+              children: [
+                _pill(
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _stage == _Stage.interviewerSpeaking
+                            ? Icons.graphic_eq
+                            : listening
+                            ? Icons.mic
+                            : Icons.more_horiz,
+                        size: 18,
+                        color: listening ? AppColors.good : Colors.white,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(status, style: const TextStyle(color: Colors.white)),
+                    ],
                   ),
                 ),
-              const SizedBox(height: 14),
-              if (listening)
-                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  SizedBox(
-                    width: 160,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(value: _level, minHeight: 6, color: AppColors.good,
-                          backgroundColor: Colors.white24),
-                    ),
+                const Spacer(),
+                _pill(
+                  Text(
+                    _mmss(_remaining),
+                    style: const TextStyle(color: Colors.white, fontFeatures: []),
                   ),
-                  const SizedBox(width: 16),
-                  FilledButton.icon(
-                    onPressed: _answered,
-                    icon: const Icon(Icons.check),
-                    label: const Text("I'm done"),
-                  ),
-                ])
-              else if (_stage == _Stage.thinking)
-                const SizedBox(
-                    width: 120, child: LinearProgressIndicator(minHeight: 3, color: Colors.white, backgroundColor: Colors.white24)),
-            ]),
+                ),
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(backgroundColor: AppColors.bad),
+                  onPressed: _endEarly,
+                  icon: const Icon(Icons.call_end, size: 18),
+                  label: const Text('End'),
+                ),
+              ],
+            ),
           ),
-        ),
-      ]),
+          // eye-contact light
+          if (_live.status == 'ready')
+            Positioned(
+              left: 12,
+              top: 60,
+              child: _pill(
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.circle, size: 10, color: _live.lookingAtScreen ? AppColors.good : AppColors.warn),
+                    const SizedBox(width: 6),
+                    Text(
+                      _live.lookingAtScreen ? 'Good eye contact' : _live.direction,
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          // subtitles + answer controls
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Color(0xCC000000)],
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_subtitle.isNotEmpty)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 900),
+                      child: Text(
+                        _subtitle,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: _stage == _Stage.interviewerSpeaking ? 1 : 0.7),
+                          fontSize: 20,
+                          height: 1.35,
+                          shadows: const [Shadow(blurRadius: 4)],
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 14),
+                  if (listening)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 160,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: _level,
+                              minHeight: 6,
+                              color: AppColors.good,
+                              backgroundColor: Colors.white24,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        FilledButton.icon(
+                          onPressed: _answered,
+                          icon: const Icon(Icons.check),
+                          label: const Text("I'm done"),
+                        ),
+                      ],
+                    )
+                  else if (_stage == _Stage.thinking)
+                    const SizedBox(
+                      width: 120,
+                      child: LinearProgressIndicator(
+                        minHeight: 3,
+                        color: Colors.white,
+                        backgroundColor: Colors.white24,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _pill(Widget child) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(color: const Color(0x99000000), borderRadius: BorderRadius.circular(20)),
-        child: child,
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    decoration: BoxDecoration(color: const Color(0x99000000), borderRadius: BorderRadius.circular(20)),
+    child: child,
+  );
 
   /// After the interview: the graded report (it waits while the server grades).
   Widget _ended() => _sessionId == null

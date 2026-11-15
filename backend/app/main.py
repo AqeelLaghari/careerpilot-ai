@@ -7,10 +7,10 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth import current_uid
-from app.services import llm
 from app.deps import blackboard
 from app.orchestrator.blackboard import SECTIONS
 from app.routers import career, interview, jobs, live_interview, market, questionnaire, resume, roadmap
+from app.services import llm
 
 logging.basicConfig(level=logging.INFO)
 

@@ -68,8 +68,14 @@ void main() {
   test('gaze letters', () {
     expect(GazeRecorder.codeFor(const FaceSample(status: 'ready')), 'N');
     expect(GazeRecorder.codeFor(const FaceSample(status: 'ready', face: true, faces: 1, eyesOpen: 0.3)), 'S');
-    expect(GazeRecorder.codeFor(const FaceSample(status: 'ready', face: true, faces: 1, eyesOpen: 0.3, gazeV: 0.8)), 'd');
-    expect(GazeRecorder.codeFor(const FaceSample(status: 'ready', face: true, faces: 1, eyesOpen: 0.3, headYaw: -0.6)), 'L');
+    expect(
+      GazeRecorder.codeFor(const FaceSample(status: 'ready', face: true, faces: 1, eyesOpen: 0.3, gazeV: 0.8)),
+      'd',
+    );
+    expect(
+      GazeRecorder.codeFor(const FaceSample(status: 'ready', face: true, faces: 1, eyesOpen: 0.3, headYaw: -0.6)),
+      'L',
+    );
     expect(GazeRecorder.codeFor(const FaceSample(status: 'ready', face: true, faces: 2, eyesOpen: 0.3)), 'M');
   });
 }

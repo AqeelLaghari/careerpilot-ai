@@ -55,7 +55,7 @@ def new_live(body: LiveIn, uid: str = Depends(current_uid)):
     try:
         live = agent.new_live(uid, body.minutes, body.role)
     except NoResumeError as e:
-        raise HTTPException(404, str(e))
+        raise HTTPException(404, str(e)) from e
     return {k: live[k] for k in ("id", "role", "level", "minutes", "status")}
 
 

@@ -24,7 +24,8 @@ class PDFError(ValueError):
 # ---------------------------------------------------------------- headings --
 SECTION_HEADINGS = {
     "summary": ["summary", "professional summary", "profile", "about me", "about", "objective",
-                "career objective", "professional profile", "personal statement", "career summary", "executive summary", "summary of qualifications",
+                "career objective", "professional profile", "personal statement", "career summary",
+                "executive summary", "summary of qualifications",
                 "career profile", "professional overview", "introduction"],
     "experience": ["experience", "work experience", "professional experience", "employment",
                    "employment history", "work history", "internships", "internship",
@@ -357,7 +358,7 @@ def extract_pdf(data: bytes) -> dict:
     try:
         doc = pymupdf.open(stream=data, filetype="pdf")
     except Exception:
-        raise PDFError("Could not open the PDF. It may be corrupted.")
+        raise PDFError("Could not open the PDF. It may be corrupted.") from None
     if doc.needs_pass:
         raise PDFError("The PDF is password-protected.")
 

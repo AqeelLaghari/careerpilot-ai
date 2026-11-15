@@ -60,7 +60,7 @@ def analyse(codes: str, fps: float) -> dict:
         else:
             merged.append([r[0], r[1], r[2], r[3], Counter(r[4]) if r[4] else None])
     away_time, events = 0.0, []
-    for code, start, length, away, kinds in merged:
+    for _code, start, length, away, kinds in merged:
         secs = length / fps
         if not away or secs < GRACE:
             continue                              # looking, or just a thinking glance

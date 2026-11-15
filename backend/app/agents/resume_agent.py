@@ -18,10 +18,10 @@ import time
 
 from app.orchestrator.blackboard import Blackboard
 from app.services import career_matcher
-from app.services.person import person_key, resume_person_key
 from app.services.ats_scorer import score_resume
 from app.services.entity_extractor import extract_entities
 from app.services.pdf_parser import extract_pdf
+from app.services.person import person_key, resume_person_key
 
 AGENT_NAME = "resume_agent"
 BETTER_FIT_GAP = 25          # points: suggest the best-fit role when the target is this far behind

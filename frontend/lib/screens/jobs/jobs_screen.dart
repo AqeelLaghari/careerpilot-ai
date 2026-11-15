@@ -131,106 +131,120 @@ class _JobsScreenState extends State<JobsScreen> {
 
     return RefreshIndicator(
       onRefresh: () => _load(quiet: true),
-      child: ListView(padding: const EdgeInsets.all(16), children: [
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 900),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Remote jobs open to Pakistan', style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 4),
-              Text(
-                [
-                  if (d['role'] != null) 'Best match for you first (${d['role']})',
-                  '${d['jobs_available']} jobs',
-                  if (d['updated_at'] != null) 'updated ${_ago(d['updated_at'] as num)}',
-                ].join(' · '),
-                style: const TextStyle(color: Colors.grey),
-              ),
-              const SizedBox(height: 12),
-              TrendingSkills(userSkills: {for (final s in (d['user_skills'] as List? ?? [])) '$s'.toLowerCase()}),
-              Row(children: [
-                Expanded(
-                  child: TextField(
-                    controller: _search,
-                    textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
-                      hintText: 'Search a job title, company or skill',
-                      prefixIcon: const Icon(Icons.search),
-                      border: const OutlineInputBorder(),
-                      isDense: true,
-                      suffixIcon: _search.text.isEmpty
-                          ? null
-                          : IconButton(
-                              tooltip: 'Clear search',
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                _search.clear();
-                                _searchFor('', now: true);
-                              }),
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 900),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Remote jobs open to Pakistan', style: Theme.of(context).textTheme.headlineSmall),
+                  const SizedBox(height: 4),
+                  Text(
+                    [
+                      if (d['role'] != null) 'Best match for you first (${d['role']})',
+                      '${d['jobs_available']} jobs',
+                      if (d['updated_at'] != null) 'updated ${_ago(d['updated_at'] as num)}',
+                    ].join(' · '),
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  const SizedBox(height: 12),
+                  TrendingSkills(userSkills: {for (final s in (d['user_skills'] as List? ?? [])) '$s'.toLowerCase()}),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _search,
+                          textInputAction: TextInputAction.search,
+                          decoration: InputDecoration(
+                            hintText: 'Search a job title, company or skill',
+                            prefixIcon: const Icon(Icons.search),
+                            border: const OutlineInputBorder(),
+                            isDense: true,
+                            suffixIcon: _search.text.isEmpty
+                                ? null
+                                : IconButton(
+                                    tooltip: 'Clear search',
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () {
+                                      _search.clear();
+                                      _searchFor('', now: true);
+                                    },
+                                  ),
+                          ),
+                          onChanged: (v) {
+                            setState(() {}); // show or hide the clear button
+                            _searchFor(v);
+                          },
+                          onSubmitted: (v) => _searchFor(v, now: true),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton(onPressed: () => _searchFor(_search.text, now: true), child: const Text('Search')),
+                    ],
+                  ),
+                  if (_loading) const LinearProgressIndicator(minHeight: 2) else const SizedBox(height: 2),
+                  if (_query.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text('${jobs.length} results for "$_query"', style: const TextStyle(color: Colors.grey)),
                     ),
-                    onChanged: (v) {
-                      setState(() {}); // show or hide the clear button
-                      _searchFor(v);
-                    },
-                    onSubmitted: (v) => _searchFor(v, now: true),
+                  const SizedBox(height: 8),
+                  FilterChip(
+                    label: const Text('Strong matches only (50%+)'),
+                    selected: _strongOnly,
+                    onSelected: (v) => setState(() => _strongOnly = v),
                   ),
-                ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: () => _searchFor(_search.text, now: true),
-                  child: const Text('Search'),
-                ),
-              ]),
-              if (_loading) const LinearProgressIndicator(minHeight: 2) else const SizedBox(height: 2),
-              if (_query.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text('${jobs.length} results for "$_query"', style: const TextStyle(color: Colors.grey)),
-                ),
-              const SizedBox(height: 8),
-              FilterChip(
-                label: const Text('Strong matches only (50%+)'),
-                selected: _strongOnly,
-                onSelected: (v) => setState(() => _strongOnly = v),
+                  const SizedBox(height: 8),
+                  if (jobs.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 32),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            if (d['refreshing'] == true) ...[
+                              const CircularProgressIndicator(),
+                              const SizedBox(height: 12),
+                              const Text('Fetching fresh remote jobs… this takes about a minute the first time.'),
+                            ] else
+                              Text(
+                                _query.isEmpty
+                                    ? 'No jobs yet. Pull down to refresh.'
+                                    : 'No jobs match "$_query". Try another word.',
+                              ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    for (final j in jobs) _JobCard(job: j, onOpen: _open),
+                  const SizedBox(height: 16),
+                  // Attribution: every source is named and linked, as their API terms ask.
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 4,
+                    children: [
+                      const Text('Jobs from', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      for (final s in sources)
+                        TextButton(
+                          style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                          onPressed: () => _open(s['url'] as String),
+                          child: Text(s['name'] as String, style: const TextStyle(fontSize: 12)),
+                        ),
+                    ],
+                  ),
+                  const Text(
+                    'Always check the location rules on the original posting before applying.',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              if (jobs.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 32),
-                  child: Center(
-                    child: Column(children: [
-                      if (d['refreshing'] == true) ...[
-                        const CircularProgressIndicator(),
-                        const SizedBox(height: 12),
-                        const Text('Fetching fresh remote jobs… this takes about a minute the first time.'),
-                      ] else
-                        Text(_query.isEmpty
-                            ? 'No jobs yet. Pull down to refresh.'
-                            : 'No jobs match "$_query". Try another word.'),
-                    ]),
-                  ),
-                )
-              else
-                for (final j in jobs) _JobCard(job: j, onOpen: _open),
-              const SizedBox(height: 16),
-              // Attribution: every source is named and linked, as their API terms ask.
-              Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 4, children: [
-                const Text('Jobs from', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                for (final s in sources)
-                  TextButton(
-                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                    onPressed: () => _open(s['url'] as String),
-                    child: Text(s['name'] as String, style: const TextStyle(fontSize: 12)),
-                  ),
-              ]),
-              const Text(
-                'Always check the location rules on the original posting before applying.',
-                style: TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-            ]),
+            ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -249,12 +263,12 @@ class _JobCard extends StatelessWidget {
   final void Function(String?) onOpen;
 
   static (String, IconData, Color) _badge(String? scope) => switch (scope) {
-        'Pakistan' => ('Open to Pakistan', Icons.check_circle, AppColors.good),
-        'Worldwide' => ('Open worldwide', Icons.public, AppColors.good),
-        'Asia' => ('Open to Asia', Icons.public, AppColors.good),
-        'Time zone fits Pakistan' => ('Time zone fits Pakistan', Icons.schedule, AppColors.good),
-        _ => ('Location not stated: check posting', Icons.help_outline, AppColors.warn),
-      };
+    'Pakistan' => ('Open to Pakistan', Icons.check_circle, AppColors.good),
+    'Worldwide' => ('Open worldwide', Icons.public, AppColors.good),
+    'Asia' => ('Open to Asia', Icons.public, AppColors.good),
+    'Time zone fits Pakistan' => ('Time zone fits Pakistan', Icons.schedule, AppColors.good),
+    _ => ('Location not stated: check posting', Icons.help_outline, AppColors.warn),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -272,63 +286,92 @@ class _JobCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: Padding(
         padding: const EdgeInsets.all(14),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(job['title'] as String, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 2),
-                Text(meta, style: const TextStyle(color: Colors.grey)),
-              ]),
-            ),
-            const SizedBox(width: 8),
-            Column(children: [
-              Text('${match.round()}%',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.forScore(match))),
-              const Text('match', style: TextStyle(fontSize: 11, color: Colors.grey)),
-            ]),
-          ]),
-          const SizedBox(height: 8),
-          Row(children: [
-            Icon(icon, size: 16, color: color),
-            const SizedBox(width: 4),
-            Flexible(child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 13))),
-          ]),
-          if (matched.isNotEmpty || missing.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Wrap(spacing: 6, runSpacing: 6, children: [
-              for (final s in matched)
-                Chip(
-                  label: Text(s, style: const TextStyle(fontSize: 12)),
-                  avatar: const Icon(Icons.check, size: 14, color: AppColors.good),
-                  visualDensity: VisualDensity.compact,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(job['title'] as String, style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 2),
+                      Text(meta, style: const TextStyle(color: Colors.grey)),
+                    ],
+                  ),
                 ),
-              for (final s in missing)
-                Chip(
-                  label: Text(s, style: const TextStyle(fontSize: 12, color: Colors.black54)),
-                  avatar: const Icon(Icons.add, size: 14),
-                  visualDensity: VisualDensity.compact,
-                  backgroundColor: Colors.grey.shade100,
+                const SizedBox(width: 8),
+                Column(
+                  children: [
+                    Text(
+                      '${match.round()}%',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.forScore(match)),
+                    ),
+                    const Text('match', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                  ],
                 ),
-            ]),
-          ],
-          if ((job['excerpt'] as String).isNotEmpty) ...[
+              ],
+            ),
             const SizedBox(height: 8),
-            Text(job['excerpt'] as String, maxLines: 3, overflow: TextOverflow.ellipsis),
+            Row(
+              children: [
+                Icon(icon, size: 16, color: color),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            if (matched.isNotEmpty || missing.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final s in matched)
+                    Chip(
+                      label: Text(s, style: const TextStyle(fontSize: 12)),
+                      avatar: const Icon(Icons.check, size: 14, color: AppColors.good),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  for (final s in missing)
+                    Chip(
+                      label: Text(s, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                      avatar: const Icon(Icons.add, size: 14),
+                      visualDensity: VisualDensity.compact,
+                      backgroundColor: Colors.grey.shade100,
+                    ),
+                ],
+              ),
+            ],
+            if ((job['excerpt'] as String).isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(job['excerpt'] as String, maxLines: 3, overflow: TextOverflow.ellipsis),
+            ],
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                FilledButton.icon(
+                  onPressed: () => onOpen(job['apply_url'] as String?),
+                  icon: const Icon(Icons.open_in_new, size: 18),
+                  label: const Text('Apply'),
+                ),
+                TextButton(
+                  onPressed: () => onOpen(job['url'] as String?),
+                  child: Text('View on ${job['source_name']}'),
+                ),
+              ],
+            ),
           ],
-          const SizedBox(height: 10),
-          Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
-            FilledButton.icon(
-              onPressed: () => onOpen(job['apply_url'] as String?),
-              icon: const Icon(Icons.open_in_new, size: 18),
-              label: const Text('Apply'),
-            ),
-            TextButton(
-              onPressed: () => onOpen(job['url'] as String?),
-              child: Text('View on ${job['source_name']}'),
-            ),
-          ]),
-        ]),
+        ),
       ),
     );
   }

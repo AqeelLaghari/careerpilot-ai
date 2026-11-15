@@ -5,7 +5,8 @@ import numpy as np
 
 from app.agents.interview_agent import InterviewAgent
 from app.orchestrator.blackboard import Blackboard
-from app.services import embeddings, interview_grader as g, privacy
+from app.services import embeddings, privacy
+from app.services import interview_grader as g
 
 
 def _metrics(words, secs, fillers=0, pauses=0):

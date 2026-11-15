@@ -14,8 +14,8 @@
   (q=<role>, country=PK), cached per role, so niche roles get relevant jobs too.
 """
 import json
-import re
 import logging
+import re
 import threading
 import time
 
@@ -57,7 +57,7 @@ def job_text(job: dict) -> str:
 
 def _add_skills(jobs: list[dict]):
     texts = [f"{j['title']}\n{' , '.join(j.get('tags', []))}\n{j['description']}" for j in jobs]
-    for job, found in zip(jobs, find_skills_batch(texts)):
+    for job, found in zip(jobs, find_skills_batch(texts), strict=False):
         hard = [s for s, cat in found.items() if cat != SOFT]          # soft skills don't count
         job["skills"] = sorted(hard, key=lambda s: -job["description"].lower().count(s.lower()))
 
@@ -65,7 +65,7 @@ def _add_skills(jobs: list[dict]):
 def _embed(jobs: list[dict]):
     todo = [j for j in jobs if j["id"] not in _vectors]
     if todo:
-        for j, v in zip(todo, embeddings.embed([job_text(j) for j in todo])):
+        for j, v in zip(todo, embeddings.embed([job_text(j) for j in todo]), strict=False):
             _vectors[j["id"]] = v
 
 
@@ -243,7 +243,7 @@ def match_jobs(profile: dict, query: str | None = None, limit: int = 30) -> list
     me = embeddings.embed([career_matcher.resume_text(profile)])[0]
     sims = np.stack([_vectors[j["id"]] for j in jobs]) @ me
     out = []
-    for j, cos in zip(jobs, sims):
+    for j, cos in zip(jobs, sims, strict=False):
         skills = j.get("skills", [])[:20]
         matched = [s for s in skills if s.lower() in have]
         missing = [s for s in skills if s.lower() not in have]

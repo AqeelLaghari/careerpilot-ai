@@ -29,7 +29,7 @@ def new_session(body: NewSessionIn, uid: str = Depends(current_uid)):
     try:
         return agent.new_session(uid, body.count, body.role)
     except NoResumeError as e:
-        raise HTTPException(404, str(e))
+        raise HTTPException(404, str(e)) from e
 
 
 @router.get("/sessions")

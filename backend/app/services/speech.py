@@ -118,7 +118,7 @@ def analyse(words: list[dict], duration: float) -> dict:
                and (w.endswith(",") or (i > 0 and raw[i - 1].endswith(","))))
     if like:
         habits["like"] = like
-    repeats = sum(1 for a, b in zip(norm, norm[1:]) if a and a == b and a not in FILLERS)
+    repeats = sum(1 for a, b in zip(norm, norm[1:], strict=False) if a and a == b and a not in FILLERS)
 
     content = [n for n in norm if n and n not in FILLERS]
     speaking = max(0.1, words[-1]["end"] - words[0]["start"])

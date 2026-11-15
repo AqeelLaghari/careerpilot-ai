@@ -205,7 +205,7 @@ def _load_postings() -> list[dict]:
             return [d.to_dict() for d in docs]
         except Exception:
             log.warning("Reading postings from Firestore failed; using the jobs in memory", exc_info=True)
-    from app.services import live_jobs                     # no database: the jobs we have
+    from app.services import live_jobs  # no database: the jobs we have
     with live_jobs._lock:
         return list(live_jobs._pool["jobs"].values())
 
@@ -410,7 +410,7 @@ def compute_trends(postings: list[dict], now: float | None = None) -> dict:
     weight_sum, demand, recent, older = 0.0, Counter(), Counter(), Counter()
     n_recent = n_older = 0
     cats = {}
-    for p, skills in zip(postings, found):
+    for p, skills in zip(postings, found, strict=False):
         age = max(0.0, (now - _when(p)) / 86400)
         w = 0.5 ** (age / TREND_HALF_LIFE)
         weight_sum += w
@@ -455,7 +455,7 @@ def live_role_shares(postings: list[dict], found: list[dict]) -> dict:
         return {}
     lower = {r.lower(): r for r in model["roles"]}
     per_role: dict[str, list[dict]] = defaultdict(list)
-    for p, skills in zip(postings, found):
+    for p, skills in zip(postings, found, strict=False):
         role = lower.get(market_model.normalize_title(p.get("title", "")).lower())
         if role:
             per_role[role].append(skills)
