@@ -440,35 +440,38 @@ class _BrandPanel extends StatelessWidget {
   Widget _content(List<(IconData, String, String)> features, double width) {
     // the horizontal logo is ~4.3x wider than tall: let it take ~75% of the panel width
     final logoHeight = (width * 0.75 / 4.3).clamp(56.0, 120.0);
+    // the logo file keeps a thin transparent margin (~2.8% of its width) on the left:
+    // shift it so the "C" lines up exactly with the text below
+    final logoWidth = logoHeight * 1000 / 232;
+    final faint = Colors.white.withValues(alpha: 0.65);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Spacer(flex: 2),
-        BrandLogo.horizontal(size: logoHeight, white: true),
-        const SizedBox(height: 28),
+        Transform.translate(
+          offset: Offset(-logoWidth * 0.028, 0),
+          child: BrandLogo.horizontal(size: logoHeight, white: true),
+        ),
+        const SizedBox(height: 32),
         Text(
           'Your 24/7 AI career counselor',
-          style: GoogleFonts.inter(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w600),
+          style: GoogleFonts.inter(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600, height: 1.3),
         ),
-        const SizedBox(height: 8),
-        Text(
-          'From CV to interview-ready, in one place.',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 16),
-        ),
-        const SizedBox(height: 40),
+        const SizedBox(height: 6),
+        Text('From CV to interview-ready, in one place.', style: TextStyle(color: faint, fontSize: 13.5)),
+        const SizedBox(height: 44),
         for (final (icon, title, text) in features)
           Padding(
-            padding: const EdgeInsets.only(bottom: 18),
+            padding: const EdgeInsets.only(bottom: 20),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(icon, color: Colors.white, size: 22),
+                  child: Icon(icon, color: Colors.white, size: 17),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -477,9 +480,10 @@ class _BrandPanel extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5),
                       ),
-                      Text(text, style: TextStyle(color: Colors.white.withValues(alpha: 0.8))),
+                      const SizedBox(height: 2),
+                      Text(text, style: TextStyle(color: faint, fontSize: 12, height: 1.35)),
                     ],
                   ),
                 ),
@@ -489,7 +493,7 @@ class _BrandPanel extends StatelessWidget {
         const Spacer(flex: 3),
         Text(
           'Bahria University Karachi · Final Year Project 2025-26',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11),
         ),
       ],
     );
