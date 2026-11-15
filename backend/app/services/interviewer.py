@@ -57,7 +57,27 @@ def _title(text: str) -> str:
     return " ".join(out)
 
 
-def candidate_info(entities: dict | None, year: int | None = None, answers: dict | None = None) -> dict:
+def candidate_info(entities: dict | None, year: int | None = None, answers: dict | None = None,
+                   account: dict | None = None) -> dict:
+    """CV details, overridden by what the user typed in their account profile (Day 23)."""
+    out = _from_cv(entities, year, answers)
+    a = account or {}
+    if a.get("full_name"):
+        cv_only = _from_cv({"name": a["full_name"]}, year)
+        out.update({k: cv_only[k] for k in ("first_name", "full_name") if k in cv_only})
+    if a.get("university"):
+        out["university"] = a["university"]
+        out.pop("subject", None)
+        if a.get("degree"):
+            out["subject"] = a["degree"]
+    elif a.get("degree"):
+        out["subject"] = a["degree"]
+    if a.get("status") in ("student", "graduate", "professional") and out.get("university"):
+        out["studying"] = a["status"] == "student"
+    return out
+
+
+def _from_cv(entities: dict | None, year: int | None = None, answers: dict | None = None) -> dict:
     """What a real interviewer would know from the CV before the call: the first name to
     use, the university, the subject and whether they are still studying. These are used in
     the interviewer's own (fixed) sentences and as Whisper hints; never sent to Gemini."""

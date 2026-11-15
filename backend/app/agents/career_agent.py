@@ -21,7 +21,7 @@ from app.services import career_matcher, live_jobs
 from app.services import questionnaire as qn
 from app.services import roadmap as rm
 from app.services.person import resume_person_key
-from app.services.profile import build_profile
+from app.services.profile import build_profile, merged_answers
 
 AGENT_NAME = "career_agent"
 RESET_GAP = 40      # old data without a person key: reset if the target is this far behind the best fit
@@ -72,14 +72,15 @@ class CareerAgent:
         self.bb.write(uid, "roadmap", None, agent=AGENT_NAME)
 
     def _answers(self, uid: str) -> dict:
-        return (self.bb.read_section(uid, "questionnaire") or {}).get("answers", {})
+        """Questionnaire answers + what the account profile already tells us (Day 23)."""
+        return merged_answers(self.bb.read_section(uid, "questionnaire"), self.bb.read_section(uid, "profile"))
 
     def _profile(self, uid: str) -> tuple[dict, dict]:
-        """Resume entities enriched with questionnaire answers and skills completed on the
-        roadmap (Day 13), plus the raw answers."""
+        """Resume entities enriched with questionnaire answers, skills completed on the
+        roadmap (Day 13) and the account profile (Day 23), plus the answers."""
         entities = self._entities(uid)
         return build_profile(entities, self.bb.read_section(uid, "questionnaire"),
-                             self.bb.read_section(uid, "roadmap"))
+                             self.bb.read_section(uid, "roadmap"), self.bb.read_section(uid, "profile"))
 
     # ------------------------------------------------------------ matching --
     def match(self, uid: str) -> dict | None:
@@ -92,6 +93,10 @@ class CareerAgent:
         career = self.bb.read_section(uid, "career") or {}
         career.update({"matches": matches, "matched_at": time.time()})
         self.bb.write(uid, "career", career, agent=AGENT_NAME)
+        # the target role given at sign-up (Day 23), if none was chosen here yet
+        wanted = (self.bb.read_section(uid, "profile") or {}).get("target_role")
+        if wanted and not career.get("target_role"):
+            career = self.set_target(uid, wanted) or career
         return career
 
     def set_target(self, uid: str, role: str) -> dict | None:
