@@ -93,6 +93,19 @@ class _InterviewReportState extends State<InterviewReport> {
       );
     }
 
+    if (r['empty'] == true) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.mic_off, size: 48, color: Colors.grey),
+            const SizedBox(height: 12),
+            Text('${r['summary']}', textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
+            if (back != null) ...[const SizedBox(height: 24), back],
+          ]),
+        ),
+      );
+    }
     final grades = {
       for (final a in (r['answers'] as List? ?? []).cast<Map>()) a['turn_id'] as String: a.cast<String, dynamic>()
     };

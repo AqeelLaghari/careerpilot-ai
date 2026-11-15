@@ -209,7 +209,12 @@ def _level(score: int) -> str:
 def grade(live: dict, use_gemini: bool = True) -> dict:
     """The full report for a finished live interview (stored as live["report"])."""
     items = answers_to_grade(live)
-    gem = _gemini_grades(live, items) if (use_gemini and items) else None
+    if not items:                       # ended before answering anything: nothing to score
+        return {"status": "ready", "empty": True, "overall": None, "level": None, "parts": {}, "weights": {},
+                "speaking": {"score": None}, "presence": {"score": None}, "answers": [],
+                "summary": "No answers were recorded in this interview, so there is nothing to grade.",
+                "strengths": [], "improvements": [], "graded_by": "rules", "corrections": 0}
+    gem = _gemini_grades(live, items) if use_gemini else None
     answers = []
     for it in items:
         g = (gem or {}).get("by_id", {}).get(it["turn_id"]) if gem else None

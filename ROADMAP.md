@@ -116,7 +116,7 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - [x] **Day 18**: Live camera preview for the whole interview + MediaPipe Face Landmarker in Flutter Web (JS interop), iris position
 - [x] **Day 19**: Eye-contact score + gaze-away log; AI voice (flutter_tts) + automatic end-of-answer (silence) detection
 - [x] **Day 20**: Live conversation loop (Gemini interviewer: follow-ups, gentle probing of mistakes, time keeping, 5/10/15 min, planned-question fallback) + live video interview screen (camera full screen, subtitles, End). Answer grading moved to Day 21.
-- [ ] **Day 21**: Answer grading (correctness with corrections, key points, STAR) + combined interview score (content 60 / speaking 20 / presence 20) + final report screen. **Milestone 3: full live mock interview** (may use a Week 4 buffer day)
+- [x] **Day 21**: Answer grading (correctness with corrections, key points, STAR) + combined interview score (content 60 / speaking 20 / presence 20) + final report screen. **Milestone 3: full live mock interview** (may use a Week 4 buffer day)
 
 ## Week 4+: DevOps, accounts, design, evaluation, deployment (re-planned 15 Nov 2026, still before 7 Dec)
 - [ ] **Day 22**: **DevOps foundation** (see "DevOps" below): GitHub Actions CI (backend tests + coverage, flutter analyze/test, ruff + dart format, gitleaks secret scan), backend Dockerfile + docker-compose (image built in CI), pre-commit hooks (formatting, block .env / firebase-key), Dependabot, PR + issue templates, feature-branch + pull-request workflow, GitHub Projects board

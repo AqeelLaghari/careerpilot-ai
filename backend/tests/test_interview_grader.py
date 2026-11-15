@@ -101,6 +101,14 @@ def test_scores_without_camera_reweight(monkeypatch):
     assert s["wpm"] == round(133 / (62 / 60)) and 0 <= s["score"] <= 100
 
 
+def test_interview_without_answers_is_not_scored_zero():
+    live = _live()
+    live["turns"] = live["turns"][:1]
+    live["turns"][0]["answer"] = None
+    r = g.grade(live)
+    assert r["empty"] and r["overall"] is None and r["answers"] == []
+
+
 def test_speaking_score_penalises_fillers():
     calm = {"turns": [{"answer": {"metrics": _metrics(140, 60)}}]}
     filler = {"turns": [{"answer": {"metrics": _metrics(140, 60, fillers=12, pauses=4)}}]}

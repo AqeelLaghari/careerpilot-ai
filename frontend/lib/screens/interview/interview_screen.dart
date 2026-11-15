@@ -133,7 +133,7 @@ class _InterviewScreenState extends State<InterviewScreen> {
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   dense: true,
-                  leading: _scoreBadge(x['score'] as num?),
+                  leading: _scoreBadge(x['score'] as num?, answered: (x['answered'] as num? ?? 0) > 0),
                   title: Text('${x['role']} · ${x['minutes']} min · ${x['answered'] ?? 0} answers'),
                   subtitle: Text(_date(x['created_at'] as num)),
                   trailing: const Icon(Icons.chevron_right),
@@ -152,10 +152,11 @@ class _InterviewScreenState extends State<InterviewScreen> {
         ),
       );
 
-  Widget _scoreBadge(num? score) => CircleAvatar(
+  /// The interview's score; "…" while it is being graded, "–" when nothing was answered.
+  Widget _scoreBadge(num? score, {bool answered = true}) => CircleAvatar(
         radius: 18,
         backgroundColor: score == null ? Colors.grey.shade200 : AppColors.forScore(score).withValues(alpha: 0.15),
-        child: Text(score == null ? '…' : '${score.round()}',
+        child: Text(score == null ? (answered ? '…' : '–') : '${score.round()}',
             style: TextStyle(
                 fontWeight: FontWeight.bold, color: score == null ? Colors.grey : AppColors.forScore(score))),
       );
