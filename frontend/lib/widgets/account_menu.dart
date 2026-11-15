@@ -38,12 +38,12 @@ class AccountMenu extends StatelessWidget {
   void _about(BuildContext context) => showAboutDialog(
     context: context,
     applicationName: 'CareerPilot AI',
-    applicationVersion: 'Final Year Project 2025-26',
+    applicationVersion: 'Version 1.0',
     applicationIcon: const BrandLogo.icon(size: 48),
     children: const [
       Text(
         'Your 24/7 AI career counselor: ATS resume check, career matches and roadmap, remote jobs, '
-        'and live AI mock interviews.\n\nBS Software Engineering, Bahria University Karachi.',
+        'and live AI mock interviews.',
       ),
     ],
   );

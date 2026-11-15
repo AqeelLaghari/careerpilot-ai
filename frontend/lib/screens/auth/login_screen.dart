@@ -491,10 +491,7 @@ class _BrandPanel extends StatelessWidget {
             ),
           ),
         const Spacer(flex: 3),
-        Text(
-          'Bahria University Karachi · Final Year Project 2025-26',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11),
-        ),
+        Text('© 2026 CareerPilot AI', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
       ],
     );
   }
