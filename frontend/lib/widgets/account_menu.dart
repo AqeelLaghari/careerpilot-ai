@@ -2,13 +2,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../screens/profile/my_profile_screen.dart';
+import '../screens/settings/settings_screen.dart';
 import '../services/profile_store.dart';
 import '../theme.dart';
 import 'brand.dart';
 import 'user_avatar.dart';
 
 /// The user's photo + name in the top bar; click for the account menu (Day 23).
-/// (Settings such as theme and interview language join this menu on Day 24.)
+/// Day 24: Settings (theme, interviewer voice, interview language).
 class AccountMenu extends StatelessWidget {
   const AccountMenu({super.key});
 
@@ -59,6 +60,7 @@ class AccountMenu extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         onSelected: (v) => switch (v) {
           'profile' => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MyProfileScreen())),
+          'settings' => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
           'about' => _about(context),
           'logout' => _logOut(context),
           _ => null,
@@ -78,18 +80,18 @@ class AccountMenu extends StatelessWidget {
                       children: [
                         Text(
                           profileStore.name,
-                          style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black87),
+                          style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.text),
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           FirebaseAuth.instance.currentUser?.email ?? '',
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                           overflow: TextOverflow.ellipsis,
                         ),
                         if (profileStore.subtitle.isNotEmpty)
                           Text(
                             profileStore.subtitle,
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                             overflow: TextOverflow.ellipsis,
                           ),
                       ],
@@ -114,11 +116,15 @@ class AccountMenu extends StatelessWidget {
               ),
             ),
           const PopupMenuItem(
+            value: 'settings',
+            child: ListTile(leading: Icon(Icons.settings_outlined), title: Text('Settings'), dense: true),
+          ),
+          const PopupMenuItem(
             value: 'about',
             child: ListTile(leading: Icon(Icons.help_outline), title: Text('Help & about'), dense: true),
           ),
           const PopupMenuDivider(),
-          const PopupMenuItem(
+          PopupMenuItem(
             value: 'logout',
             child: ListTile(
               leading: Icon(Icons.logout, color: AppColors.bad),

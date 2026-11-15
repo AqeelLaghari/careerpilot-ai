@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/api_client.dart';
 import '../../theme.dart';
+import 'bullet_coach.dart';
 import 'resume_widgets.dart';
 
 /// Resume Intelligence screen: upload a PDF → ATS score, fixes, extracted profile.
@@ -109,7 +110,7 @@ class _ResumeScreenState extends State<ResumeScreen> {
     decoration: BoxDecoration(color: AppColors.bad.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12)),
     child: Row(
       children: [
-        const Icon(Icons.error_outline, color: AppColors.bad),
+        Icon(Icons.error_outline, color: AppColors.bad),
         const SizedBox(width: 8),
         Expanded(child: Text(_error!)),
       ],
@@ -134,6 +135,7 @@ class _ResumeScreenState extends State<ResumeScreen> {
                 children: [for (final f in (ats['top_fixes'] as List).cast<Map<String, dynamic>>()) FixTile(fix: f)],
               ),
       ),
+      BulletCoach(key: ValueKey(r['uploaded_at'])), // reloads after a new upload
       SectionCard(
         title: 'Score breakdown',
         icon: Icons.analytics_outlined,
@@ -180,38 +182,41 @@ class _ResumeScreenState extends State<ResumeScreen> {
     );
   }
 
-  Widget _scoreCard(Map<String, dynamic> ats, String filename) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(20),
-      child: Wrap(
-        spacing: 24,
-        runSpacing: 16,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          ScoreGauge(score: ats['readability_score'] as num, label: ats['grade'] as String),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 320),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('ATS Readability', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 4),
-                Text(filename, style: const TextStyle(color: Colors.grey)),
-                const SizedBox(height: 8),
-                const Text(
-                  'How easily applicant tracking systems can read your resume. '
-                  'See below how well it matches a role.',
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: _pickAndUpload,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Upload new version'),
-                ),
-              ],
+  Widget _scoreCard(Map<String, dynamic> ats, String filename) => SizedBox(
+    width: double.infinity, // fill the column's width like the cards below it
+    child: Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Wrap(
+          spacing: 24,
+          runSpacing: 16,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            ScoreGauge(score: ats['readability_score'] as num, label: ats['grade'] as String),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('ATS Readability', style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 4),
+                  Text(filename, style: const TextStyle(color: Colors.grey)),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'How easily applicant tracking systems can read your resume. '
+                    'See below how well it matches a role.',
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: _pickAndUpload,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Upload new version'),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     ),
   );

@@ -25,6 +25,7 @@ AGENT = "profile"
 
 def _view(uid: str, profile: dict | None) -> dict:
     p = dict(profile or {})
+    p["settings"] = ap.DEFAULT_SETTINGS | (p.get("settings") or {})
     resume = blackboard.read_section(uid, "resume") or {}
     return {"profile": p, "completed": bool(p.get("completed")), "has_photo": bool(p.get("photo_version")),
             "suggested": ap.suggestions(resume.get("entities")), "statuses": ap.STATUSES}

@@ -56,7 +56,7 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
   void _celebrate(String skill, Map<String, dynamic>? mc) => showDialog(
     context: context,
     builder: (_) => AlertDialog(
-      icon: const Icon(Icons.emoji_events, color: AppColors.warn, size: 48),
+      icon: Icon(Icons.emoji_events, color: AppColors.warn, size: 48),
       title: Text('$skill learned!'),
       content: Text(
         mc == null
@@ -225,7 +225,7 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
       shape: isCurrent
           ? RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: AppColors.brand, width: 2),
+              side: BorderSide(color: AppColors.brand, width: 2),
             )
           : null,
       child: Theme(

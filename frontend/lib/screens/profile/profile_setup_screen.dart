@@ -124,7 +124,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           ),
                           if (_error != null) ...[
                             const SizedBox(height: 14),
-                            Text(_error!, style: const TextStyle(color: AppColors.bad)),
+                            Text(_error!, style: TextStyle(color: AppColors.bad)),
                           ],
                           const SizedBox(height: 24),
                           Row(

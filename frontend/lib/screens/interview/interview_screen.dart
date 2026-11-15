@@ -105,7 +105,7 @@ class _InterviewScreenState extends State<InterviewScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.video_call, color: AppColors.brand, size: 28),
+              Icon(Icons.video_call, color: AppColors.brand, size: 28),
               const SizedBox(width: 8),
               Text('Live video interview', style: Theme.of(context).textTheme.titleLarge),
             ],
@@ -264,7 +264,7 @@ class _InterviewScreenState extends State<InterviewScreen> {
                 if (_error != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
-                    child: Text(_error!, style: const TextStyle(color: AppColors.bad)),
+                    child: Text(_error!, style: TextStyle(color: AppColors.bad)),
                   ),
                 const SizedBox(height: 16),
                 if (s == null)
@@ -351,13 +351,13 @@ class _QuestionCard extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.check_circle, size: 16, color: AppColors.good),
+                      Icon(Icons.check_circle, size: 16, color: AppColors.good),
                       const SizedBox(width: 4),
                       Text(
                         answer!['metrics'] == null
                             ? 'Answered (${(answer!['duration_sec'] as num).round()} s)'
                             : 'Answered · ${answer!['metrics']['wpm']} words/min · ${answer!['metrics']['filler_count']} fillers',
-                        style: const TextStyle(color: AppColors.good, fontSize: 12),
+                        style: TextStyle(color: AppColors.good, fontSize: 12),
                       ),
                     ],
                   ),
@@ -394,7 +394,7 @@ class _QuestionCard extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.check, size: 16, color: AppColors.good),
+                          Icon(Icons.check, size: 16, color: AppColors.good),
                           const SizedBox(width: 6),
                           Expanded(child: Text(k)),
                         ],

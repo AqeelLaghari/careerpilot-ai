@@ -163,7 +163,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.check_circle, size: 72, color: AppColors.good),
+        Icon(Icons.check_circle, size: 72, color: AppColors.good),
         const SizedBox(height: 12),
         Text(_questions.isEmpty ? 'All done!' : 'That\'s it for now', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 8),
@@ -202,10 +202,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
         ],
         const SizedBox(height: 20),
         _input(q),
-        if (_error != null) ...[
-          const SizedBox(height: 12),
-          Text(_error!, style: const TextStyle(color: AppColors.bad)),
-        ],
+        if (_error != null) ...[const SizedBox(height: 12), Text(_error!, style: TextStyle(color: AppColors.bad))],
         const SizedBox(height: 24),
         Row(
           children: [

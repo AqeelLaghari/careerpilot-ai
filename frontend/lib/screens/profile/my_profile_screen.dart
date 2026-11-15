@@ -124,7 +124,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                             ].join(' · '),
                           ),
                           trailing: (user?.emailVerified ?? false)
-                              ? const Chip(
+                              ? Chip(
                                   avatar: Icon(Icons.verified, size: 16, color: AppColors.good),
                                   label: Text('Verified'),
                                 )

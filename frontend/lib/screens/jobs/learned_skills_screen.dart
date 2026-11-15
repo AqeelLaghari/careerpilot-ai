@@ -185,7 +185,7 @@ class _LearnedSkillsScreenState extends State<LearnedSkillsScreen> {
                       if (s['status'] != 'approved')
                         IconButton(
                           tooltip: 'Approve',
-                          icon: const Icon(Icons.check, color: AppColors.good),
+                          icon: Icon(Icons.check, color: AppColors.good),
                           onPressed: () => _approve(s),
                         ),
                       if (s['status'] != 'removed')

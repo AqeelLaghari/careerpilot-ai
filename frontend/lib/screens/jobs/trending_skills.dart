@@ -72,7 +72,7 @@ class _TrendingSkillsState extends State<TrendingSkills> {
                   Chip(
                     visualDensity: VisualDensity.compact,
                     avatar: widget.userSkills.contains((s['name'] as String).toLowerCase())
-                        ? const Icon(Icons.check, size: 14, color: AppColors.good)
+                        ? Icon(Icons.check, size: 14, color: AppColors.good)
                         : null,
                     label: Text('${s['name']} · ${s['share']}%', style: const TextStyle(fontSize: 12)),
                   ),
@@ -90,7 +90,7 @@ class _TrendingSkillsState extends State<TrendingSkills> {
                 for (final s in rising.take(8))
                   Chip(
                     visualDensity: VisualDensity.compact,
-                    avatar: const Icon(Icons.arrow_upward, size: 14, color: AppColors.good),
+                    avatar: Icon(Icons.arrow_upward, size: 14, color: AppColors.good),
                     label: Text('${s['name']} +${s['change']}%', style: const TextStyle(fontSize: 12)),
                   ),
               ],
