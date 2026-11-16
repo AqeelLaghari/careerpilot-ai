@@ -83,7 +83,7 @@ class _InterviewReportState extends State<InterviewReport> {
                           'from "Past interviews".',
                   textAlign: TextAlign.center,
                 )
-              else ...const [
+              else ...[
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
                 Text('Thank you! Grading your answers…', style: TextStyle(fontSize: 18)),
@@ -91,7 +91,7 @@ class _InterviewReportState extends State<InterviewReport> {
                 Text(
                   'Checking facts, key points and how you spoke. This takes about half a minute.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(color: AppColors.textMuted),
                 ),
               ],
               if (back != null) ...[const SizedBox(height: 24), back],
@@ -108,7 +108,7 @@ class _InterviewReportState extends State<InterviewReport> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.mic_off, size: 48, color: Colors.grey),
+              Icon(Icons.mic_off, size: 48, color: AppColors.textMuted),
               const SizedBox(height: 12),
               Text('${r['summary']}', textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
               if (back != null) ...[const SizedBox(height: 24), back],
@@ -136,10 +136,10 @@ class _InterviewReportState extends State<InterviewReport> {
                 const SizedBox(height: 20),
                 Text('Your answers', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'Each answer is scored out of 10. Personal facts (your projects, jobs, grades) are '
                   'not checked; technical facts are.',
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(color: AppColors.textMuted),
                 ),
                 const SizedBox(height: 8),
                 for (final t in turns)
@@ -177,7 +177,7 @@ class _InterviewReportState extends State<InterviewReport> {
                     child: CircularProgressIndicator(
                       value: overall / 100,
                       strokeWidth: 12,
-                      backgroundColor: Colors.grey.shade200,
+                      backgroundColor: AppColors.border,
                       color: AppColors.forScore(overall),
                     ),
                   ),
@@ -199,7 +199,7 @@ class _InterviewReportState extends State<InterviewReport> {
                   Text('${s['role']} interview', style: Theme.of(context).textTheme.titleLarge),
                   Text(
                     '${s['minutes']} minutes · $answered answers graded',
-                    style: const TextStyle(color: Colors.grey),
+                    style: TextStyle(color: AppColors.textMuted),
                   ),
                   const SizedBox(height: 12),
                   _bar('Content${pct('content')}', 'what you said', parts['content'] as num?),
@@ -224,19 +224,19 @@ class _InterviewReportState extends State<InterviewReport> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-              Text(hint, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+              Text(hint, style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
             ],
           ),
         ),
         Expanded(
           child: value == null
-              ? const Text('no camera data', style: TextStyle(color: Colors.grey))
+              ? Text('no camera data', style: TextStyle(color: AppColors.textMuted))
               : ClipRRect(
                   borderRadius: BorderRadius.circular(6),
                   child: LinearProgressIndicator(
                     value: value / 100,
                     minHeight: 10,
-                    backgroundColor: Colors.grey.shade200,
+                    backgroundColor: AppColors.border,
                     color: AppColors.forScore(value),
                   ),
                 ),
@@ -278,12 +278,12 @@ class _InterviewReportState extends State<InterviewReport> {
           children: [
             Text('${r['summary']}', style: const TextStyle(fontSize: 16, height: 1.4)),
             if (r['graded_by'] == 'rules')
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(top: 8),
                 child: Text(
                   'The AI fact-checker was busy, so answers were scored by how well they matched the '
                   'key points. Open this report again later for a full check.',
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                 ),
               ),
             const SizedBox(height: 16),
@@ -339,7 +339,7 @@ class _AnswerCard extends StatelessWidget {
                     children: [
                       Text(
                         turn['kind'] == 'follow_up' ? 'Follow-up question' : 'Interviewer',
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                        style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                       ),
                       Text('${turn['text']}', style: const TextStyle(fontWeight: FontWeight.w600)),
                     ],
@@ -368,7 +368,7 @@ class _AnswerCard extends StatelessWidget {
                 ),
               ),
             const SizedBox(height: 10),
-            Text('Your answer', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+            Text('Your answer', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
             SelectableText(
               transcript.isEmpty ? '(nothing was heard)' : transcript,
               style: const TextStyle(height: 1.4),
@@ -397,7 +397,7 @@ class _AnswerCard extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   'Possibly misheard by the speech recogniser: ${grade['misheard']} (not counted as a mistake)',
-                  style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic, fontSize: 12),
+                  style: TextStyle(color: AppColors.textMuted, fontStyle: FontStyle.italic, fontSize: 12),
                 ),
               ),
             if (covered.isNotEmpty || missing.isNotEmpty) ...[

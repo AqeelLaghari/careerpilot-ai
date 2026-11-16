@@ -296,13 +296,13 @@ class _AnswerScreenState extends State<AnswerScreen> {
                 Icon(
                   Icons.circle,
                   size: 10,
-                  color: _live.status != 'ready' ? Colors.grey : (good ? AppColors.good : AppColors.warn),
+                  color: _live.status != 'ready' ? AppColors.textMuted : (good ? AppColors.good : AppColors.warn),
                 ),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     _live.status == 'ready' ? _live.direction : 'Starting camera…',
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -382,7 +382,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                 ),
                 const SizedBox(height: 16),
                 if (_cameraOk) _cameraBox(),
-                Text('Question ${_index + 1} of ${_questions.length}', style: const TextStyle(color: Colors.grey)),
+                Text('Question ${_index + 1} of ${_questions.length}', style: TextStyle(color: AppColors.textMuted)),
                 const SizedBox(height: 6),
                 Text(_q['question'] as String, style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 6),
@@ -393,7 +393,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                         recording
                             ? 'Stay quiet for 3 seconds when you are done, or press "I\'m done".'
                             : 'You have about ${_mmss(_limit)} to answer.',
-                        style: const TextStyle(color: Colors.grey),
+                        style: TextStyle(color: AppColors.textMuted),
                       ),
                     ),
                     if (_speaking)
@@ -435,7 +435,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                       const Spacer(),
                       Text(
                         '${_mmss(left < 0 ? 0 : left)} left',
-                        style: TextStyle(color: left <= 15 ? AppColors.bad : Colors.grey),
+                        style: TextStyle(color: left <= 15 ? AppColors.bad : AppColors.textMuted),
                       ),
                     ],
                   ),
@@ -446,7 +446,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                     child: LinearProgressIndicator(value: _level, minHeight: 10, color: AppColors.good),
                   ),
                   const SizedBox(height: 4),
-                  const Text('Microphone level', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text('Microphone level', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
                   const SizedBox(height: 16),
                 ],
                 if (!recording && _transcribing.contains(_q['id']))
@@ -541,7 +541,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                 Text(
                   '${_saved.length} of ${_questions.length} answered',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.grey),
+                  style: TextStyle(color: AppColors.textMuted),
                 ),
               ],
             ),

@@ -141,7 +141,7 @@ class CategoryTile extends StatelessWidget {
           minHeight: 6,
           borderRadius: BorderRadius.circular(3),
           color: AppColors.forScore(pct),
-          backgroundColor: Colors.grey.shade200,
+          backgroundColor: AppColors.border,
         ),
       ),
       trailing: Text('${_fmt(score)} / ${_fmt(max)}', style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -190,7 +190,7 @@ class SkillGroups extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (final g in ordered) ...[
-          Text(_pretty(g.key), style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.grey.shade700)),
+          Text(_pretty(g.key), style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppColors.textMuted)),
           const SizedBox(height: 6),
           Wrap(
             spacing: 6,
@@ -236,9 +236,9 @@ class RoleMatchCard extends StatelessWidget {
           minHeight: 6,
           borderRadius: BorderRadius.circular(3),
           color: AppColors.forScore(value),
-          backgroundColor: Colors.grey.shade200,
+          backgroundColor: AppColors.border,
         ),
-        Text(hint, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(hint, style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
       ],
     ),
   );
@@ -270,7 +270,7 @@ class RoleMatchCard extends StatelessWidget {
           Text(
             '${m['basis'] == 'target role' ? 'Your target role' : 'Your best-fit role'} · '
             'learned from ${m['postings_analysed']} job postings',
-            style: const TextStyle(color: Colors.grey),
+            style: TextStyle(color: AppColors.textMuted),
           ),
           if (m['better_fit'] is Map) ...[
             const SizedBox(height: 8),
@@ -317,7 +317,7 @@ class RoleMatchCard extends StatelessWidget {
           ],
           if (matched.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text('Already showing: ${matched.join(', ')}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            Text('Already showing: ${matched.join(', ')}', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
           ],
         ],
       ),

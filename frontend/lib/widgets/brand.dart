@@ -83,8 +83,8 @@ class _BrandLoadingState extends State<BrandLoading> {
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
                     minHeight: 4,
-                    color: AppColors.brand,
-                    backgroundColor: AppColors.brand.withValues(alpha: 0.1),
+                    color: AppColors.navy, // the splash is always white, so fixed colours
+                    backgroundColor: AppColors.navy.withValues(alpha: 0.1),
                   ),
                 ),
               ),
@@ -95,7 +95,7 @@ class _BrandLoadingState extends State<BrandLoading> {
                 child: Text(
                   widget.message ?? 'Starting the AI engine… the first start can take up to a minute.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  style: const TextStyle(color: Color(0xFF5B6B82), fontSize: 13),
                 ),
               ),
             ],

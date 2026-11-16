@@ -205,7 +205,7 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
                   const SizedBox(height: 4),
                   Text(
                     (_plan['summary'] as Map)['message'] as String,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                   ),
                 ],
               ),
@@ -234,7 +234,7 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
           initiallyExpanded: isCurrent,
           leading: CircleAvatar(
             backgroundColor: finished ? AppColors.good : AppColors.brand.withValues(alpha: isCurrent ? 1 : 0.15),
-            foregroundColor: finished || isCurrent ? Colors.white : AppColors.brand,
+            foregroundColor: finished || isCurrent ? AppColors.onBrand : AppColors.brand,
             child: finished ? const Icon(Icons.check) : Text('${w['week']}'),
           ),
           title: Text('Week ${w['week']}${isCurrent ? '  ·  this week' : ''}'),
@@ -258,12 +258,12 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
     return CheckboxListTile(
       value: t['done'] == true,
       onChanged: saving ? null : (v) => _toggle(t, v ?? false),
-      secondary: Icon(icon, color: Colors.grey),
+      secondary: Icon(icon, color: AppColors.textMuted),
       title: Text(
         t['title'] as String,
         style: TextStyle(
           decoration: t['done'] == true ? TextDecoration.lineThrough : null,
-          color: t['done'] == true ? Colors.grey : null,
+          color: t['done'] == true ? AppColors.textMuted : null,
         ),
       ),
       subtitle: Text('${t['hours']} h · ${t['skill']}'),
@@ -278,11 +278,11 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Padding(
+        Padding(
           padding: EdgeInsets.only(bottom: 8),
           child: Text(
             'In learning order. Foundations come before the skills that need them.',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: AppColors.textMuted),
           ),
         ),
         for (final (i, s) in _skills.indexed) _skillCard(i + 1, s, completed.contains(s['name'])),
@@ -307,8 +307,8 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           leading: CircleAvatar(
-            backgroundColor: learned ? AppColors.good : Colors.grey.shade200,
-            foregroundColor: learned ? Colors.white : Colors.black87,
+            backgroundColor: learned ? AppColors.good : AppColors.border,
+            foregroundColor: learned ? AppColors.onBrand : AppColors.text,
             child: learned ? const Icon(Icons.check) : Text('$n'),
           ),
           title: Text(s['name'] as String),
@@ -333,7 +333,7 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           expandedCrossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (pre.isNotEmpty) Text('Learn first: ${pre.join(', ')}', style: const TextStyle(color: Colors.grey)),
+            if (pre.isNotEmpty) Text('Learn first: ${pre.join(', ')}', style: TextStyle(color: AppColors.textMuted)),
             const SizedBox(height: 6),
             Text('Project: ${s['project']}', style: const TextStyle(fontWeight: FontWeight.w600)),
             if (s['tip'] != null) ...[const SizedBox(height: 4), Text('Tip: ${s['tip']}')],

@@ -142,7 +142,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                     value: total == 0 ? 1 : _answered / total,
                     minHeight: 6,
                     color: AppColors.good,
-                    backgroundColor: Colors.grey.shade200,
+                    backgroundColor: AppColors.border,
                   ),
                   Expanded(
                     child: Center(
@@ -184,7 +184,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        Text('Question ${_answered + 1} of $total', style: const TextStyle(color: Colors.grey)),
+        Text('Question ${_answered + 1} of $total', style: TextStyle(color: AppColors.textMuted)),
         const SizedBox(height: 8),
         Text(q['text'] as String, style: t.headlineSmall),
         if (q['why'] != null) ...[
@@ -192,10 +192,10 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.info_outline, size: 18, color: Colors.grey),
+              Icon(Icons.info_outline, size: 18, color: AppColors.textMuted),
               const SizedBox(width: 6),
               Expanded(
-                child: Text(q['why'] as String, style: const TextStyle(color: Colors.grey)),
+                child: Text(q['why'] as String, style: TextStyle(color: AppColors.textMuted)),
               ),
             ],
           ),
@@ -289,7 +289,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
             ),
             if (q['max_choices'] != null) ...[
               const SizedBox(height: 6),
-              Text('Choose up to ${q['max_choices']}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              Text('Choose up to ${q['max_choices']}', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
             ],
             if (q['allow_other'] == true) ...[
               const SizedBox(height: 12),
@@ -300,7 +300,10 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
               ),
             ],
             const SizedBox(height: 6),
-            const Text('Select none and press Next if none apply.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+            Text(
+              'Select none and press Next if none apply.',
+              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+            ),
           ],
         );
       case 'number':

@@ -71,17 +71,17 @@ class _CameraCheckScreenState extends State<CameraCheckScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
+                  Text(
                     'Sit so your face is in the middle, with light in front of you. '
                     'The video stays on your computer; only eye-contact numbers are used.',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: AppColors.textMuted),
                   ),
                   const SizedBox(height: 12),
                   AspectRatio(
                     aspectRatio: 4 / 3,
                     child: _problem != null && !_started
                         ? Container(
-                            decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(12)),
+                            decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(12)),
                             padding: const EdgeInsets.all(24),
                             alignment: Alignment.center,
                             child: Text(_problem!, textAlign: TextAlign.center),
@@ -144,7 +144,7 @@ class _CameraCheckScreenState extends State<CameraCheckScreen> {
           const SizedBox(height: 6),
           Text(
             'Eye opening ${s.eyesOpen.toStringAsFixed(2)} · ${s.fps} checks per second',
-            style: const TextStyle(color: Colors.grey, fontSize: 12),
+            style: TextStyle(color: AppColors.textMuted, fontSize: 12),
           ),
         ],
         const SizedBox(height: 8),
@@ -155,7 +155,7 @@ class _CameraCheckScreenState extends State<CameraCheckScreen> {
                 s.calibrated
                     ? 'Centre = your normal position. If the dots are off-centre while you look at the screen, recalibrate.'
                     : 'Look at the middle of the screen for a moment to set your centre.',
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
+                style: TextStyle(color: AppColors.textMuted, fontSize: 12),
               ),
             ),
             TextButton.icon(
@@ -185,14 +185,14 @@ class _CameraCheckScreenState extends State<CameraCheckScreen> {
                   children: [
                     Positioned.fill(
                       child: DecoratedBox(
-                        decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(7)),
+                        decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(7)),
                       ),
                     ),
                     Positioned(
                       left: c.maxWidth / 2 - 1,
                       top: 0,
                       bottom: 0,
-                      child: Container(width: 2, color: Colors.black26),
+                      child: Container(width: 2, color: AppColors.borderStrong),
                     ),
                     Positioned(
                       left: (x + 1) / 2 * (c.maxWidth - 14),

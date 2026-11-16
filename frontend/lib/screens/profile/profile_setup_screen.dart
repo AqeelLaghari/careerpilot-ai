@@ -114,7 +114,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                             style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 4),
-                          Text(subtitles[_step], style: TextStyle(color: Colors.grey.shade600)),
+                          Text(subtitles[_step], style: TextStyle(color: AppColors.textMuted)),
                           const SizedBox(height: 24),
                           AnimatedSwitcher(
                             duration: const Duration(milliseconds: 250),
@@ -148,10 +148,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                                   padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
                                 ),
                                 child: _saving
-                                    ? const SizedBox(
+                                    ? SizedBox(
                                         width: 18,
                                         height: 18,
-                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.onBrand),
                                       )
                                     : Text(_step == 0 ? 'Continue' : 'Finish'),
                               ),
@@ -184,7 +184,7 @@ class _Progress extends StatelessWidget {
       children: [
         Text(
           'Step $step of $total',
-          style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+          style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         Row(
@@ -198,7 +198,7 @@ class _Progress extends StatelessWidget {
                       duration: const Duration(milliseconds: 300),
                       height: 6,
                       decoration: BoxDecoration(
-                        color: i <= step ? AppColors.brand : Colors.grey.shade300,
+                        color: i <= step ? AppColors.brand : AppColors.borderStrong,
                         borderRadius: BorderRadius.circular(3),
                       ),
                     ),
@@ -207,7 +207,7 @@ class _Progress extends StatelessWidget {
                       labels[i - 1],
                       style: TextStyle(
                         fontSize: 12,
-                        color: i <= step ? AppColors.brand : Colors.grey,
+                        color: i <= step ? AppColors.brand : AppColors.textMuted,
                         fontWeight: i == step ? FontWeight.w700 : FontWeight.normal,
                       ),
                     ),

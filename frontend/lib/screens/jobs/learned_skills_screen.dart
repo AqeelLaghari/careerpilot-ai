@@ -151,7 +151,7 @@ class _LearnedSkillsScreenState extends State<LearnedSkillsScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text(_lastRun(d), style: const TextStyle(color: Colors.grey)),
+            Text(_lastRun(d), style: TextStyle(color: AppColors.textMuted)),
             const SizedBox(height: 8),
             SegmentedButton<String>(
               segments: [

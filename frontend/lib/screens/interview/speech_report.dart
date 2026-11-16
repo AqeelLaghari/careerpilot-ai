@@ -28,7 +28,11 @@ class SpeechReport extends StatelessWidget {
         TextSpan(
           text: '$word ',
           style: marked
-              ? TextStyle(color: AppColors.warn, fontWeight: FontWeight.bold, backgroundColor: Color(0x22F59E0B))
+              ? TextStyle(
+                  color: AppColors.warn,
+                  fontWeight: FontWeight.bold,
+                  backgroundColor: AppColors.warn.withValues(alpha: 0.13),
+                )
               : null,
         ),
       );
@@ -61,7 +65,7 @@ class SpeechReport extends StatelessWidget {
           padding: const EdgeInsets.only(left: 24, top: 2),
           child: Text(
             '${at(e['at'] as num)}  looked ${e['where']} for ${(e['seconds'] as num).toStringAsFixed(0)} s',
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
           ),
         ),
       for (final t in (v['tips'] as List? ?? []).cast<String>().skip(pct >= 70 ? 1 : 0))
@@ -89,7 +93,7 @@ class SpeechReport extends StatelessWidget {
           value,
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
         ),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(label, style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
       ],
     ),
   );
@@ -107,7 +111,7 @@ class SpeechReport extends StatelessWidget {
         const Text('What you said', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
         if (transcript.trim().isEmpty)
-          const Text('(no speech heard)', style: TextStyle(color: Colors.grey))
+          Text('(no speech heard)', style: TextStyle(color: AppColors.textMuted))
         else
           _transcript(context),
         const SizedBox(height: 12),

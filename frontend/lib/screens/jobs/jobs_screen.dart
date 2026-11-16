@@ -148,7 +148,7 @@ class _JobsScreenState extends State<JobsScreen> {
                       '${d['jobs_available']} jobs',
                       if (d['updated_at'] != null) 'updated ${_ago(d['updated_at'] as num)}',
                     ].join(' · '),
-                    style: const TextStyle(color: Colors.grey),
+                    style: TextStyle(color: AppColors.textMuted),
                   ),
                   const SizedBox(height: 12),
                   TrendingSkills(userSkills: {for (final s in (d['user_skills'] as List? ?? [])) '$s'.toLowerCase()}),
@@ -189,7 +189,7 @@ class _JobsScreenState extends State<JobsScreen> {
                   if (_query.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
-                      child: Text('${jobs.length} results for "$_query"', style: const TextStyle(color: Colors.grey)),
+                      child: Text('${jobs.length} results for "$_query"', style: TextStyle(color: AppColors.textMuted)),
                     ),
                   const SizedBox(height: 8),
                   FilterChip(
@@ -226,7 +226,7 @@ class _JobsScreenState extends State<JobsScreen> {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     spacing: 4,
                     children: [
-                      const Text('Jobs from', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      Text('Jobs from', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                       for (final s in sources)
                         TextButton(
                           style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
@@ -235,9 +235,9 @@ class _JobsScreenState extends State<JobsScreen> {
                         ),
                     ],
                   ),
-                  const Text(
+                  Text(
                     'Always check the location rules on the original posting before applying.',
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                   ),
                 ],
               ),
@@ -298,7 +298,7 @@ class _JobCard extends StatelessWidget {
                     children: [
                       Text(job['title'] as String, style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: 2),
-                      Text(meta, style: const TextStyle(color: Colors.grey)),
+                      Text(meta, style: TextStyle(color: AppColors.textMuted)),
                     ],
                   ),
                 ),
@@ -309,7 +309,7 @@ class _JobCard extends StatelessWidget {
                       '${match.round()}%',
                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.forScore(match)),
                     ),
-                    const Text('match', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                    Text('match', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
                   ],
                 ),
               ],
@@ -341,10 +341,10 @@ class _JobCard extends StatelessWidget {
                     ),
                   for (final s in missing)
                     Chip(
-                      label: Text(s, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                      label: Text(s, style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
                       avatar: const Icon(Icons.add, size: 14),
                       visualDensity: VisualDensity.compact,
-                      backgroundColor: Colors.grey.shade100,
+                      backgroundColor: AppColors.border,
                     ),
                 ],
               ),
