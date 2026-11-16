@@ -34,6 +34,17 @@ FOLLOW_UP_MIN_SECONDS = 120   # no follow-ups when less time than this is left
 GEMINI_BUDGET = 6             # seconds; the user is waiting
 GEMINI_HEDGE = 3.0            # s; Gemini usually answers in ~1.5 s: later than this, ask again in parallel
 TOPICS_FOR = {5: 4, 10: 7, 15: 10}      # agenda size (plus opening/background) per interview length
+# A 5-minute interview is short: no separate background question (the opening already asks about
+# studies and experience), at most 1 follow-up per topic, and the closing starts a bit later.
+SHORT_MINUTES, SHORT_FOLLOW_UPS, SHORT_WRAP_UP = 5, 1, 60
+
+
+def _max_follow_ups(live: dict) -> int:
+    return SHORT_FOLLOW_UPS if live.get("minutes", 10) <= SHORT_MINUTES else MAX_FOLLOW_UPS
+
+
+def _wrap_up_seconds(live: dict) -> int:
+    return SHORT_WRAP_UP if live.get("minutes", 10) <= SHORT_MINUTES else WRAP_UP_SECONDS
 
 REACTIONS = ["Thank you.", "Okay, thanks for that.", "Alright.", "Got it, thank you.", "I see, thanks.",
              "That's helpful, thank you.", "Okay."]
@@ -199,18 +210,14 @@ def _urdu_opening(role: str, who: dict | None) -> tuple[str, str, str]:
     name = who.get("first_name")
     uni, subject = who.get("university"), who.get("subject")
     n = f" {name}" if name else ""
-    hello = (f"السلام علیکم{n}، انٹرویو میں شامل ہونے کا شکریہ۔ آج کا انٹرویو {role} کی پوزیشن کے لیے ہے۔ یہ ایک "
-             "عام گفتگو کی طرح ہوگا، اس لیے آرام سے اور قدرتی انداز میں جواب دیں۔",
-             f"Assalam o Alaikum{n}, interview mein shamil hone ka shukriya. Aaj ka interview {role} ki position "
-             "ke liye hai. Yeh ek aam guftagu ki tarah hoga, is liye aaram se aur qudrati andaaz mein jawab dein.",
-             f"अस्सलाम ओ अलैकुम{n}, इंटरव्यू में शामिल होने का शुक्रिया। आज का इंटरव्यू {role} की पोज़िशन के लिए "
-             "है। यह एक आम गुफ़्तगू की तरह होगा, इस लिए आराम से और क़ुदरती अंदाज़ में जवाब दें।")
-    start = ("شروع کرنے کے لیے، اپنے بارے میں تھوڑا بتائیں: ", "Shuru karne ke liye, apne baare mein thora batayein: ",
-             "शुरू करने के लिए, अपने बारे में थोड़ा बताइए: ")
-    exp = ("اور اب تک آپ کا کیا تجربہ ہے؟", "aur ab tak aap ka kya tajurba hai?", "और अब तक आपका क्या तजुर्बा है?")
+    # Kept short: an Urdu or Hindi voice reads it slowly, and every second counts in 5 minutes.
+    hello = (f"السلام علیکم{n}، شکریہ۔ آج کا انٹرویو {role} کی پوزیشن کے لیے ہے۔",
+             f"Assalam o Alaikum{n}, shukriya. Aaj ka interview {role} ki position ke liye hai.",
+             f"अस्सलाम ओ अलैकुम{n}, शुक्रिया। आज का इंटरव्यू {role} की पोज़िशन के लिए है।")
+    start = ("اپنے بارے میں تھوڑا بتائیں: ", "Apne baare mein thora batayein: ", "अपने बारे में थोड़ा बताइए: ")
+    exp = ("اور اب تک کا تجربہ کیا ہے؟", "aur ab tak ka tajurba kya hai?", "और अब तक का तजुर्बा क्या है?")
     if not uni:
-        ask = ("آپ کون ہیں، کہاں پڑھ رہے ہیں یا پڑھا ہے، ", "aap kaun hain, kahan parh rahe hain ya parha hai, ",
-               "आप कौन हैं, कहाँ पढ़ रहे हैं या पढ़ा है, ")
+        ask = ("کہاں پڑھ رہے ہیں یا پڑھا ہے، ", "kahan parh rahe hain ya parha hai, ", "कहाँ पढ़ रहे हैं या पढ़ा है, ")
         cv = ("", "", "")
     else:
         sub = (f"{subject} ", f"{subject} ", f"{subject} ") if subject else ("", "", "")
@@ -225,9 +232,8 @@ def _urdu_opening(role: str, who: dict | None) -> tuple[str, str, str]:
             cv = (f"آپ کی CV کے مطابق آپ نے {uni} سے {sub[0]}پڑھا ہے۔ ",
                   f"Aap ki CV ke mutabiq aap ne {uni} se {sub[1]}parha hai. ",
                   f"आपकी CV के मुताबिक़ आपने {uni} से {sub[2]}पढ़ा है। ")
-        ask = ("آپ نے پڑھائی میں کیا سیکھا، آپ کو سب سے زیادہ کس چیز میں دلچسپی ہے، ",
-               "aap ne parhai mein kya seekha, aap ko sab se zyada kis cheez mein dilchaspi hai, ",
-               "आपने पढ़ाई में क्या सीखा, आपको सबसे ज़्यादा किस चीज़ में दिलचस्पी है, ")
+        ask = ("کس چیز میں سب سے زیادہ دلچسپی ہے، ", "kis cheez mein sab se zyada dilchaspi hai, ",
+               "किस चीज़ में सबसे ज़्यादा दिलचस्पी है, ")
     return tuple(f"{hello[i]} {cv[i]}{start[i]}{ask[i]}{exp[i]}" for i in range(3))
 
 
@@ -344,7 +350,8 @@ def build_agenda(questions: list[dict], minutes: int) -> list[dict]:
     """Topics in interview order from the planned questions (Day 15)."""
     n = TOPICS_FOR.get(minutes, 7)
     body = [q for q in questions if q["type"] != "intro"][:n]
-    agenda = [{"id": "opening", "type": "intro", "question": None, "key_points": [], "skill": None, "project": None},
+    opening = {"id": "opening", "type": "intro", "question": None, "key_points": [], "skill": None, "project": None}
+    agenda = [opening] if minutes <= SHORT_MINUTES else [opening,
               {"id": "background", "type": "background", "question": BACKGROUND_QUESTION, "skill": None, "project": None,
                "key_points": ["Clear summary of studies (degree, where, what stood out)",
                               "Relevant work, internship or project experience",
@@ -463,7 +470,7 @@ def _prompt(live: dict, remaining: float) -> str:
         "check is vague, ask for the specific part (what you did, how, the result). You may also follow up on "
         "an interesting detail. If you already probed this same point and they kept their answer, don't "
         "probe it again: move on. "
-        f"(Follow-ups used on this topic: {cur['follow_ups'] if cur else 0} of {MAX_FOLLOW_UPS}.)\n"
+        f"(Follow-ups used on this topic: {cur['follow_ups'] if cur else 0} of {_max_follow_ups(live)}.)\n"
         "- next_topic: move to the next pending topic in the list. Rephrase its planned question naturally, "
         "and link it to what they said when it fits.\n"
         "- wrap_up: only when time is nearly over.\n"
@@ -548,7 +555,8 @@ def decide(live: dict, now: float | None = None, use_gemini: bool = True) -> dic
         return _line("repeat", URDU["repeat"] if urdu else REPEAT, last.get("topic_id"), "rules")
 
     pending = _pending(live)
-    if remaining < WRAP_UP_SECONDS or (not pending and (cur is None or cur["follow_ups"] >= MAX_FOLLOW_UPS)):
+    if remaining < _wrap_up_seconds(live) or (not pending and (cur is None
+                                                              or cur["follow_ups"] >= _max_follow_ups(live))):
         return _wrap_up(live)
 
     out = _ask_gemini(live, remaining) if use_gemini else None
@@ -559,7 +567,7 @@ def decide(live: dict, now: float | None = None, use_gemini: bool = True) -> dic
     else:
         reaction = _clean_reaction((out or {}).get("reaction"))
         question, join = _clean_question((out or {}).get("question")), _join
-    can_follow = cur is not None and cur["follow_ups"] < MAX_FOLLOW_UPS and remaining > FOLLOW_UP_MIN_SECONDS \
+    can_follow = cur is not None and cur["follow_ups"] < _max_follow_ups(live) and remaining > FOLLOW_UP_MIN_SECONDS \
         and len(answer.split()) >= 3
     if out and out.get("action") == "follow_up" and can_follow and question:
         cur["follow_ups"] += 1

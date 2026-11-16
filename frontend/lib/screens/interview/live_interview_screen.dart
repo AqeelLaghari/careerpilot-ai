@@ -58,6 +58,8 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
   Future<void>? _speech; // the interviewer's current sentence
   bool _pauseSent = false; // told the server "the user went quiet" for this quiet spell
   bool _spokeSincePause = false;
+  int _newSpeechMs = 0; // audio since the last piece the server was asked to transcribe
+  bool _chunkSent = false; // a "chunk" was already sent in this quiet spell
 
   @override
   void initState() {
@@ -187,6 +189,8 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
         _turn.reset();
         _pauseSent = false;
         _spokeSincePause = false;
+        _newSpeechMs = 0;
+        _chunkSent = false;
         if (_camera.latest().status == 'ready') _gaze.start();
         _send({'type': 'listening', 'turn_id': _turnId});
         setState(() => _stage = _Stage.listening);
@@ -210,11 +214,21 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
     _ws?.sink.add(chunk);
     final event = _turn.feed(level, chunk.length ~/ 32); // 32 bytes per ms at 16 kHz
     if (mounted) setState(() => _level = level);
+    _newSpeechMs += chunk.length ~/ 32;
+    if (_turn.quietMs == 0) _chunkSent = false;
+    // A short breath after 5+ s of speech: the server transcribes up to here while the user
+    // carries on, so little is left to transcribe when the answer ends.
+    if (_turn.hasSpoken && _turn.quietMs >= 400 && !_chunkSent && !_pauseSent && _newSpeechMs >= 5000) {
+      _chunkSent = true;
+      _newSpeechMs = 0;
+      _send({'type': 'chunk'});
+    }
     // Quiet for a moment after speaking: let the server start preparing the next question
     // now, so it is ready (almost) as soon as the answer ends.
     if (_turn.hasSpoken && _turn.quietMs >= 1200 && !_pauseSent) {
       _pauseSent = true;
       _spokeSincePause = false;
+      _newSpeechMs = 0;
       _send({'type': 'pause'});
     } else if (_turn.quietMs == 0 && _pauseSent) {
       _pauseSent = false; // speaking again: the early guess will be ignored
@@ -342,7 +356,8 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
               const Text(
                 'The interviewer will speak to you. Answer naturally, like a real interview. '
                 'When you finish an answer, stay quiet for 3 seconds (or press "I\'m done") '
-                'and the next question follows. Look at the camera while you speak.',
+                'and the next question follows. Look at the camera while you speak. '
+                'Keep each answer to about a minute, so there is time for more questions.',
                 textAlign: TextAlign.center,
               ),
               if (_language == 'ur') ...[const SizedBox(height: 12), _urduNote()],

@@ -111,13 +111,31 @@ def _process_answer(uid: str, live: dict, file_id: str, pcm: bytes, vision: dict
                       for w in tr["words"]]
         if heard is not None:
             heard.update(bytes=len(pcm), words=words)
-        m = speech.analyse(words, secs, language)
-        m["pauses"] = m.get("pauses", [])[:10]
-        return answer | {"transcript": " ".join(w["w"] for w in words)[:3000], "metrics": m}
+        return answer | _measured(words, secs, language)
     except Exception:
         log.exception("Live transcription failed")
         return answer | {"transcript": "", "metrics": speech.analyse([], secs, language),
                          "error": "transcription failed"}
+
+
+def _closing(live: dict) -> bool:
+    """The candidate is asking THEIR question: the reply needs every word, so wait for all of it."""
+    return bool(live["turns"]) and live["turns"][-1]["kind"] == "candidate_questions"
+
+
+def _measured(words: list[dict], secs: float, language: str) -> dict:
+    """{"transcript", "metrics"} for the words heard so far."""
+    m = speech.analyse(words, secs, language)
+    m["pauses"] = m.get("pauses", [])[:10]
+    return {"transcript": " ".join(w["w"] for w in words)[:3000], "metrics": m}
+
+
+# The next question is chosen from what is ALREADY transcribed when the user pauses, if at most this
+# much speech is still being transcribed and enough words are there. Speech-to-text takes ~3 s
+# whatever the length (Urdu), so waiting for the last words would add those seconds to every gap;
+# the full answer is still saved (a moment later) for the report.
+EARLY_MISSING_SECONDS = 8
+EARLY_MIN_WORDS = 15
 
 
 @router.websocket("/live/ws")
@@ -173,6 +191,8 @@ async def live_ws(ws: WebSocket):
             await _send(ws, type="ended")
             return
         finished = True
+        if filling:
+            await asyncio.gather(*filling, return_exceptions=True)
         live["status"], live["ended_at"] = "completed", time.time()
         for t in live["agenda"]:
             if t["status"] == "current":
@@ -196,20 +216,35 @@ async def live_ws(ws: WebSocket):
 
     listening, buf, vision = None, bytearray(), None
     spec: dict = {}            # early work started at the last pause: {"n", "task", "resumed"}
-    heard: dict = {"bytes": 0, "words": []}   # the answer so far, transcribed at its pauses
+    heard: dict = {"bytes": 0, "words": []}   # the answer so far, transcribed in pieces while it is spoken
+    sent = 0                   # bytes of this answer already handed to Whisper (chunks + pauses)
+    filling: set = set()       # answers still being completed in the background
 
-    async def think_early(turn_id: str, pcm: bytes, n: int, heard: dict):
-        """At a pause: transcribe what was said since the last pause, then choose the next
-        question on a COPY of the interview. The question is skipped (None) if the user has
-        spoken again since: a newer pause will prepare it."""
-        draft = copy.deepcopy(live)
-        turn = next(t for t in draft["turns"] if t["id"] == turn_id)
-        turn["answer"] = await loop.run_in_executor(_stt, _process_answer, uid, draft, f"{turn_id}_early{n}", pcm,
-                                                    None, heard)
+    def transcribe_upto(turn_id: str, pcm: bytes, tag: str, heard: dict) -> asyncio.Future:
+        """Queue the audio up to here for Whisper (only the part after `heard` is transcribed)."""
+        return loop.run_in_executor(_stt, _process_answer, uid, live, f"{turn_id}_{tag}", pcm, None, heard)
+
+    async def think_early(turn_id: str, pcm: bytes, n: int, heard: dict, full: asyncio.Future):
+        """At a pause: choose the next question on a COPY of the interview, from what is already
+        transcribed when that is nearly everything (else after `full`, the transcript up to the
+        pause). Skipped (None) if the user has spoken again since: a newer pause will do it."""
+        language = live.get("language", "en")
+        missing = audio_store.seconds(len(pcm) - heard["bytes"])
+        if missing > EARLY_MISSING_SECONDS or len(heard["words"]) < EARLY_MIN_WORDS or _closing(live):
+            answer = await full
+        else:
+            answer = {"duration_sec": round(audio_store.seconds(len(pcm)), 1), "vision": None} | _measured(
+                list(heard["words"]), audio_store.seconds(len(pcm)), language)
         if spec.get("n") != n or spec.get("resumed"):
             return None
-        # Gemini runs outside the Whisper thread, so the next pause's audio isn't kept waiting
+        draft = copy.deepcopy(live)
+        next(t for t in draft["turns"] if t["id"] == turn_id)["answer"] = answer
         return draft, await loop.run_in_executor(None, interviewer.decide, draft)
+
+    async def fill_answer(turn: dict, full: asyncio.Future, secs: float, eyes: dict | None):
+        """The complete transcript of an answer whose next question was chosen early."""
+        turn["answer"] = (await full) | {"duration_sec": round(secs, 1), "vision": eyes}
+        await save()
 
     try:
         while True:
@@ -227,10 +262,21 @@ async def live_ws(ws: WebSocket):
             kind = data.get("type")
             if kind == "listening":
                 listening, buf, vision = data.get("turn_id"), bytearray(), None
-                spec, heard = {}, {"bytes": 0, "words": []}
+                spec, heard, sent = {}, {"bytes": 0, "words": []}, 0
+                for t in live["turns"]:
+                    if t["id"] == listening:
+                        t["listen_at"] = time.time()
+            elif kind == "chunk" and listening is not None:
+                # a short breath in a long answer: transcribe up to here now, while they carry on
+                if audio_store.seconds(len(buf) - sent) >= 1:
+                    sent = len(buf)
+                    transcribe_upto(listening, bytes(buf), f"c{sent}", heard)
             elif kind == "pause" and listening is not None:
                 n = spec.get("n", 0) + 1
-                spec = {"n": n, "task": asyncio.ensure_future(think_early(listening, bytes(buf), n, heard))}
+                sent = len(buf)
+                full = transcribe_upto(listening, bytes(buf), f"p{n}", heard)
+                spec = {"n": n, "full": full,
+                        "task": asyncio.ensure_future(think_early(listening, bytes(buf), n, heard, full))}
             elif kind == "resumed":
                 spec["resumed"] = True                       # speaking again: that early question is out of date
             elif kind == "vision":
@@ -240,7 +286,7 @@ async def live_ws(ws: WebSocket):
                 pcm, eyes = bytes(buf), vision
                 listening, buf, vision = None, bytearray(), None
                 await _send(ws, type="thinking")
-                t0, early = time.time(), None
+                t0, early, full = time.time(), None, spec.get("full")
                 if spec.get("task") is not None and not data.get("spoke_since_pause") and not spec.get("resumed"):
                     try:
                         early = await spec["task"]               # usually finished already
@@ -250,16 +296,24 @@ async def live_ws(ws: WebSocket):
                 if early is not None:
                     draft, nxt = early
                     live["agenda"] = draft["agenda"]
-                    turn["answer"] = next(t for t in draft["turns"] if t["id"] == turn["id"])["answer"] | {
-                        "duration_sec": round(audio_store.seconds(len(pcm)), 1), "vision": eyes}
+                    secs = audio_store.seconds(len(pcm))
+                    if full.done():
+                        turn["answer"] = full.result() | {"duration_sec": round(secs, 1), "vision": eyes}
+                    else:                                        # the last words: saved a moment later
+                        turn["answer"] = next(t for t in draft["turns"] if t["id"] == turn["id"])["answer"] | {
+                            "duration_sec": round(secs, 1), "vision": eyes}
+                        task = asyncio.ensure_future(fill_answer(turn, full, secs, eyes))
+                        filling.add(task)
+                        task.add_done_callback(filling.discard)
                 else:
                     # only the audio after the last pause is still to transcribe (heard); it waits
                     # in line behind any pause still being transcribed, so heard is up to date
                     turn["answer"] = await loop.run_in_executor(_stt, _process_answer, uid, live, turn["id"], pcm,
                                                                 eyes, heard)
                     nxt = await loop.run_in_executor(None, interviewer.decide, live)
+                turn["wait_sec"] = round(time.time() - t0, 1)   # how long the user waited (kept for tuning)
                 log.info("Live turn %s: answer %.1f s, next ready %.1f s after the end (%s%s)", turn["id"],
-                         turn["answer"]["duration_sec"], time.time() - t0, nxt.get("source"),
+                         turn["answer"]["duration_sec"], turn["wait_sec"], nxt.get("source"),
                          ", prepared early" if early else "")
                 if nxt["kind"] == "end":
                     await finish()

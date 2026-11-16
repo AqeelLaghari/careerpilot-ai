@@ -178,7 +178,8 @@ def test_name_and_university_hidden_from_gemini(monkeypatch):
 
 def test_agenda_size_follows_the_length():
     many = QUESTIONS + [dict(QUESTIONS[2], id=f"x{i}") for i in range(12)]
-    assert len(iv.build_agenda(many, 5)) == 2 + iv.TOPICS_FOR[5]
+    short = iv.build_agenda(many, 5)                  # 5 minutes: no separate background question
+    assert len(short) == 1 + iv.TOPICS_FOR[5] and "background" not in [t["id"] for t in short]
     assert len(iv.build_agenda(many, 15)) == 2 + iv.TOPICS_FOR[15]
 
 
@@ -358,3 +359,58 @@ def test_pause_prepares_the_next_question_early(live_env):
     a = live["turns"][0]["answer"]
     assert a["duration_sec"] == 5.0 and a["transcript"].startswith("I am a final year")   # the early transcript
     assert [t["status"] for t in live["agenda"][:2]] == ["done", "done"]   # agenda taken from the early run
+
+
+def test_five_minute_interview_allows_one_follow_up_per_topic(monkeypatch):
+    live = _live(minutes=5)
+    _say(live, iv.start(live))
+    _answer(live, "I built a CI pipeline with Docker and GitHub Actions for a student project")
+    follow = {"check": "fine", "note": "", "action": "follow_up", "reaction": "Okay.",
+              "question": "What did the pipeline test?", "topic_id": "opening"}
+    monkeypatch.setattr(iv.llm, "generate_json", lambda *a, **k: follow)
+    first = iv.decide(live)
+    _say(live, first)
+    _answer(live, "It ran the unit tests and built the image on every push to main")
+    second = iv.decide(live)
+    assert first["kind"] == "follow_up" and second["kind"] == "question"    # straight to the next topic
+    assert second["topic_id"] == "q2"
+
+
+def test_next_question_does_not_wait_for_the_last_words(live_env, monkeypatch):
+    """Long answer: the part spoken before a short breath is transcribed while they carry on; at the
+    pause the next question is chosen from it at once, and the last words are added a moment later."""
+    import wave
+
+    first_part = "I built a pipeline with Docker and GitHub Actions that tested and deployed our student project"
+
+    def fake_transcribe(path, prompt=None, fast=False, language="en"):
+        with wave.open(str(path)) as w:
+            secs = w.getnframes() / w.getframerate()
+        last = "_p" in str(path)
+        if last:
+            time.sleep(1.5)                                  # Whisper on the last words is slow
+        text = "and it cut our release time in half" if last else first_part
+        words = [{"w": w, "start": 0.1 + i * 0.3, "end": 0.3 + i * 0.3} for i, w in enumerate(text.split())]
+        return {"text": text, "words": words, "duration": secs, "language_probability": 1, "seconds_taken": 0}
+    monkeypatch.setattr(speech, "transcribe", fake_transcribe)
+    with TestClient(app).websocket_connect("/interview/live/ws") as ws:
+        ws.send_json({"type": "auth", "token": "good", "session_id": "L1"})
+        ws.receive_json(), ws.receive_json()                      # ready, the opening
+        ws.send_json({"type": "listening", "turn_id": "t1"})
+        ws.send_bytes(b"\x01\x00" * 16000 * 6)
+        ws.send_json({"type": "chunk"})                           # a short breath
+        ws.send_json({"type": "ping"})
+        assert ws.receive_json()["type"] == "pong"
+        time.sleep(0.3)                                           # that part is transcribed meanwhile
+        ws.send_bytes(b"\x01\x00" * 16000 * 3)
+        ws.send_json({"type": "pause"})
+        ws.send_json({"type": "answered", "turn_id": "t1", "spoke_since_pause": False})
+        t = time.time()
+        assert ws.receive_json()["type"] == "thinking"
+        assert ws.receive_json()["turn_id"] == "t2"
+        assert time.time() - t < 1.2                              # not after the slow last words
+        ws.send_json({"type": "end"})
+        assert ws.receive_json()["type"] == "ended"
+    turn = live_env.read_section("u1", "interviews")["sessions"][0]["turns"][0]
+    assert turn["answer"]["transcript"] == first_part + " and it cut our release time in half"
+    assert turn["answer"]["duration_sec"] == 9.0 and "wait_sec" in turn and "listen_at" in turn
