@@ -1,6 +1,6 @@
 # Day 2: web server + Firebase
 fastapi==0.115.*
-uvicorn[standard]==0.32.*
+uvicorn[standard]==0.54.*
 python-dotenv==1.0.*
 firebase-admin==6.*
 python-multipart==0.0.*
