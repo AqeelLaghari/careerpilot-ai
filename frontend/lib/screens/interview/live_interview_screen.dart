@@ -12,6 +12,7 @@ import '../../config.dart';
 import '../../services/api_client.dart';
 import '../../services/camera/face_camera.dart';
 import '../../services/camera/gaze_recorder.dart';
+import '../../services/profile_store.dart';
 import '../../services/speaker.dart';
 import '../../services/turn_detector.dart';
 import '../../theme.dart';
@@ -33,7 +34,7 @@ enum _Stage { preparing, lobby, connecting, interviewerSpeaking, listening, thin
 class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
   final _camera = FaceCamera();
   late final _gaze = GazeRecorder(_camera);
-  final _voice = Speaker();
+  Speaker _voice = Speaker(); // replaced by one for the interview's language
   final _recorder = AudioRecorder();
   final _turn = TurnDetector();
 
@@ -45,6 +46,8 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
   _Stage _stage = _Stage.preparing;
   String? _sessionId;
   String _role = '';
+  String _language = 'en'; // 'en' | 'ur' (Day 27)
+  String _voiceMode = 'en'; // see Speaker.voiceLanguage
   String _subtitle = '';
   String? _turnId;
   String _kind = '';
@@ -81,9 +84,15 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
   Future<void> _prepare() async {
     final camera = _startCamera();
     try {
-      final s = await api.post('/interview/live', {'minutes': widget.minutes});
+      final s = await api.post('/interview/live', {
+        'minutes': widget.minutes,
+        'language': profileStore.setting('language'),
+      });
       _sessionId = s['id'] as String;
       _role = s['role'] as String;
+      _language = (s['language'] as String?) ?? 'en';
+      _voice = Speaker(language: _language);
+      _voiceMode = await _voice.ready();
     } catch (e) {
       _fail('$e'.replaceFirst('Exception: ', '').replaceFirst(RegExp(r'API error \d+: '), ''));
       return;
@@ -160,11 +169,11 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
         _kind = m['kind'] as String;
         setState(() {
           _stage = _Stage.interviewerSpeaking;
-          _subtitle = m['text'] as String;
+          _subtitle = (m['roman'] as String?) ?? m['text'] as String; // Urdu: Roman Urdu subtitles
           _remaining = (m['remaining_sec'] as num).toInt().clamp(0, widget.minutes * 60);
         });
         _camera.baselineStart(); // listening = looking at the screen: re-measure "straight ahead"
-        _speech = _voice.say(m['text'] as String);
+        _speech = _voice.sayLine(m['text'] as String, hindi: m['hindi'] as String?);
         await _speech;
         _camera.baselineEnd();
         if (!mounted || _finishing || _stage != _Stage.interviewerSpeaking || _kind == 'goodbye') return;
@@ -328,6 +337,7 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
                 'and the next question follows. Look at the camera while you speak.',
                 textAlign: TextAlign.center,
               ),
+              if (_language == 'ur') ...[const SizedBox(height: 12), _urduNote()],
               const SizedBox(height: 20),
               FilledButton.icon(
                 onPressed: _join,
@@ -340,6 +350,49 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
       ),
     ],
   );
+
+  /// Urdu interview: what to expect, and a warning when this device has no voice to speak it.
+  Widget _urduNote() {
+    final (text, colour, icon) = switch (_voiceMode) {
+      'ur' => (
+        'Interview in Urdu. Answer in Urdu, or mix in English words as you normally would. '
+            'Subtitles are in Roman Urdu, and your report will be in Roman Urdu.',
+        AppColors.good,
+        Icons.translate,
+      ),
+      'hi' => (
+        'Interview in Urdu. Answer in Urdu, or mix in English words as you normally would. This browser has no '
+            'Urdu voice, so a Hindi voice reads the questions (spoken, it sounds the same). Microsoft Edge or '
+            'the Android app has a real Urdu voice.',
+        AppColors.warn,
+        Icons.record_voice_over_outlined,
+      ),
+      _ => (
+        'This browser has no Urdu (or Hindi) voice, so the questions will appear as text only. '
+            'Use Microsoft Edge or the Android app to hear them, or switch the interview language to '
+            'English in Settings.',
+        AppColors.bad,
+        Icons.volume_off_outlined,
+      ),
+    };
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colour.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppSizes.radius),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: colour),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(text, style: TextStyle(color: AppColors.text, height: 1.4)),
+          ),
+        ],
+      ),
+    );
+  }
 
   /// Video-call layout: big camera, subtitles at the bottom, small status on top.
   Widget _call() {

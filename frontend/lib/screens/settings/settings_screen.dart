@@ -16,6 +16,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   Speaker? _sample;
   bool _playing = false;
+  String? _voiceNote; // which voice the sample used
 
   @override
   void dispose() {
@@ -39,12 +40,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _sample?.stop();
     final voice = _sample = Speaker(); // a new speaker picks up the current voice settings
     setState(() => _playing = true);
-    await voice.say(
-      'Hi ${profileStore.firstName}, I am your CareerPilot interviewer. '
-      'Tell me about a project you are proud of.',
-    );
+    final mode = await voice.ready();
+    if (mounted) setState(() => _voiceNote = _describe(mode, voice.voiceName));
+    final name = profileStore.firstName;
+    if (voice.language == 'ur') {
+      await voice.sayLine(
+        'السلام علیکم $name، میں آپ کا CareerPilot انٹرویوور ہوں۔ کسی ایسے پروجیکٹ کے بارے میں بتائیں جس پر آپ کو فخر ہو۔',
+        hindi:
+            'अस्सलाम ओ अलैकुम $name, मैं आपका CareerPilot इंटरव्यूअर हूँ। किसी ऐसे प्रोजेक्ट के बारे में बताइए जिस पर आपको फ़ख़्र हो।',
+      );
+    } else {
+      await voice.say(
+        'Hi $name, I am your CareerPilot interviewer. '
+        'Tell me about a project you are proud of.',
+      );
+    }
     if (mounted && identical(_sample, voice)) setState(() => _playing = false);
   }
+
+  static String _describe(String mode, String? name) => switch (mode) {
+    'ur' => 'Urdu voice: $name',
+    'hi' =>
+      'No Urdu voice in this browser, so a Hindi voice reads Urdu: $name. Microsoft Edge or Android has a real Urdu voice.',
+    'none' => 'No Urdu or Hindi voice in this browser: Urdu questions will be shown as text only.',
+    _ => 'Voice: ${name ?? 'browser default'}',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -112,27 +132,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         icon: Icon(_playing ? Icons.stop_circle_outlined : Icons.volume_up_outlined),
                         label: Text(_playing ? 'Stop' : 'Play a sample'),
                       ),
+                      if (_voiceNote != null) ...[
+                        const SizedBox(height: 8),
+                        Text(_voiceNote!, style: TextStyle(color: AppColors.textMuted, fontSize: 12.5, height: 1.4)),
+                      ],
                     ],
                   ),
                 ),
                 _Section(
                   icon: Icons.translate_outlined,
                   title: 'Interview language',
-                  subtitle: 'The language the AI interviewer speaks and understands.',
+                  subtitle:
+                      'The language of the live video interview: what the interviewer speaks and understands, '
+                      'and the language of your report.',
                   child: Column(
                     children: [
                       RadioGroup<String>(
                         groupValue: profileStore.setting('language'),
-                        onChanged: (v) => v == null ? null : _set('language', v),
+                        onChanged: (v) {
+                          if (v == null) return;
+                          setState(() => _voiceNote = null);
+                          _set('language', v);
+                        },
                         child: Column(
                           children: [
                             const RadioListTile(value: 'en', title: Text('English'), contentPadding: EdgeInsets.zero),
                             RadioListTile(
                               value: 'ur',
-                              enabled: false,
                               contentPadding: EdgeInsets.zero,
-                              title: Row(
-                                children: [const Text('اردو  Urdu'), const SizedBox(width: 10), _Tag('Coming soon')],
+                              title: Row(children: [const Text('اردو  Urdu'), const SizedBox(width: 10), _Tag('New')]),
+                              subtitle: const Text(
+                                'Questions in Urdu with Roman Urdu subtitles. Answer in Urdu or mixed Urdu-English; '
+                                'the report is in Roman Urdu. Press "Play a sample" to check the voice.',
                               ),
                             ),
                           ],
