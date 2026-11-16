@@ -25,3 +25,6 @@ VERIFY_EMAIL_FROM = os.getenv("VERIFY_EMAIL_FROM", "2026-11-16")
 # Whisper model for Urdu interviews (Day 27): "small" is clearly more accurate in Urdu than "base"
 # (tested: about 6 s for a 17 s answer on a laptop CPU vs 2 s); "base" if speed matters more.
 WHISPER_MODEL_URDU = os.getenv("WHISPER_MODEL_URDU", "small").strip()
+# CPU threads for Whisper (measured on a 12-thread laptop: 8 threads ~30% faster than the default).
+# On a small server set it to its number of CPUs (e.g. 2 on Hugging Face's free tier).
+WHISPER_THREADS = int(os.getenv("WHISPER_THREADS", "0") or 0) or min(8, os.cpu_count() or 4)

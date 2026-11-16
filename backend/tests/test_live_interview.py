@@ -197,13 +197,12 @@ def live_env(monkeypatch, tmp_path):
                  "I studied software engineering and did a cloud internship last summer",
                  "No questions, thank you"] + ["I would check the logs and the pod events first"] * 20)
 
-    def fake_process(path, role=None, terms=None, fast=False, language="en"):
+    def fake_transcribe(path, prompt=None, fast=False, language="en"):
         assert fast
         text = next(said)
         words = [{"w": w, "start": i * 0.4, "end": i * 0.4 + 0.3} for i, w in enumerate(text.split())]
-        return {"transcript": text, "words": words, "metrics": speech.analyse(words, 5), "model": "fake",
-                "seconds_taken": 0.1}
-    monkeypatch.setattr(speech, "process", fake_process)
+        return {"text": text, "words": words, "duration": 5, "language_probability": 1, "seconds_taken": 0.1}
+    monkeypatch.setattr(speech, "transcribe", fake_transcribe)
     session = {"id": "L1", "created_at": time.time(), "role": "DevOps Engineer", "level": "mid", "status": "ready",
                "source": "template", "questions": QUESTIONS, "mode": "live", "minutes": 10,
                "agenda": iv.build_agenda(QUESTIONS, 10), "turns": [], "started_at": None}
@@ -238,6 +237,42 @@ def test_live_conversation_over_websocket(live_env):
     a1 = live["turns"][0]["answer"]
     assert a1["transcript"].startswith("I am a final year") and a1["vision"]["eye_contact_pct"] == 100
     assert a1["duration_sec"] == 3.0 and a1["metrics"]["word_count"] > 5
+
+
+def test_pauses_transcribe_only_the_new_audio(live_env, monkeypatch):
+    """Each pause transcribes only what was said since the last one; the answer joins the pieces
+    with the right times, and a pause followed by more speech doesn't prepare a question."""
+    lengths, decided = [], []
+    parts = iter(["I built a pipeline", "with Docker and Kubernetes", "for a bank"])
+
+    def fake_transcribe(path, prompt=None, fast=False, language="en"):
+        import wave
+        with wave.open(str(path)) as w:
+            lengths.append(round(w.getnframes() / w.getframerate(), 1))
+        words = [{"w": w, "start": 0.1 + i * 0.3, "end": 0.3 + i * 0.3} for i, w in enumerate(next(parts).split())]
+        return {"text": "", "words": words, "duration": lengths[-1], "language_probability": 1, "seconds_taken": 0}
+    monkeypatch.setattr(speech, "transcribe", fake_transcribe)
+    real = iv.decide
+    monkeypatch.setattr(iv, "decide", lambda live, *a, **k: decided.append(1) or real(live, *a, **k))
+    with TestClient(app).websocket_connect("/interview/live/ws") as ws:
+        ws.send_json({"type": "auth", "token": "good", "session_id": "L1"})
+        ws.receive_json(), ws.receive_json()                      # ready, the opening
+        ws.send_json({"type": "listening", "turn_id": "t1"})
+        ws.send_bytes(b"\x01\x00" * 16000 * 2)
+        ws.send_json({"type": "pause"})
+        ws.send_json({"type": "resumed"})                         # spoke again
+        ws.send_bytes(b"\x01\x00" * 16000 * 3)
+        ws.send_json({"type": "pause"})
+        ws.send_json({"type": "resumed"})
+        ws.send_bytes(b"\x01\x00" * 16000 * 1)
+        ws.send_json({"type": "answered", "turn_id": "t1", "spoke_since_pause": True})
+        assert ws.receive_json()["type"] == "thinking"
+        assert ws.receive_json()["turn_id"] == "t2"
+    answer = live_env.read_section("u1", "interviews")["sessions"][0]["turns"][0]["answer"]
+    assert lengths == [2.0, 3.0, 1.0]                             # never the same audio twice
+    assert answer["transcript"] == "I built a pipeline with Docker and Kubernetes for a bank"
+    assert answer["duration_sec"] == 6.0 and answer["metrics"]["word_count"] == 11
+    assert len(decided) == 1                                      # no question for the out-of-date pauses
 
 
 def test_answer_check_is_saved_for_the_report(live_env, monkeypatch):

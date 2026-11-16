@@ -22,8 +22,9 @@ interview never stops.
 """
 import random
 import time
+from functools import lru_cache
 
-from pydantic import BaseModel
+from pydantic import BaseModel, create_model
 
 from app.services import llm, privacy
 
@@ -31,6 +32,7 @@ MAX_FOLLOW_UPS = 2
 WRAP_UP_SECONDS = 75          # less time left than this: start closing
 FOLLOW_UP_MIN_SECONDS = 120   # no follow-ups when less time than this is left
 GEMINI_BUDGET = 6             # seconds; the user is waiting
+GEMINI_HEDGE = 3.0            # s; Gemini usually answers in ~1.5 s: later than this, ask again in parallel
 TOPICS_FOR = {5: 4, 10: 7, 15: 10}      # agenda size (plus opening/background) per interview length
 
 REACTIONS = ["Thank you.", "Okay, thanks for that.", "Alright.", "Got it, thank you.", "I see, thanks.",
@@ -242,6 +244,42 @@ def _urdu(live: dict) -> bool:
     return live.get("language") == "ur"
 
 
+# The voice the app found for an Urdu interview: "ur" (an Urdu voice reads Urdu script), "hi" (a Hindi
+# voice reads Devanagari) or "none" (subtitles only). Gemini then writes only Roman Urdu (the subtitles)
+# + the one script that voice reads: fewer words to write = a faster next question.
+VOICES = ("ur", "hi", "none")
+
+
+def _scripts(live: dict) -> tuple[str, ...]:
+    """The forms Gemini writes besides Roman Urdu: "text" (Urdu script) and/or "hindi" (Devanagari).
+    Unknown voice (an older app): both."""
+    return {"ur": ("text",), "hi": ("hindi",), "none": ()}.get(live.get("voice"), ("text", "hindi"))
+
+
+def _key(key: str, form: str) -> str:
+    """The JSON field of one form: "question" (Urdu script), "question_roman", "question_hindi"."""
+    return key if form == "text" else f"{key}_{form}"
+
+
+@lru_cache(maxsize=None)
+def _urdu_schema(base: type, keys: tuple[str, ...], scripts: tuple[str, ...]) -> type:
+    """base + every key in Roman Urdu and in the scripts this voice needs."""
+    fields = {_key(k, f): (str, ...) for k in keys for f in ("roman", *scripts)}
+    return create_model(f"{base.__name__}Urdu_{'_'.join(scripts) or 'roman'}", __base__=base, **fields)
+
+
+def _forms_text(keys: str, scripts: tuple[str, ...]) -> str:
+    """Prompt text: which fields to write in which script. keys like "`reaction` / `question`"."""
+    names = [k.strip(" `") for k in keys.split("/")]
+    out = " / ".join(f"`{n}_roman`" for n in names) + " in Roman Urdu (e.g. 'Aap ne is mein kya kiya?')"
+    if "text" in scripts:
+        out += "; the SAME sentences in Urdu script as " + " / ".join(f"`{n}`" for n in names)
+    if "hindi" in scripts:
+        out += "; the SAME sentences in Devanagari (for a Hindi voice) as " + " / ".join(f"`{n}_hindi`"
+                                                                                       for n in names)
+    return out
+
+
 def _join3(*parts) -> tuple[str, str, str]:
     """_join for (text, roman, hindi) tuples."""
     return tuple(_join(*(p[i] for p in parts if p)) for i in range(3))
@@ -259,15 +297,16 @@ def _planned(topic: dict, live: dict):
     return (tr["text"], tr["roman"], tr["hindi"]) if tr else (q, q, q)
 
 
-class _UrduQuestion(BaseModel):
+class _QuestionId(BaseModel):
     id: str
-    text: str       # Urdu script
-    roman: str      # Roman Urdu
-    hindi: str      # Devanagari
 
 
-class _UrduQuestions(BaseModel):
-    questions: list[_UrduQuestion]
+@lru_cache(maxsize=None)
+def _questions_schema(scripts: tuple[str, ...]) -> type:
+    """{questions: [{id, roman, (text), (hindi)}]}: text = Urdu script, hindi = Devanagari."""
+    one = create_model(f"_UrduQuestion_{'_'.join(scripts) or 'roman'}", __base__=_QuestionId,
+                       **{f: (str, ...) for f in ("roman", *scripts)})
+    return create_model(f"_UrduQuestions_{'_'.join(scripts) or 'roman'}", questions=(list[one], ...))
 
 
 def translate_agenda(live: dict) -> None:
@@ -278,20 +317,26 @@ def translate_agenda(live: dict) -> None:
     todo = [t for t in live["agenda"] if t.get("question") and t["id"] != "background"]
     if not todo:
         return
+    scripts = _scripts(live)
     lines = "\n".join(f"{t['id']}: {privacy.scrub(t['question'], private)}" for t in todo)
+    extra = ("text (the same sentence in Urdu script)" if "text" in scripts else "",
+             "hindi (the same spoken sentence in Devanagari, for a Hindi text-to-speech voice)"
+             if "hindi" in scripts else "")
+    extra = " and ".join(x for x in extra if x)
     out = llm.generate_json(
         "Translate these job-interview questions into natural, polite spoken Urdu, as a Pakistani "
         "interviewer would say them (address the candidate as 'aap'; keep technical terms, tool names and "
-        "the role in English, as people do in Pakistan). For each give: text (Urdu script), roman (the same "
-        "sentence in Roman Urdu, e.g. 'Aap ne is project mein kya kiya?') and hindi (the same spoken sentence "
-        "in Devanagari, for a Hindi text-to-speech voice). Keep the ids. "
+        "the role in English, as people do in Pakistan). For each give: roman (Roman Urdu, e.g. 'Aap ne is "
+        f"project mein kya kiya?'){' and ' + extra if extra else ''}. Keep the ids. "
         f"{privacy.NOTE}\n\n{lines}",
-        _UrduQuestions, tier="fast", temperature=0.2, timeout=25)
+        _questions_schema(scripts), tier="fast", temperature=0.2, timeout=25)
     by_id = {q.get("id"): q for q in (out or {}).get("questions", [])}
     for t in todo:
-        q = by_id.get(t["id"])
-        if q and all(str(q.get(k, "")).strip() and "[" not in str(q[k]) for k in ("text", "roman", "hindi")):
-            t["urdu"] = {k: str(q[k]).strip()[:400] for k in ("text", "roman", "hindi")}
+        q = by_id.get(t["id"]) or {}
+        forms = {f: str(q.get(f) or "").strip()[:400] for f in ("roman", *scripts)}
+        if all(forms.values()) and not any("[" in v for v in forms.values()):
+            # a form the voice doesn't read is the Roman Urdu (never spoken, only stored)
+            t["urdu"] = {k: forms.get(k, forms["roman"]) for k in ("text", "roman", "hindi")}
 
 
 # ---------------------------------------------------------------- agenda --
@@ -425,55 +470,59 @@ def _prompt(live: dict, remaining: float) -> str:
         "Write `reaction`: a short neutral acknowledgement (max 10 words, e.g. 'Okay.', 'I see.', 'Alright, "
         "thank you.'). It must NOT judge the answer: no 'correct', 'exactly', 'great', 'wrong', 'actually'. "
         "Write `question`: ONE clear spoken question ending with '?', max 2 sentences, no lists, no code. "
-        + (URDU_PROMPT if _urdu(live) else "Use plain English.\n")
+        + (_urdu_prompt(_scripts(live)) if _urdu(live) else "Use plain English.\n")
         + "Give `topic_id` of the topic the question belongs to.\n"
         f"{privacy.NOTE}\n"
         f"TOPICS (in order):\n{topics}\n"
         f"CONVERSATION SO FAR:\n{_history(live)}")
 
 
-URDU_PROMPT = (
-    "LANGUAGE: this interview is in URDU. The candidate answers in Urdu or mixed Urdu-English (speech-to-text "
-    "in Urdu script; English words may appear in Urdu letters). Write `reaction` and `question` in natural "
-    "spoken Urdu in Urdu script, as a Pakistani interviewer talks: polite, addressing them as 'aap', keeping "
-    "technical terms, tool names and the role in English. Give the SAME sentences again as `reaction_roman` / "
-    "`question_roman` (Roman Urdu, e.g. 'Aap ne is mein kya kiya?') and as `reaction_hindi` / `question_hindi` "
-    "(Devanagari, for a Hindi voice). Don't use gendered words about yourself (say 'Theek hai', 'Shukriya', not "
-    "'samajh gaya'). The reaction must not judge either: no 'sahi', 'ghalat', 'zabardast', 'shabash', "
-    "'behtareen'. Write `note` in English.\n")
+def _urdu_prompt(scripts: tuple[str, ...]) -> str:
+    return (
+        "LANGUAGE: this interview is in URDU. The candidate answers in Urdu or mixed Urdu-English (speech-to-text "
+        "in Urdu script; English words may appear in Urdu letters). Write the reaction and question in natural "
+        "spoken Urdu, as a Pakistani interviewer talks: polite, addressing them as 'aap', keeping technical "
+        f"terms, tool names and the role in English. Write {_forms_text('reaction / question', scripts)} "
+        "(the rules above for `reaction` and `question` apply to every form). "
+        "Don't use gendered words about yourself (say 'Theek hai', 'Shukriya', not 'samajh gaya'). The reaction "
+        "must not judge either: no 'sahi', 'ghalat', 'zabardast', 'shabash', 'behtareen'. Write `note` in "
+        "English.\n")
 
 
-class _NextUrdu(_Next):
-    reaction_roman: str
-    reaction_hindi: str
-    question_roman: str
-    question_hindi: str
+class _Decision(BaseModel):
+    check: str
+    note: str
+    action: str
+    topic_id: str
 
 
 def _ask_gemini(live: dict, remaining: float) -> dict | None:
     urdu = _urdu(live)
-    return llm.generate_json(_prompt(live, remaining), _NextUrdu if urdu else _Next, tier="fast", temperature=0.6,
-                             timeout=GEMINI_BUDGET + (3 if urdu else 0), quick=True)
+    schema = _urdu_schema(_Decision, ("reaction", "question"), _scripts(live)) if urdu else _Next
+    return llm.generate_json(_prompt(live, remaining), schema, tier="fast", temperature=0.6,
+                             timeout=GEMINI_BUDGET, quick=True, hedge_after=GEMINI_HEDGE)
 
 
-def _urdu_parts(out: dict | None, key: str) -> tuple[str, str, str] | None:
-    """Gemini's Urdu (text, roman, hindi) for "reaction" or "question"; None if a form is missing,
-    contains a privacy placeholder, or judges the answer."""
-    parts = tuple(str((out or {}).get(k) or "").strip() for k in (key, f"{key}_roman", f"{key}_hindi"))
+def _urdu_parts(out: dict | None, key: str, scripts: tuple[str, ...] = ("text", "hindi")) -> tuple[str, str, str] | None:
+    """Gemini's Urdu (text, roman, hindi) for "reaction", "question" or "reply"; None if a form is
+    missing, contains a privacy placeholder, or judges the answer. A form the voice doesn't read
+    (not in scripts) is the Roman Urdu."""
+    got = {f: str((out or {}).get(_key(key, f)) or "").strip() for f in ("roman", *scripts)}
+    parts = tuple(got.get(f, got["roman"]) for f in ("text", "roman", "hindi"))
     if not all(parts) or any("[" in p or _has(p, VERDICTS + URDU_VERDICTS) for p in parts):
         return None
     return parts
 
 
-def _urdu_reaction(out: dict | None) -> tuple[str, str, str]:
-    parts = _urdu_parts(out, "reaction")
+def _urdu_reaction(out: dict | None, scripts: tuple[str, ...] = ("text", "hindi")) -> tuple[str, str, str]:
+    parts = _urdu_parts(out, "reaction", scripts)
     if parts is None or len(parts[1].split()) > 12 or _has(parts[1], REACTION_EXTRA):
         return random.choice(URDU_REACTIONS)
     return parts
 
 
-def _urdu_question(out: dict | None) -> tuple[str, str, str] | None:
-    parts = _urdu_parts(out, "question")
+def _urdu_question(out: dict | None, scripts: tuple[str, ...] = ("text", "hindi")) -> tuple[str, str, str] | None:
+    parts = _urdu_parts(out, "question", scripts)
     return parts if parts and parts[1].rstrip().endswith("?") else None
 
 
@@ -505,7 +554,8 @@ def decide(live: dict, now: float | None = None, use_gemini: bool = True) -> dic
     out = _ask_gemini(live, remaining) if use_gemini else None
     check = _check(out)
     if urdu:
-        reaction, question, join = _urdu_reaction(out), _urdu_question(out), _join3
+        scripts = _scripts(live)
+        reaction, question, join = _urdu_reaction(out, scripts), _urdu_question(out, scripts), _join3
     else:
         reaction = _clean_reaction((out or {}).get("reaction"))
         question, join = _clean_question((out or {}).get("question")), _join
@@ -561,10 +611,6 @@ class _Reply(BaseModel):
     reply: str
 
 
-class _ReplyUrdu(BaseModel):
-    reply: str           # Urdu script
-    reply_roman: str
-    reply_hindi: str
 
 
 # "No questions, thank you" in English and Urdu: then the interviewer just says goodbye
@@ -577,16 +623,18 @@ def _goodbye(live: dict, answer: str) -> dict:
     urdu = _urdu(live)
     reply = None
     if len(answer.split()) >= 4 and not _has(answer, NO_QUESTIONS):
-        lang = ("Reply in polite spoken Urdu (Urdu script, technical terms in English), and give the same reply "
-                "as reply_roman (Roman Urdu) and reply_hindi (Devanagari). ") if urdu else ""
+        scripts = _scripts(live)
+        lang = (f"Reply in polite spoken Urdu (technical terms in English): write {_forms_text('reply', scripts)}. "
+                if urdu else "")
         out = llm.generate_json(
             f"You are a friendly interviewer for a {live['role']} position at a typical company. At the end of "
             f"the interview the candidate asked: \"{privacy.scrub(answer[:500], live.get('private'))}\". Reply in "
             "at most 2 short spoken sentences, honest and general (you don't know this company's private "
             f"details; say the team will share specifics in the next round if needed). {lang}{privacy.NOTE}",
-            _ReplyUrdu if urdu else _Reply, tier="fast", temperature=0.5, timeout=GEMINI_BUDGET)
+            _urdu_schema(BaseModel, ("reply",), scripts) if urdu else _Reply, tier="fast", temperature=0.5,
+            timeout=GEMINI_BUDGET)
         if urdu:
-            reply = _urdu_parts(out, "reply") or URDU["no_answer_reply"]
+            reply = _urdu_parts(out, "reply", scripts) or URDU["no_answer_reply"]
         else:
             reply = (out or {}).get("reply", "").strip()
             if not reply or "[" in reply:

@@ -85,7 +85,7 @@ def model_size(language: str = "en") -> str:
 def get_model(size: str = MODEL_SIZE):
     from faster_whisper import WhisperModel
     t = time.time()
-    model = WhisperModel(size, device="cpu", compute_type=COMPUTE_TYPE)
+    model = WhisperModel(size, device="cpu", compute_type=COMPUTE_TYPE, cpu_threads=config.WHISPER_THREADS)
     log.info("Whisper %s model loaded in %.0f s", size, time.time() - t)
     return model
 

@@ -71,7 +71,29 @@ def test_urdu_follow_up_from_gemini(monkeypatch):
     assert nxt["kind"] == "follow_up" and nxt["check"] == "vague"
     assert nxt["text"] == "ٹھیک ہے۔ اس پروجیکٹ کا نتیجہ کیا نکلا؟"
     assert nxt["roman"] == "Theek hai. Is project ka nateeja kya nikla?" and nxt["hindi"].startswith("ठीक है।")
-    assert "URDU" in calls[0][0] and calls[0][1] is iv._NextUrdu
+    assert "URDU" in calls[0][0]
+    assert {"reaction", "reaction_roman", "reaction_hindi", "question_hindi"} <= set(calls[0][1].model_fields)
+
+
+def test_gemini_writes_only_the_script_the_voice_reads(monkeypatch):
+    """Fewer words for Gemini to write = a faster next question: Roman Urdu (subtitles) + one script."""
+    live = _live() | {"voice": "hi"}
+    _say(live, iv.start(live))
+    _answer(live, "میں نے ایک پائپ لائن بنائی تھی Docker کے ساتھ")
+    calls = []
+    out = {k: v for k, v in URDU_NEXT.items() if k not in ("reaction", "question")}
+    monkeypatch.setattr(iv.llm, "generate_json", lambda prompt, model, **k: calls.append((prompt, model)) or out)
+    nxt = iv.decide(live)
+    fields = set(calls[0][1].model_fields)
+    assert {"question_roman", "question_hindi"} <= fields and "question" not in fields
+    assert "question_hindi" in calls[0][0] and "in Urdu script as" not in calls[0][0]
+    assert nxt["hindi"] == "ठीक है। इस प्रोजेक्ट का नतीजा क्या निकला?"
+    assert nxt["text"] == nxt["roman"] == "Theek hai. Is project ka nateeja kya nikla?"   # not spoken
+    # an Urdu voice: Urdu script only; no voice: Roman Urdu only
+    assert set(iv._urdu_schema(iv._Decision, ("question",), iv._scripts({"voice": "ur"})).model_fields) >= {
+        "question", "question_roman"}
+    none = set(iv._urdu_schema(iv._Decision, ("question",), iv._scripts({"voice": "none"})).model_fields)
+    assert "question_roman" in none and not {"question", "question_hindi"} & none
 
 
 def test_urdu_verdict_is_never_spoken(monkeypatch):

@@ -84,15 +84,22 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
   Future<void> _prepare() async {
     final camera = _startCamera();
     try {
+      // Find the voice first: for Urdu, the server then asks Gemini only for the script this
+      // voice reads (+ Roman Urdu subtitles), which makes every next question quicker.
+      _voice = Speaker(language: profileStore.setting('language'));
+      _voiceMode = await _voice.ready();
       final s = await api.post('/interview/live', {
         'minutes': widget.minutes,
         'language': profileStore.setting('language'),
+        'voice': _voiceMode,
       });
       _sessionId = s['id'] as String;
       _role = s['role'] as String;
       _language = (s['language'] as String?) ?? 'en';
-      _voice = Speaker(language: _language);
-      _voiceMode = await _voice.ready();
+      if (_language != _voice.language) {
+        _voice = Speaker(language: _language);
+        _voiceMode = await _voice.ready();
+      }
     } catch (e) {
       _fail('$e'.replaceFirst('Exception: ', '').replaceFirst(RegExp(r'API error \d+: '), ''));
       return;
@@ -212,6 +219,7 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
     } else if (_turn.quietMs == 0 && _pauseSent) {
       _pauseSent = false; // speaking again: the early guess will be ignored
       _spokeSincePause = true;
+      _send({'type': 'resumed'}); // the server skips preparing that out-of-date question
     }
     if (event == 'end') _answered();
   }

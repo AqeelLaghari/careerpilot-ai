@@ -48,6 +48,7 @@ class LiveIn(BaseModel):
     minutes: int = 10
     role: str | None = None
     language: str = "en"           # "en" | "ur" (Day 27)
+    voice: str | None = None       # Urdu: the voice the app found, "ur" | "hi" | "none" (see interviewer.VOICES)
 
 
 @router.post("/live")
@@ -62,7 +63,7 @@ def new_live(body: LiveIn, uid: str = Depends(current_uid)):
         # first answer isn't slow
         threading.Thread(target=speech.get_model, args=(speech.model_size("ur"),), daemon=True).start()
     try:
-        live = agent.new_live(uid, body.minutes, body.role, body.language)
+        live = agent.new_live(uid, body.minutes, body.role, body.language, body.voice)
     except NoResumeError as e:
         raise HTTPException(404, str(e)) from e
     return {k: live[k] for k in ("id", "role", "level", "minutes", "status", "language")}
@@ -75,30 +76,48 @@ async def _send(ws: WebSocket, **msg):
         pass            # the app already left (e.g. pressed End and went back); state is saved anyway
 
 
-def _process_answer(uid: str, live: dict, file_id: str, pcm: bytes, vision: dict | None) -> dict:
-    """Whisper thread: save the audio, transcribe (fast mode), measure, delete the audio."""
+def _process_answer(uid: str, live: dict, file_id: str, pcm: bytes, vision: dict | None,
+                    heard: dict | None = None) -> dict:
+    """Whisper thread: save the audio, transcribe (fast mode), measure, delete the audio.
+
+    heard: {"bytes", "words"}, the part of this answer already transcribed at an earlier pause.
+    Only the audio after it is transcribed now (each pause cuts at a silence, so nothing is
+    split mid-word), and heard is moved on. Without this, every pause transcribed the whole
+    answer again, which made long answers slow (most of all in Urdu, which uses a bigger model)."""
     secs = audio_store.seconds(len(pcm))
     answer = {"duration_sec": round(secs, 1), "vision": vision}
     language = live.get("language", "en")
     if secs < 0.5:
         return answer | {"transcript": "", "metrics": speech.analyse([], 0, language)}
-    audio_store.save_answer(uid, live["id"], file_id, pcm)
-    path = audio_store.answer_path(uid, live["id"], file_id)
-    terms = [x for t in live["agenda"] for x in (t.get("skill"), t.get("project")) if x]
-    # the candidate's own name and university, so Whisper spells them right (runs locally)
-    who = live.get("candidate") or {}
-    terms = [x for x in (who.get("full_name"), who.get("university"), who.get("subject")) if x] + terms
+    start = heard["bytes"] if heard and heard["bytes"] <= len(pcm) else 0
+    start -= start % 2                                        # 16-bit samples
+    words = list(heard["words"]) if start else []
+    tail = pcm[start:]
     try:
-        r = speech.process(str(path), live["role"], terms, fast=True, language=language)
-        m = dict(r["metrics"])
+        if audio_store.seconds(len(tail)) >= 0.3:
+            terms = [x for t in live["agenda"] for x in (t.get("skill"), t.get("project")) if x]
+            # the candidate's own name and university, so Whisper spells them right (runs locally)
+            who = live.get("candidate") or {}
+            terms = [x for x in (who.get("full_name"), who.get("university"), who.get("subject")) if x] + terms
+            audio_store.save_answer(uid, live["id"], file_id, tail)
+            try:
+                path = audio_store.answer_path(uid, live["id"], file_id)
+                tr = speech.transcribe(str(path), speech.make_prompt(live["role"], terms, language), fast=True,
+                                       language=language)
+            finally:
+                audio_store.delete_answer(uid, live["id"], file_id)
+            shift = audio_store.seconds(start)
+            words += [w | {"start": round(w["start"] + shift, 2), "end": round(w["end"] + shift, 2)}
+                      for w in tr["words"]]
+        if heard is not None:
+            heard.update(bytes=len(pcm), words=words)
+        m = speech.analyse(words, secs, language)
         m["pauses"] = m.get("pauses", [])[:10]
-        return answer | {"transcript": r["transcript"][:3000], "metrics": m}
+        return answer | {"transcript": " ".join(w["w"] for w in words)[:3000], "metrics": m}
     except Exception:
         log.exception("Live transcription failed")
         return answer | {"transcript": "", "metrics": speech.analyse([], secs, language),
                          "error": "transcription failed"}
-    finally:
-        audio_store.delete_answer(uid, live["id"], file_id)
 
 
 @router.websocket("/live/ws")
@@ -176,15 +195,21 @@ async def live_ws(ws: WebSocket):
             await say(await loop.run_in_executor(None, interviewer.decide, live))
 
     listening, buf, vision = None, bytearray(), None
-    spec: dict = {}            # early work started at the last pause: {"n", "task"}
+    spec: dict = {}            # early work started at the last pause: {"n", "task", "resumed"}
+    heard: dict = {"bytes": 0, "words": []}   # the answer so far, transcribed at its pauses
 
-    def think_early(turn_id: str, pcm: bytes, n: int):
-        """At a pause: transcribe what was said so far and choose the next question, on a COPY
-        of the interview (thrown away if the user carries on speaking)."""
+    async def think_early(turn_id: str, pcm: bytes, n: int, heard: dict):
+        """At a pause: transcribe what was said since the last pause, then choose the next
+        question on a COPY of the interview. The question is skipped (None) if the user has
+        spoken again since: a newer pause will prepare it."""
         draft = copy.deepcopy(live)
         turn = next(t for t in draft["turns"] if t["id"] == turn_id)
-        turn["answer"] = _process_answer(uid, draft, f"{turn_id}_early{n}", pcm, None)
-        return draft, interviewer.decide(draft)
+        turn["answer"] = await loop.run_in_executor(_stt, _process_answer, uid, draft, f"{turn_id}_early{n}", pcm,
+                                                    None, heard)
+        if spec.get("n") != n or spec.get("resumed"):
+            return None
+        # Gemini runs outside the Whisper thread, so the next pause's audio isn't kept waiting
+        return draft, await loop.run_in_executor(None, interviewer.decide, draft)
 
     try:
         while True:
@@ -202,10 +227,12 @@ async def live_ws(ws: WebSocket):
             kind = data.get("type")
             if kind == "listening":
                 listening, buf, vision = data.get("turn_id"), bytearray(), None
-                spec = {}
+                spec, heard = {}, {"bytes": 0, "words": []}
             elif kind == "pause" and listening is not None:
                 n = spec.get("n", 0) + 1
-                spec = {"n": n, "task": loop.run_in_executor(_stt, think_early, listening, bytes(buf), n)}
+                spec = {"n": n, "task": asyncio.ensure_future(think_early(listening, bytes(buf), n, heard))}
+            elif kind == "resumed":
+                spec["resumed"] = True                       # speaking again: that early question is out of date
             elif kind == "vision":
                 vision = eye_contact.analyse(str(data.get("codes", ""))[:20000], data.get("fps", 5))
             elif kind == "answered" and listening is not None and live["status"] != "completed":
@@ -214,7 +241,7 @@ async def live_ws(ws: WebSocket):
                 listening, buf, vision = None, bytearray(), None
                 await _send(ws, type="thinking")
                 t0, early = time.time(), None
-                if spec.get("task") is not None and not data.get("spoke_since_pause"):
+                if spec.get("task") is not None and not data.get("spoke_since_pause") and not spec.get("resumed"):
                     try:
                         early = await spec["task"]               # usually finished already
                     except Exception:
@@ -226,7 +253,10 @@ async def live_ws(ws: WebSocket):
                     turn["answer"] = next(t for t in draft["turns"] if t["id"] == turn["id"])["answer"] | {
                         "duration_sec": round(audio_store.seconds(len(pcm)), 1), "vision": eyes}
                 else:
-                    turn["answer"] = await loop.run_in_executor(_stt, _process_answer, uid, live, turn["id"], pcm, eyes)
+                    # only the audio after the last pause is still to transcribe (heard); it waits
+                    # in line behind any pause still being transcribed, so heard is up to date
+                    turn["answer"] = await loop.run_in_executor(_stt, _process_answer, uid, live, turn["id"], pcm,
+                                                                eyes, heard)
                     nxt = await loop.run_in_executor(None, interviewer.decide, live)
                 log.info("Live turn %s: answer %.1f s, next ready %.1f s after the end (%s%s)", turn["id"],
                          turn["answer"]["duration_sec"], time.time() - t0, nxt.get("source"),
