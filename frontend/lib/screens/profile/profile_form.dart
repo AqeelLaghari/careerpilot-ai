@@ -280,7 +280,7 @@ class _CareerSectionState extends State<CareerSection> {
             const SizedBox(height: 8),
             Text(
               'Only you can see these. They are never sent to the AI.',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
             ),
           ],
         );
@@ -339,12 +339,12 @@ class _PhotoPickerState extends State<PhotoPicker> {
                   child: IconButton(
                     tooltip: 'Upload photo',
                     icon: _busy
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.onBrand),
                           )
-                        : const Icon(Icons.photo_camera, color: Colors.white, size: 18),
+                        : Icon(Icons.photo_camera, color: AppColors.onBrand, size: 18),
                     onPressed: _busy ? null : _pick,
                   ),
                 ),

@@ -59,9 +59,9 @@ class _TrendingSkillsState extends State<TrendingSkills> {
         expandedCrossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (top.isNotEmpty) ...[
-            const Text(
+            Text(
               'Most asked for (newer postings count more). ✓ = you have it',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
             ),
             const SizedBox(height: 6),
             Wrap(
@@ -96,9 +96,9 @@ class _TrendingSkillsState extends State<TrendingSkills> {
               ],
             ),
           ] else if (top.isNotEmpty && t['history_ready'] != true)
-            const Text(
+            Text(
               'Rising and falling skills appear after a few weeks of postings.',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
             ),
           if (newSkills.isNotEmpty) ...[
             const SizedBox(height: 10),

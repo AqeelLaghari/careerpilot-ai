@@ -19,7 +19,7 @@ class MiniBar extends StatelessWidget {
       children: [
         SizedBox(
           width: 72,
-          child: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          child: Text(label, style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
         ),
         Expanded(
           child: LinearProgressIndicator(
@@ -27,7 +27,7 @@ class MiniBar extends StatelessWidget {
             minHeight: 5,
             borderRadius: BorderRadius.circular(3),
             color: AppColors.forScore(value),
-            backgroundColor: Colors.grey.shade200,
+            backgroundColor: AppColors.border,
           ),
         ),
         SizedBox(
@@ -114,7 +114,7 @@ class TargetSummary extends StatelessWidget {
             ),
           ],
         ),
-        Text('Learned from ${m['postings_analysed']} job postings', style: const TextStyle(color: Colors.grey)),
+        Text('Learned from ${m['postings_analysed']} job postings', style: TextStyle(color: AppColors.textMuted)),
         const SizedBox(height: 10),
         MiniBar(label: 'Keywords', value: m['keyword'] as num),
         MiniBar(label: 'Meaning', value: m['semantic'] as num),
@@ -344,7 +344,7 @@ class RoadmapSummaryCard extends StatelessWidget {
               minHeight: 8,
               borderRadius: BorderRadius.circular(4),
               color: p['status'] == 'behind' ? AppColors.bad : AppColors.good,
-              backgroundColor: Colors.grey.shade200,
+              backgroundColor: AppColors.border,
             ),
             const SizedBox(height: 4),
             Text('${p['percent']}% done · ${p['message']}', style: const TextStyle(fontSize: 12)),
@@ -361,13 +361,13 @@ class RoadmapSummaryCard extends StatelessWidget {
                 children: [
                   SizedBox(
                     width: 24,
-                    child: Text('${i + 1}.', style: const TextStyle(color: Colors.grey)),
+                    child: Text('${i + 1}.', style: TextStyle(color: AppColors.textMuted)),
                   ),
                   Expanded(child: Text(sk['name'] as String)),
                   if (sk['kind'] == 'foundation')
                     Text('foundation ', style: TextStyle(fontSize: 11, color: AppColors.brand)),
                   if (sk['kind'] == 'improve') Text('improve ', style: TextStyle(fontSize: 11, color: AppColors.warn)),
-                  Text('${sk['hours']} h', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text('${sk['hours']} h', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
                 ],
               ),
             ),
@@ -375,7 +375,7 @@ class RoadmapSummaryCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'After this plan: ${later.map((l) => l['name']).join(', ')}',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
             ),
           ],
           const SizedBox(height: 12),
@@ -409,7 +409,7 @@ class RoadmapSummaryCard extends StatelessWidget {
         value,
         style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.brand),
       ),
-      Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      Text(label, style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
     ],
   );
 }
@@ -472,7 +472,7 @@ class _JobDescriptionCardState extends State<JobDescriptionCard> {
             children: [
               Text(
                 _ctrl.text.trim().length < 50 ? 'At least 50 characters' : '',
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
               ),
               const Spacer(),
               FilledButton(
@@ -506,7 +506,7 @@ class _JobDescriptionCardState extends State<JobDescriptionCard> {
             const SizedBox(height: 6),
             Text(
               '${r['skills_in_job']} skills found in the job ad',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
             ),
             if ((r['matched_skills'] as List).isNotEmpty) ...[
               const SizedBox(height: 8),

@@ -175,10 +175,13 @@ class _InterviewScreenState extends State<InterviewScreen> {
   /// The interview's score; "…" while it is being graded, "–" when nothing was answered.
   Widget _scoreBadge(num? score, {bool answered = true}) => CircleAvatar(
     radius: 18,
-    backgroundColor: score == null ? Colors.grey.shade200 : AppColors.forScore(score).withValues(alpha: 0.15),
+    backgroundColor: score == null ? AppColors.border : AppColors.forScore(score).withValues(alpha: 0.15),
     child: Text(
       score == null ? (answered ? '…' : '–') : '${score.round()}',
-      style: TextStyle(fontWeight: FontWeight.bold, color: score == null ? Colors.grey : AppColors.forScore(score)),
+      style: TextStyle(
+        fontWeight: FontWeight.bold,
+        color: score == null ? AppColors.textMuted : AppColors.forScore(score),
+      ),
     ),
   );
 
@@ -206,9 +209,9 @@ class _InterviewScreenState extends State<InterviewScreen> {
                 const SizedBox(height: 24),
                 Text('Practice question sets', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'Questions made for your CV, your skills and your target role. A new set every time.',
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(color: AppColors.textMuted),
                 ),
                 const SizedBox(height: 12),
                 Wrap(
@@ -279,7 +282,7 @@ class _InterviewScreenState extends State<InterviewScreen> {
                   ),
                   Text(
                     'Made ${_date(s['created_at'] as num)}',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                   ),
                   const SizedBox(height: 10),
                   FilledButton.icon(
@@ -346,7 +349,7 @@ class _QuestionCard extends StatelessWidget {
                   label: Text(about == null ? label : '$label: $about', style: const TextStyle(fontSize: 12)),
                   visualDensity: VisualDensity.compact,
                 ),
-                Text('about $minutes min', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                Text('about $minutes min', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                 if (answer != null)
                   Row(
                     mainAxisSize: MainAxisSize.min,

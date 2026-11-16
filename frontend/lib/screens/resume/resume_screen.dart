@@ -60,14 +60,14 @@ class _ResumeScreenState extends State<ResumeScreen> {
   Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_uploading) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 16),
             Text('Analysing your resume…'),
-            Text('Reading the PDF, extracting skills, scoring for ATS', style: TextStyle(color: Colors.grey)),
+            Text('Reading the PDF, extracting skills, scoring for ATS', style: TextStyle(color: AppColors.textMuted)),
           ],
         ),
       );
@@ -200,7 +200,7 @@ class _ResumeScreenState extends State<ResumeScreen> {
                 children: [
                   Text('ATS Readability', style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 4),
-                  Text(filename, style: const TextStyle(color: Colors.grey)),
+                  Text(filename, style: TextStyle(color: AppColors.textMuted)),
                   const SizedBox(height: 8),
                   const Text(
                     'How easily applicant tracking systems can read your resume. '
@@ -234,7 +234,7 @@ class _ResumeScreenState extends State<ResumeScreen> {
             padding: const EdgeInsets.only(bottom: 6),
             child: Row(
               children: [
-                Icon(i, size: 18, color: Colors.grey),
+                Icon(i, size: 18, color: AppColors.textMuted),
                 const SizedBox(width: 8),
                 Expanded(child: Text(text)),
               ],
@@ -278,7 +278,9 @@ class _ResumeScreenState extends State<ResumeScreen> {
                     subtitle: Text(
                       [
                         if (j['company'] != null) j['company'],
-                        '${j['start']} – ${j['end']}',
+                        // a job with no dates on the CV would otherwise show "null – null"
+                        if (j['start'] != null || j['end'] != null)
+                          [j['start'], j['end']].whereType<String>().join(' – '),
                         if (j['months'] != null) '${j['months']} mo',
                       ].join(' · '),
                     ),

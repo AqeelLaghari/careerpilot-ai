@@ -313,7 +313,7 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
               Text(
                 _live.status == 'ready' ? _live.direction : 'Starting camera…',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.grey),
+                style: TextStyle(color: AppColors.textMuted),
               ),
               const SizedBox(height: 16),
               Text(
