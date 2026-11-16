@@ -145,6 +145,153 @@ CANDIDATE_QUESTIONS = "We're almost at the end. Before we finish, do you have an
 GOODBYE = ("Thank you very much for your time today. It was good talking to you. "
            "That's the end of the interview; your feedback report is being prepared now.")
 REPEAT = "Sorry, I didn't quite catch that. Could you say that again?"
+NO_ANSWER_REPLY = "That's a good question; the team will share the details in the next round."
+
+
+# ------------------------------------------------------------------ Urdu (Day 27) --
+# Everything the interviewer says in Urdu comes in three forms:
+#   text   Urdu script        what an Urdu voice reads (Edge, Android)
+#   roman  Roman Urdu         the subtitles
+#   hindi  Devanagari         what a Hindi voice reads when the device has no Urdu voice
+#                             (Chrome on a computer): spoken, it sounds the same
+# The interviewer's own wording is gender-neutral (no "samajh gaya / gayi"), because the
+# user chooses a female or a male voice, and it speaks to the candidate as "aap".
+LANGUAGES = ("en", "ur")
+URDU = {
+    "background": ("کیا آپ اپنی پڑھائی اور کسی کام، انٹرن شپ یا پروجیکٹ کے تجربے کے بارے میں تھوڑا اور بتا سکتے "
+                   "ہیں؟ آپ کو سب سے زیادہ کیا اچھا لگا، اور آپ نے اس سے کیا سیکھا؟",
+                   "Kya aap apni parhai aur kisi kaam, internship ya project ke tajurbe ke baare mein thora aur bata "
+                   "sakte hain? Aap ko sab se zyada kya acha laga, aur aap ne us se kya seekha?",
+                   "क्या आप अपनी पढ़ाई और किसी काम, इंटर्नशिप या प्रोजेक्ट के तजुर्बे के बारे में थोड़ा और बता सकते "
+                   "हैं? आपको सबसे ज़्यादा क्या अच्छा लगा, और आपने उससे क्या सीखा?"),
+    "candidate_questions": ("ہم انٹرویو کے آخر میں ہیں۔ ختم کرنے سے پہلے، کیا آپ مجھ سے کوئی سوال پوچھنا چاہیں گے؟",
+                            "Hum interview ke aakhir mein hain. Khatam karne se pehle, kya aap mujh se koi sawal "
+                            "poochna chahenge?",
+                            "हम इंटरव्यू के आख़िर में हैं। ख़त्म करने से पहले, क्या आप मुझसे कोई सवाल पूछना चाहेंगे?"),
+    "goodbye": ("آج اپنا وقت دینے کا بہت شکریہ۔ آپ سے بات کر کے اچھا لگا۔ انٹرویو یہاں ختم ہوتا ہے، اور آپ کی "
+                "فیڈبیک رپورٹ تیار ہو رہی ہے۔",
+                "Aaj apna waqt dene ka bohat shukriya. Aap se baat kar ke acha laga. Interview yahan khatam hota "
+                "hai, aur aap ki feedback report tayyar ho rahi hai.",
+                "आज अपना वक़्त देने का बहुत शुक्रिया। आपसे बात करके अच्छा लगा। इंटरव्यू यहाँ ख़त्म होता है, और आपकी "
+                "फ़ीडबैक रिपोर्ट तैयार हो रही है।"),
+    "repeat": ("معاف کیجیے، آواز ٹھیک سے نہیں آئی۔ کیا آپ دوبارہ بتا سکتے ہیں؟",
+               "Maaf kijiye, awaaz theek se nahi aayi. Kya aap dobara bata sakte hain?",
+               "माफ़ कीजिए, आवाज़ ठीक से नहीं आई। क्या आप दोबारा बता सकते हैं?"),
+    "no_answer_reply": ("اچھا سوال ہے؛ ٹیم اگلے راؤنڈ میں تفصیلات بتا دے گی۔",
+                        "Acha sawal hai; team agle round mein tafseelat bata degi.",
+                        "अच्छा सवाल है; टीम अगले राउंड में तफ़सीलात बता देगी।"),
+}
+URDU_REACTIONS = [("ٹھیک ہے۔", "Theek hai.", "ठीक है।"), ("شکریہ۔", "Shukriya.", "शुक्रिया।"),
+                  ("اچھا، شکریہ۔", "Acha, shukriya.", "अच्छा, शुक्रिया।"),
+                  ("ٹھیک ہے، بتانے کا شکریہ۔", "Theek hai, batane ka shukriya.", "ठीक है, बताने का शुक्रिया।"),
+                  ("جی، اچھا۔", "Ji, acha.", "जी, अच्छा।")]
+# Urdu phrases that judge an answer (never spoken during the interview), in both scripts
+URDU_VERDICTS = ("ghalat", "galat", "sahi hai", "sahih", "durust", "bilkul theek", "theek kaha", "shabash",
+                 "zabardast", "behtareen", "kamaal", "غلط", "صحیح", "درست", "بالکل ٹھیک", "ٹھیک کہا", "شاباش",
+                 "زبردست", "بہترین", "کمال", "ग़लत", "गलत", "सही", "दुरुस्त", "शाबाश", "ज़बरदस्त", "बेहतरीन", "कमाल")
+
+
+def _urdu_opening(role: str, who: dict | None) -> tuple[str, str, str]:
+    """The Urdu greeting + "tell me about yourself", like opening_text()."""
+    who = who or {}
+    name = who.get("first_name")
+    uni, subject = who.get("university"), who.get("subject")
+    n = f" {name}" if name else ""
+    hello = (f"السلام علیکم{n}، انٹرویو میں شامل ہونے کا شکریہ۔ آج کا انٹرویو {role} کی پوزیشن کے لیے ہے۔ یہ ایک "
+             "عام گفتگو کی طرح ہوگا، اس لیے آرام سے اور قدرتی انداز میں جواب دیں۔",
+             f"Assalam o Alaikum{n}, interview mein shamil hone ka shukriya. Aaj ka interview {role} ki position "
+             "ke liye hai. Yeh ek aam guftagu ki tarah hoga, is liye aaram se aur qudrati andaaz mein jawab dein.",
+             f"अस्सलाम ओ अलैकुम{n}, इंटरव्यू में शामिल होने का शुक्रिया। आज का इंटरव्यू {role} की पोज़िशन के लिए "
+             "है। यह एक आम गुफ़्तगू की तरह होगा, इस लिए आराम से और क़ुदरती अंदाज़ में जवाब दें।")
+    start = ("شروع کرنے کے لیے، اپنے بارے میں تھوڑا بتائیں: ", "Shuru karne ke liye, apne baare mein thora batayein: ",
+             "शुरू करने के लिए, अपने बारे में थोड़ा बताइए: ")
+    exp = ("اور اب تک آپ کا کیا تجربہ ہے؟", "aur ab tak aap ka kya tajurba hai?", "और अब तक आपका क्या तजुर्बा है?")
+    if not uni:
+        ask = ("آپ کون ہیں، کہاں پڑھ رہے ہیں یا پڑھا ہے، ", "aap kaun hain, kahan parh rahe hain ya parha hai, ",
+               "आप कौन हैं, कहाँ पढ़ रहे हैं या पढ़ा है, ")
+        cv = ("", "", "")
+    else:
+        sub = (f"{subject} ", f"{subject} ", f"{subject} ") if subject else ("", "", "")
+        if who.get("studying") is None:
+            cv = (f"آپ کی CV میں {uni} سے {sub[0]}تعلیم لکھی ہے۔ ", f"Aap ki CV mein {uni} se {sub[1]}taleem likhi hai. ",
+                  f"आपकी CV में {uni} से {sub[2]}तालीम लिखी है। ")
+        elif who.get("studying"):
+            cv = (f"آپ کی CV کے مطابق آپ {uni} میں {sub[0]}پڑھ رہے ہیں۔ ",
+                  f"Aap ki CV ke mutabiq aap {uni} mein {sub[1]}parh rahe hain. ",
+                  f"आपकी CV के मुताबिक़ आप {uni} में {sub[2]}पढ़ रहे हैं। ")
+        else:
+            cv = (f"آپ کی CV کے مطابق آپ نے {uni} سے {sub[0]}پڑھا ہے۔ ",
+                  f"Aap ki CV ke mutabiq aap ne {uni} se {sub[1]}parha hai. ",
+                  f"आपकी CV के मुताबिक़ आपने {uni} से {sub[2]}पढ़ा है। ")
+        ask = ("آپ نے پڑھائی میں کیا سیکھا، آپ کو سب سے زیادہ کس چیز میں دلچسپی ہے، ",
+               "aap ne parhai mein kya seekha, aap ko sab se zyada kis cheez mein dilchaspi hai, ",
+               "आपने पढ़ाई में क्या सीखा, आपको सबसे ज़्यादा किस चीज़ में दिलचस्पी है, ")
+    return tuple(f"{hello[i]} {cv[i]}{start[i]}{ask[i]}{exp[i]}" for i in range(3))
+
+
+def _line(kind: str, parts, topic_id, source: str, extra: dict | None = None) -> dict:
+    """One thing the interviewer says. parts: an English string, or an Urdu (text, roman, hindi)."""
+    if isinstance(parts, str):
+        out = {"kind": kind, "text": parts}
+    else:
+        out = {"kind": kind, "text": parts[0], "roman": parts[1], "hindi": parts[2]}
+    return out | {"topic_id": topic_id, "source": source} | (extra or {})
+
+
+def _urdu(live: dict) -> bool:
+    return live.get("language") == "ur"
+
+
+def _join3(*parts) -> tuple[str, str, str]:
+    """_join for (text, roman, hindi) tuples."""
+    return tuple(_join(*(p[i] for p in parts if p)) for i in range(3))
+
+
+def _planned(topic: dict, live: dict):
+    """The planned question of a topic, in the interview's language. In Urdu: the translation made
+    when the interview was created, else the English question (better than silence)."""
+    if topic["id"] == "background":
+        return URDU["background"] if _urdu(live) else BACKGROUND_QUESTION
+    q = topic.get("question") or BACKGROUND_QUESTION
+    if not _urdu(live):
+        return q
+    tr = topic.get("urdu")
+    return (tr["text"], tr["roman"], tr["hindi"]) if tr else (q, q, q)
+
+
+class _UrduQuestion(BaseModel):
+    id: str
+    text: str       # Urdu script
+    roman: str      # Roman Urdu
+    hindi: str      # Devanagari
+
+
+class _UrduQuestions(BaseModel):
+    questions: list[_UrduQuestion]
+
+
+def translate_agenda(live: dict) -> None:
+    """Urdu interview: translate every planned question once, when the interview is created
+    (ONE Gemini call), so the rule fallback can still ask in Urdu. Questions it can't
+    translate stay in English."""
+    private = live.get("private")
+    todo = [t for t in live["agenda"] if t.get("question") and t["id"] != "background"]
+    if not todo:
+        return
+    lines = "\n".join(f"{t['id']}: {privacy.scrub(t['question'], private)}" for t in todo)
+    out = llm.generate_json(
+        "Translate these job-interview questions into natural, polite spoken Urdu, as a Pakistani "
+        "interviewer would say them (address the candidate as 'aap'; keep technical terms, tool names and "
+        "the role in English, as people do in Pakistan). For each give: text (Urdu script), roman (the same "
+        "sentence in Roman Urdu, e.g. 'Aap ne is project mein kya kiya?') and hindi (the same spoken sentence "
+        "in Devanagari, for a Hindi text-to-speech voice). Keep the ids. "
+        f"{privacy.NOTE}\n\n{lines}",
+        _UrduQuestions, tier="fast", temperature=0.2, timeout=25)
+    by_id = {q.get("id"): q for q in (out or {}).get("questions", [])}
+    for t in todo:
+        q = by_id.get(t["id"])
+        if q and all(str(q.get(k, "")).strip() and "[" not in str(q[k]) for k in ("text", "roman", "hindi")):
+            t["urdu"] = {k: str(q[k]).strip()[:400] for k in ("text", "roman", "hindi")}
 
 
 # ---------------------------------------------------------------- agenda --
@@ -278,16 +425,56 @@ def _prompt(live: dict, remaining: float) -> str:
         "Write `reaction`: a short neutral acknowledgement (max 10 words, e.g. 'Okay.', 'I see.', 'Alright, "
         "thank you.'). It must NOT judge the answer: no 'correct', 'exactly', 'great', 'wrong', 'actually'. "
         "Write `question`: ONE clear spoken question ending with '?', max 2 sentences, no lists, no code. "
-        "Use plain English.\n"
-        "Give `topic_id` of the topic the question belongs to.\n"
+        + (URDU_PROMPT if _urdu(live) else "Use plain English.\n")
+        + "Give `topic_id` of the topic the question belongs to.\n"
         f"{privacy.NOTE}\n"
         f"TOPICS (in order):\n{topics}\n"
         f"CONVERSATION SO FAR:\n{_history(live)}")
 
 
+URDU_PROMPT = (
+    "LANGUAGE: this interview is in URDU. The candidate answers in Urdu or mixed Urdu-English (speech-to-text "
+    "in Urdu script; English words may appear in Urdu letters). Write `reaction` and `question` in natural "
+    "spoken Urdu in Urdu script, as a Pakistani interviewer talks: polite, addressing them as 'aap', keeping "
+    "technical terms, tool names and the role in English. Give the SAME sentences again as `reaction_roman` / "
+    "`question_roman` (Roman Urdu, e.g. 'Aap ne is mein kya kiya?') and as `reaction_hindi` / `question_hindi` "
+    "(Devanagari, for a Hindi voice). Don't use gendered words about yourself (say 'Theek hai', 'Shukriya', not "
+    "'samajh gaya'). The reaction must not judge either: no 'sahi', 'ghalat', 'zabardast', 'shabash', "
+    "'behtareen'. Write `note` in English.\n")
+
+
+class _NextUrdu(_Next):
+    reaction_roman: str
+    reaction_hindi: str
+    question_roman: str
+    question_hindi: str
+
+
 def _ask_gemini(live: dict, remaining: float) -> dict | None:
-    return llm.generate_json(_prompt(live, remaining), _Next, tier="fast", temperature=0.6, timeout=GEMINI_BUDGET,
-                             quick=True)
+    urdu = _urdu(live)
+    return llm.generate_json(_prompt(live, remaining), _NextUrdu if urdu else _Next, tier="fast", temperature=0.6,
+                             timeout=GEMINI_BUDGET + (3 if urdu else 0), quick=True)
+
+
+def _urdu_parts(out: dict | None, key: str) -> tuple[str, str, str] | None:
+    """Gemini's Urdu (text, roman, hindi) for "reaction" or "question"; None if a form is missing,
+    contains a privacy placeholder, or judges the answer."""
+    parts = tuple(str((out or {}).get(k) or "").strip() for k in (key, f"{key}_roman", f"{key}_hindi"))
+    if not all(parts) or any("[" in p or _has(p, VERDICTS + URDU_VERDICTS) for p in parts):
+        return None
+    return parts
+
+
+def _urdu_reaction(out: dict | None) -> tuple[str, str, str]:
+    parts = _urdu_parts(out, "reaction")
+    if parts is None or len(parts[1].split()) > 12 or _has(parts[1], REACTION_EXTRA):
+        return random.choice(URDU_REACTIONS)
+    return parts
+
+
+def _urdu_question(out: dict | None) -> tuple[str, str, str] | None:
+    parts = _urdu_parts(out, "question")
+    return parts if parts and parts[1].rstrip().endswith("?") else None
 
 
 # --------------------------------------------------------------- decide --
@@ -306,9 +493,10 @@ def decide(live: dict, now: float | None = None, use_gemini: bool = True) -> dic
     if last and last["kind"] == "goodbye":
         return {"kind": "end", "text": "", "topic_id": None, "source": "rules"}
 
+    urdu = _urdu(live)
     # nothing heard: ask once more, then move on
     if len(answer.split()) < 3 and last and last["kind"] != "repeat":
-        return {"kind": "repeat", "text": REPEAT, "topic_id": last.get("topic_id"), "source": "rules"}
+        return _line("repeat", URDU["repeat"] if urdu else REPEAT, last.get("topic_id"), "rules")
 
     pending = _pending(live)
     if remaining < WRAP_UP_SECONDS or (not pending and (cur is None or cur["follow_ups"] >= MAX_FOLLOW_UPS)):
@@ -316,24 +504,25 @@ def decide(live: dict, now: float | None = None, use_gemini: bool = True) -> dic
 
     out = _ask_gemini(live, remaining) if use_gemini else None
     check = _check(out)
-    reaction = _clean_reaction((out or {}).get("reaction"))
-    question = _clean_question((out or {}).get("question"))
+    if urdu:
+        reaction, question, join = _urdu_reaction(out), _urdu_question(out), _join3
+    else:
+        reaction = _clean_reaction((out or {}).get("reaction"))
+        question, join = _clean_question((out or {}).get("question")), _join
     can_follow = cur is not None and cur["follow_ups"] < MAX_FOLLOW_UPS and remaining > FOLLOW_UP_MIN_SECONDS \
         and len(answer.split()) >= 3
     if out and out.get("action") == "follow_up" and can_follow and question:
         cur["follow_ups"] += 1
-        return {"kind": "follow_up", "text": _join(reaction, question), "topic_id": cur["id"],
-                "source": "gemini"} | check
+        return _line("follow_up", join(reaction, question), cur["id"], "gemini", check)
     if not pending:
         return _wrap_up(live) | check
     # next topic: Gemini's choice if it is a pending topic, else the next one in order
     nxt = next((t for t in pending if out and t["id"] == out.get("topic_id")), pending[0])
     _set_current(live, nxt)
     if out and out.get("action") == "next_topic" and question and out.get("topic_id") == nxt["id"]:
-        return {"kind": "question", "text": _join(reaction, question), "topic_id": nxt["id"],
-                "source": "gemini"} | check
-    return {"kind": "question", "text": _join(reaction, nxt["question"] or BACKGROUND_QUESTION),
-            "topic_id": nxt["id"], "source": "gemini+plan" if out else "plan"} | check
+        return _line("question", join(reaction, question), nxt["id"], "gemini", check)
+    return _line("question", join(reaction, _planned(nxt, live)), nxt["id"], "gemini+plan" if out else "plan",
+                 check)
 
 
 def _check(out: dict | None) -> dict:
@@ -347,8 +536,8 @@ def _check(out: dict | None) -> dict:
 def start(live: dict) -> dict:
     """The first thing the interviewer says."""
     _set_current(live, live["agenda"][0])
-    return {"kind": "question", "text": opening_text(live["role"], live.get("candidate")), "topic_id": "opening",
-            "source": "rules"}
+    opening = (_urdu_opening if _urdu(live) else opening_text)(live["role"], live.get("candidate"))
+    return _line("question", opening, "opening", "rules")
 
 
 def _set_current(live: dict, topic: dict):
@@ -362,28 +551,50 @@ def _wrap_up(live: dict) -> dict:
     cur = _current(live)
     if cur:
         cur["status"] = "done"
-    return {"kind": "candidate_questions", "text": _join(random.choice(REACTIONS), CANDIDATE_QUESTIONS),
-            "topic_id": None, "source": "rules"}
+    if _urdu(live):
+        return _line("candidate_questions", _join3(random.choice(URDU_REACTIONS), URDU["candidate_questions"]),
+                     None, "rules")
+    return _line("candidate_questions", _join(random.choice(REACTIONS), CANDIDATE_QUESTIONS), None, "rules")
 
 
 class _Reply(BaseModel):
     reply: str
 
 
+class _ReplyUrdu(BaseModel):
+    reply: str           # Urdu script
+    reply_roman: str
+    reply_hindi: str
+
+
+# "No questions, thank you" in English and Urdu: then the interviewer just says goodbye
+NO_QUESTIONS = ("no question", "no, thank", "nothing", "کوئی سوال نہیں", "نہیں، شکریہ", "نہیں شکریہ", "جی نہیں",
+                "koi sawal nahi", "nahi shukriya")
+
+
 def _goodbye(live: dict, answer: str) -> dict:
     """Answer the candidate's question briefly (Gemini), then say goodbye."""
-    reply = ""
-    if len(answer.split()) >= 4 and not any(w in answer.lower() for w in ("no question", "no, thank", "nothing")):
+    urdu = _urdu(live)
+    reply = None
+    if len(answer.split()) >= 4 and not _has(answer, NO_QUESTIONS):
+        lang = ("Reply in polite spoken Urdu (Urdu script, technical terms in English), and give the same reply "
+                "as reply_roman (Roman Urdu) and reply_hindi (Devanagari). ") if urdu else ""
         out = llm.generate_json(
             f"You are a friendly interviewer for a {live['role']} position at a typical company. At the end of "
             f"the interview the candidate asked: \"{privacy.scrub(answer[:500], live.get('private'))}\". Reply in "
             "at most 2 short spoken sentences, honest and general (you don't know this company's private "
-            f"details; say the team will share specifics in the next round if needed). {privacy.NOTE}",
-            _Reply, tier="fast", temperature=0.5, timeout=GEMINI_BUDGET)
-        reply = (out or {}).get("reply", "").strip()
-        if not reply or "[" in reply:
-            reply = "That's a good question; the team will share the details in the next round."
-    return {"kind": "goodbye", "text": _join(reply, GOODBYE), "topic_id": None, "source": "gemini" if reply else "rules"}
+            f"details; say the team will share specifics in the next round if needed). {lang}{privacy.NOTE}",
+            _ReplyUrdu if urdu else _Reply, tier="fast", temperature=0.5, timeout=GEMINI_BUDGET)
+        if urdu:
+            reply = _urdu_parts(out, "reply") or URDU["no_answer_reply"]
+        else:
+            reply = (out or {}).get("reply", "").strip()
+            if not reply or "[" in reply:
+                reply = NO_ANSWER_REPLY
+    source = "gemini" if reply else "rules"
+    if urdu:
+        return _line("goodbye", _join3(reply, URDU["goodbye"]), None, source)
+    return _line("goodbye", _join(reply, GOODBYE), None, source)
 
 
 def _join(*parts) -> str:

@@ -1,12 +1,13 @@
 """Live video interview (Day 20): one continuous spoken conversation.
 
-POST /interview/live {"minutes": 5|10|15}   → a live session (agenda from the user's CV)
+POST /interview/live {"minutes": 5|10|15, "language": "en"|"ur"}   → a live session (agenda from the CV)
 WS   /interview/live/ws                     → the conversation
 
 Messages (JSON text unless said otherwise):
   app → server   {"type": "auth", "token", "session_id"}                 first, within AUTH_WAIT s
   server → app   {"type": "ready", "minutes", "role"}
   server → app   {"type": "say", "turn_id", "text", "kind", "remaining_sec"}   the interviewer speaks
+                 (Urdu, Day 27: also "roman" = subtitles, "hindi" = for a Hindi voice when there's no Urdu one)
   app → server   {"type": "listening", "turn_id"}      the app has finished speaking; the mic is open
   app → server   BINARY frames: the answer (PCM 16-bit mono 16 kHz)
   app → server   {"type": "vision", "fps", "codes"}    where the user looked (eye_contact.py letters)
@@ -24,6 +25,7 @@ import asyncio
 import copy
 import json
 import logging
+import threading
 import time
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
@@ -45,6 +47,7 @@ MAX_ANSWER_SECONDS = 240          # one answer can't run longer than this
 class LiveIn(BaseModel):
     minutes: int = 10
     role: str | None = None
+    language: str = "en"           # "en" | "ur" (Day 27)
 
 
 @router.post("/live")
@@ -52,11 +55,17 @@ def new_live(body: LiveIn, uid: str = Depends(current_uid)):
     """Prepare a live interview (the agenda is made from the CV; about 3-10 s)."""
     if body.minutes not in interviewer.TOPICS_FOR:
         raise HTTPException(422, "minutes must be 5, 10 or 15")
+    if body.language not in interviewer.LANGUAGES:
+        raise HTTPException(422, "language must be 'en' or 'ur'")
+    if body.language == "ur":
+        # load the Urdu speech model now (a few seconds; the first time it is downloaded) so the
+        # first answer isn't slow
+        threading.Thread(target=speech.get_model, args=(speech.model_size("ur"),), daemon=True).start()
     try:
-        live = agent.new_live(uid, body.minutes, body.role)
+        live = agent.new_live(uid, body.minutes, body.role, body.language)
     except NoResumeError as e:
         raise HTTPException(404, str(e)) from e
-    return {k: live[k] for k in ("id", "role", "level", "minutes", "status")}
+    return {k: live[k] for k in ("id", "role", "level", "minutes", "status", "language")}
 
 
 async def _send(ws: WebSocket, **msg):
@@ -70,8 +79,9 @@ def _process_answer(uid: str, live: dict, file_id: str, pcm: bytes, vision: dict
     """Whisper thread: save the audio, transcribe (fast mode), measure, delete the audio."""
     secs = audio_store.seconds(len(pcm))
     answer = {"duration_sec": round(secs, 1), "vision": vision}
+    language = live.get("language", "en")
     if secs < 0.5:
-        return answer | {"transcript": "", "metrics": speech.analyse([], 0)}
+        return answer | {"transcript": "", "metrics": speech.analyse([], 0, language)}
     audio_store.save_answer(uid, live["id"], file_id, pcm)
     path = audio_store.answer_path(uid, live["id"], file_id)
     terms = [x for t in live["agenda"] for x in (t.get("skill"), t.get("project")) if x]
@@ -79,13 +89,14 @@ def _process_answer(uid: str, live: dict, file_id: str, pcm: bytes, vision: dict
     who = live.get("candidate") or {}
     terms = [x for x in (who.get("full_name"), who.get("university"), who.get("subject")) if x] + terms
     try:
-        r = speech.process(str(path), live["role"], terms, fast=True)
+        r = speech.process(str(path), live["role"], terms, fast=True, language=language)
         m = dict(r["metrics"])
         m["pauses"] = m.get("pauses", [])[:10]
         return answer | {"transcript": r["transcript"][:3000], "metrics": m}
     except Exception:
         log.exception("Live transcription failed")
-        return answer | {"transcript": "", "metrics": speech.analyse([], secs), "error": "transcription failed"}
+        return answer | {"transcript": "", "metrics": speech.analyse([], secs, language),
+                         "error": "transcription failed"}
     finally:
         audio_store.delete_answer(uid, live["id"], file_id)
 
@@ -114,7 +125,7 @@ async def live_ws(ws: WebSocket):
         await _send(ws, type="ended")
         await ws.close()
         return
-    await _send(ws, type="ready", minutes=live["minutes"], role=live["role"])
+    await _send(ws, type="ready", minutes=live["minutes"], role=live["role"], language=live.get("language", "en"))
     loop = asyncio.get_running_loop()
 
     async def save():
@@ -123,12 +134,14 @@ async def live_ws(ws: WebSocket):
     async def say(nxt: dict):
         turn = {"id": f"t{len(live['turns']) + 1}", "topic_id": nxt["topic_id"], "kind": nxt["kind"],
                 "text": nxt["text"], "source": nxt.get("source"), "at": time.time()}
+        if nxt.get("roman"):                               # Urdu: subtitles + the Hindi-voice version
+            turn.update(roman=nxt["roman"], hindi=nxt.get("hindi") or nxt["text"])
         if nxt.get("check") and live["turns"]:
             # the interviewer's silent check of the PREVIOUS answer (mistake / vague) for the report
             live["turns"][-1]["check"] = {"kind": nxt["check"], "note": nxt.get("note", "")}
         live["turns"].append(turn)
-        await _send(ws, type="say", turn_id=turn["id"], text=turn["text"], kind=turn["kind"],
-                    remaining_sec=round(interviewer.remaining_seconds(live)))
+        await _send(ws, type="say", turn_id=turn["id"], text=turn["text"], roman=turn.get("roman"),
+                    hindi=turn.get("hindi"), kind=turn["kind"], remaining_sec=round(interviewer.remaining_seconds(live)))
         await save()
         if nxt["kind"] == "goodbye":
             await finish()
@@ -156,7 +169,8 @@ async def live_ws(ws: WebSocket):
     else:
         last = live["turns"][-1]
         if last.get("answer") is None:                     # repeat the question that was not answered
-            await _send(ws, type="say", turn_id=last["id"], text=last["text"], kind=last["kind"],
+            await _send(ws, type="say", turn_id=last["id"], text=last["text"], roman=last.get("roman"),
+                        hindi=last.get("hindi"), kind=last["kind"],
                         remaining_sec=round(interviewer.remaining_seconds(live)))
         else:
             await say(await loop.run_in_executor(None, interviewer.decide, live))

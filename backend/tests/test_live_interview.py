@@ -197,7 +197,7 @@ def live_env(monkeypatch, tmp_path):
                  "I studied software engineering and did a cloud internship last summer",
                  "No questions, thank you"] + ["I would check the logs and the pod events first"] * 20)
 
-    def fake_process(path, role=None, terms=None, fast=False):
+    def fake_process(path, role=None, terms=None, fast=False, language="en"):
         assert fast
         text = next(said)
         words = [{"w": w, "start": i * 0.4, "end": i * 0.4 + 0.3} for i, w in enumerate(text.split())]

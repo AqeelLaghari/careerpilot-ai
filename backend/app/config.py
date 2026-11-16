@@ -22,3 +22,6 @@ APP_VERSION = os.getenv("APP_VERSION", "0.3.0")
 # Email/password accounts created on or after this date must verify their email (Day 23);
 # older test accounts keep working. Google accounts are always verified by Google.
 VERIFY_EMAIL_FROM = os.getenv("VERIFY_EMAIL_FROM", "2026-11-16")
+# Whisper model for Urdu interviews (Day 27): "small" is clearly more accurate in Urdu than "base"
+# (tested: about 6 s for a 17 s answer on a laptop CPU vs 2 s); "base" if speed matters more.
+WHISPER_MODEL_URDU = os.getenv("WHISPER_MODEL_URDU", "small").strip()

@@ -113,7 +113,7 @@ class InterviewAgent:
         return True
 
     # ------------------------------------------------------- live interview (Day 20) --
-    def new_live(self, uid: str, minutes: int, role: str | None = None) -> dict:
+    def new_live(self, uid: str, minutes: int, role: str | None = None, language: str = "en") -> dict:
         """A live interview: the planned questions become the agenda the interviewer follows."""
         from app.services import interviewer, privacy
         count = interviewer.TOPICS_FOR[minutes] + 1           # + the intro the agenda replaces
@@ -124,7 +124,10 @@ class InterviewAgent:
         session.update(mode="live", minutes=minutes, agenda=interviewer.build_agenda(session["questions"], minutes),
                        turns=[], started_at=None, ended_at=None, status="ready",
                        private=privacy.terms(entities, account),  # hidden from Gemini (privacy.scrub)
-                       candidate=interviewer.candidate_info(entities, answers=answers, account=account))
+                       candidate=interviewer.candidate_info(entities, answers=answers, account=account),
+                       language=language if language in interviewer.LANGUAGES else "en")
+        if session["language"] == "ur":
+            interviewer.translate_agenda(session)               # Day 27: planned questions in Urdu too
         self.save_live(uid, session)
         return session
 

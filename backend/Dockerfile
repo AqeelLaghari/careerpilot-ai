@@ -36,9 +36,10 @@ RUN pip install torch --index-url https://download.pytorch.org/whl/cpu \
 USER user
 
 # 2) Download the AI models into the image, so the server starts fast and works offline:
-#    SBERT (career/ATS matching) and Whisper "base" (interview speech-to-text)
+#    SBERT (career/ATS matching), Whisper "base" (English interviews) and "small" (Urdu interviews)
 RUN python -c "from sentence_transformers import SentenceTransformer as S; S('sentence-transformers/all-MiniLM-L6-v2')" \
-    && python -c "from faster_whisper import WhisperModel as W; W('base', device='cpu', compute_type='int8')"
+    && python -c "from faster_whisper import WhisperModel as W; W('base', device='cpu', compute_type='int8')" \
+    && python -c "from faster_whisper import WhisperModel as W; W('small', device='cpu', compute_type='int8')"
 
 # 3) The application code (changes most often, so it comes last)
 COPY --chown=user:user . .

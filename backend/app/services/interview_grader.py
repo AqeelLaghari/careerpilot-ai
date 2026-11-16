@@ -12,6 +12,10 @@ Overall score (0-100) = content 60% + speaking 20% + presence 20%
   speaking  pace, filler words, habit words, long pauses (Day 17 metrics, whole interview).
   presence  eye contact (Day 19), weighted by answer length.
 Without camera data the weights become content 75% + speaking 25%.
+
+Urdu interviews (Day 27): the answers are Urdu speech-to-text (Urdu script); Gemini writes the
+whole report in Roman Urdu. The rule fallback writes Roman Urdu too, and scores Urdu answers by
+length only (the meaning model is English-only, so it can't compare Urdu with the key points).
 """
 import logging
 
@@ -108,8 +112,17 @@ def _prompt(live: dict, items: list[dict]) -> str:
         "situation; don't invent big achievements).\n"
         "Then: summary (2-3 sentences on the whole interview), strengths (2-4 short points), improvements "
         "(2-4 short, practical points).\n"
-        f"Use the turn ids exactly as given. Plain English. {privacy.NOTE}\n\n"
+        f"Use the turn ids exactly as given. {URDU_NOTE if live.get('language') == 'ur' else 'Plain English.'} "
+        f"{privacy.NOTE}\n\n"
         + "\n\n".join(blocks))
+
+
+URDU_NOTE = (
+    "The interview was in URDU: the questions and answers are in Urdu script (the answers are speech-to-text, "
+    "so English terms may be written in Urdu letters). Write EVERY text field (feedback, better_answer, covered, "
+    "missing, star, corrections, misheard, summary, strengths, improvements) in Roman Urdu, i.e. Urdu written in "
+    "English letters, e.g. 'Aap ne project ka acha example diya, lekin nateeja nahi bataya.' Keep technical terms "
+    "in English. Grade the content, not the language: mixing Urdu and English is normal.")
 
 
 def _gemini_grades(live: dict, items: list[dict]) -> dict | None:
@@ -141,13 +154,22 @@ def _clean_grade(g: dict, item: dict) -> dict:
             "better_answer": str(g.get("better_answer") or "")[:700], "graded_by": "gemini"}
 
 
-def _fallback_grade(item: dict) -> dict:
-    """No Gemini: how close the answer is in MEANING to the key points (SBERT), and its length."""
+def _fallback_grade(item: dict, language: str = "en") -> dict:
+    """No Gemini: how close the answer is in MEANING to the key points (SBERT), and its length.
+    Urdu: length only (the SBERT model is English-only)."""
+    urdu = language == "ur"
     words = len(item["answer"].split())
     if words < MIN_WORDS:
         return {"score": 0, "verdict": "no_facts", "corrections": [], "covered": [], "missing": item["key_points"][:5],
-                "star": "", "misheard": "", "feedback": "No answer was heard for this question.",
+                "star": "", "misheard": "",
+                "feedback": "Is sawal ka koi jawab sunai nahi diya." if urdu else "No answer was heard for this question.",
                 "better_answer": "", "graded_by": "rules"}
+    if urdu:
+        score = round(10 * (0.4 + 0.6 * min(1.0, words / 70)))      # ~70+ Urdu words is a full answer
+        tip = ("Jawab mein ek misaal aur us ka nateeja zaroor batayein." if words < 50
+               else "Aap ne tafseel se jawab diya; aham points ko mukhtasir aur wazeh rakhein.")
+        return {"score": max(1, min(10, score)), "verdict": "no_facts", "corrections": [], "covered": [],
+                "missing": [], "star": "", "misheard": "", "feedback": tip, "better_answer": "", "graded_by": "rules"}
     covered, missing = [], []
     if item["key_points"]:
         from app.services import embeddings
@@ -180,7 +202,7 @@ def speaking_score(live: dict) -> dict:
     habits = sum(m.get("habit_count", 0) for m in ms)
     pauses = sum(m.get("long_pauses", 0) for m in ms)
     from app.services.speech import _pace
-    pace, _ = _pace(wpm)
+    pace, _ = _pace(wpm, live.get("language", "en"))
     score = 100
     score -= {"good": 0, "a bit slow": 8, "a bit fast": 8}.get(pace, 20)
     score -= min(30, max(0.0, fillers / minutes - 3) * 5)
@@ -211,16 +233,19 @@ def _level(score: int) -> str:
 def grade(live: dict, use_gemini: bool = True) -> dict:
     """The full report for a finished live interview (stored as live["report"])."""
     items = answers_to_grade(live)
+    language = live.get("language", "en")
     if not items:                       # ended before answering anything: nothing to score
         return {"status": "ready", "empty": True, "overall": None, "level": None, "parts": {}, "weights": {},
                 "speaking": {"score": None}, "presence": {"score": None}, "answers": [],
-                "summary": "No answers were recorded in this interview, so there is nothing to grade.",
+                "summary": ("Is interview mein koi jawab record nahi hua, is liye grade karne ke liye kuch nahi hai."
+                            if language == "ur" else
+                            "No answers were recorded in this interview, so there is nothing to grade."),
                 "strengths": [], "improvements": [], "graded_by": "rules", "corrections": 0}
     gem = _gemini_grades(live, items) if use_gemini else None
     answers = []
     for it in items:
         g = (gem or {}).get("by_id", {}).get(it["turn_id"]) if gem else None
-        answers.append({"turn_id": it["turn_id"]} | (_clean_grade(g, it) if g else _fallback_grade(it)))
+        answers.append({"turn_id": it["turn_id"]} | (_clean_grade(g, it) if g else _fallback_grade(it, language)))
     content = round(10 * sum(a["score"] for a in answers) / len(answers)) if answers else 0
     speaking, presence = speaking_score(live), presence_score(live)
 
@@ -234,7 +259,8 @@ def grade(live: dict, use_gemini: bool = True) -> dict:
         strengths = [str(x)[:200] for x in gem["strengths"]][:4]
         improvements = [str(x)[:200] for x in gem["improvements"]][:4]
     else:
-        summary, strengths, improvements = _rule_summary(answers, speaking, presence, content)
+        summary_of = _rule_summary_urdu if language == "ur" else _rule_summary
+        summary, strengths, improvements = summary_of(answers, speaking, presence, content)
     return {"status": "ready", "overall": overall, "level": _level(overall),
             "parts": parts, "weights": {k: round(w / total_w, 2) for k, w in weights.items()} if total_w else {},
             "speaking": speaking, "presence": presence, "answers": answers,
@@ -261,4 +287,26 @@ def _rule_summary(answers, speaking, presence, content):
             else "Look at the camera more while you speak.")
     summary = (f"You answered {len(answers)} questions. Detailed fact-checking was not available this time, "
                "so content was scored by how well your answers matched the key points.")
+    return summary, strengths[:4], improvements[:4]
+
+
+def _rule_summary_urdu(answers, speaking, presence, content):
+    """_rule_summary in Roman Urdu (Urdu interviews)."""
+    strengths, improvements = [], []
+    if content >= 70:
+        strengths.append("Aap ne zyada tar sawalon ke tafseeli jawab diye.")
+    else:
+        improvements.append("Har jawab mein zyada tafseel dein: ek misaal aur us ka nateeja zaroor batayein.")
+    if speaking.get("pace") == "good":
+        strengths.append("Aap ki bolne ki raftar saaf aur munasib thi.")
+    elif speaking.get("pace"):
+        improvements.append(f"Aap ki raftar {speaking['wpm']} alfaaz fi minute thi; 120-180 ke darmiyan rakhein.")
+    if speaking.get("fillers_per_min", 0) > 3:
+        improvements.append("'Um', 'matlab', 'yani' jaise alfaaz ki jagah chhota sa khamosh waqfa lein.")
+    if presence.get("score") is not None:
+        (strengths if presence["score"] >= 70 else improvements).append(
+            "Camera se acha eye contact rakha." if presence["score"] >= 70
+            else "Bolte waqt camera ki taraf zyada dekhein.")
+    summary = (f"Aap ne {len(answers)} sawalon ke jawab diye. Is dafa tafseeli fact-check dastyab nahi tha, is liye "
+               "jawabon ko un ki tafseel aur lambai se score kiya gaya.")
     return summary, strengths[:4], improvements[:4]
