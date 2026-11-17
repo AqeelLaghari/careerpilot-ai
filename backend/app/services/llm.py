@@ -7,13 +7,16 @@
 - Cache: the same prompt is never sent twice while the server runs.
 - Never crashes: returns None when Gemini is unavailable, and callers fall
   back to rule-based results.
+- hedge_after (live interview): when an answer is late, a second identical request
+  is sent and the first answer wins (Gemini sometimes stalls for many seconds on one
+  request while a new one answers in about 1.5 s).
 """
 import hashlib
 import json
 import logging
 import time
 from collections import Counter
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from concurrent.futures import TimeoutError as FutureTimeout
 
 from pydantic import BaseModel
@@ -41,8 +44,25 @@ def _get_client():
     return _client
 
 
+def _first(futures: list, deadline: float) -> str:
+    """The first successful result of futures before deadline (else the last error / FutureTimeout)."""
+    pending, error = set(futures), None
+    while pending:
+        left = deadline - time.monotonic()
+        if left <= 0:
+            break
+        done, pending = wait(pending, timeout=left, return_when=FIRST_COMPLETED)
+        for f in done:
+            if f.exception() is None:
+                return f.result()
+            error = f.exception()
+    if error is not None and not pending:
+        raise error
+    raise FutureTimeout()
+
+
 def _call(prompt: str, tier: str, temperature: float, schema: type[BaseModel] | None,
-          timeout: float | None = None, quick: bool = False) -> str | None:
+          timeout: float | None = None, quick: bool = False, hedge_after: float | None = None) -> str | None:
     if not available():
         log.info("Gemini key not set; skipping LLM call.")
         return None
@@ -71,9 +91,17 @@ def _call(prompt: str, tier: str, temperature: float, schema: type[BaseModel] | 
                 left = deadline - time.monotonic()
                 if left <= 0:
                     raise TimeoutError("time budget used up")
-                fut = _pool.submit(_generate, model, prompt, config)
-                fut.add_done_callback(lambda f, k=key: f.exception() or _cache.__setitem__(k, f.result()))
-                text = fut.result(timeout=left)
+                def send(model: str = model):
+                    fut = _pool.submit(_generate, model, prompt, config)
+                    fut.add_done_callback(lambda f, k=key: f.exception() or _cache.__setitem__(k, f.result()))
+                    return fut
+
+                futures = [send()]
+                if hedge_after and left > hedge_after and not wait(futures, timeout=hedge_after).done:
+                    usage["hedged"] += 1
+                    log.info("Gemini %s is slow; sending the request again", model)
+                    futures.append(send())
+                text = _first(futures, deadline)
             usage[model] += 1
             _cache[key] = text
             return text
@@ -91,11 +119,12 @@ def _generate(model: str, prompt: str, config) -> str:
     return _get_client().models.generate_content(model=model, contents=prompt, config=config).text
 
 
-def generate_json(prompt: str, schema: type[BaseModel], tier: str = "fast",
-                  temperature: float = 0.2, timeout: float | None = None, quick: bool = False) -> dict | None:
+def generate_json(prompt: str, schema: type[BaseModel], tier: str = "fast", temperature: float = 0.2,
+                  timeout: float | None = None, quick: bool = False, hedge_after: float | None = None) -> dict | None:
     """Ask Gemini for JSON matching a Pydantic schema. Returns a dict or None.
-    timeout: seconds the caller can wait in total (None = no limit, for background jobs)."""
-    text = _call(prompt, tier, temperature, schema, timeout, quick)
+    timeout: seconds the caller can wait in total (None = no limit, for background jobs).
+    hedge_after: seconds after which a slow request is sent a second time (needs timeout)."""
+    text = _call(prompt, tier, temperature, schema, timeout, quick, hedge_after)
     if text is None:
         return None
     try:

@@ -51,3 +51,35 @@ def test_cache_avoids_second_call(monkeypatch):
 def test_both_fail_returns_none(monkeypatch):
     _setup(monkeypatch, fail=tuple(llm.MODELS.values()))
     assert llm.generate_text("x") is None
+
+
+def test_a_stalled_request_is_sent_again_and_the_first_answer_wins(monkeypatch):
+    """Live interview: Gemini sometimes stalls on one request; a second one usually answers fast."""
+    import threading
+    import time
+
+    from pydantic import BaseModel
+
+    class Skills(BaseModel):
+        skills: list[str]
+
+    release, calls = threading.Event(), []
+
+    def generate(model, prompt, config):
+        calls.append(time.monotonic())
+        if len(calls) == 1:
+            release.wait(5)                  # the first request stalls
+        return '{"skills": ["Python"]}'
+    monkeypatch.setattr(llm, "available", lambda: True)
+    monkeypatch.setattr(llm, "_generate", generate)
+    llm._cache.clear()
+    t = time.monotonic()
+    out = llm.generate_json("stall", Skills, timeout=3, quick=True, hedge_after=0.3)
+    release.set()
+    assert out == {"skills": ["Python"]} and len(calls) == 2
+    assert time.monotonic() - t < 1.5        # not the stalled request's time
+    # a fast answer is never sent twice
+    llm._cache.clear()
+    calls.clear()
+    llm.generate_json("fast", Skills, timeout=3, hedge_after=0.3)
+    assert len(calls) == 1

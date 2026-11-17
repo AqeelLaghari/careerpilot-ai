@@ -341,7 +341,7 @@ class _AnswerCard extends StatelessWidget {
                         turn['kind'] == 'follow_up' ? 'Follow-up question' : 'Interviewer',
                         style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                       ),
-                      Text('${turn['text']}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                      Text('${turn['roman'] ?? turn['text']}', style: const TextStyle(fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
