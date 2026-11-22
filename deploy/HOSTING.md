@@ -235,3 +235,38 @@ az containerapp logs show -n careerpilot-api -g careerpilot-rg --tail 100
    ```
 3. GitHub → **Actions** → **Android** builds it (about 10 minutes) and publishes
    **Releases → v1.1.1** with the APK. Phones with the old version install it over the top.
+
+## 10. Saving your own change to GitHub
+
+The scripts push their own change (the server address). For anything you change yourself (release notes, a text
+fix, or when a script says "Push failed" / "did not commit"):
+
+```powershell
+cd "C:\Users\Hp\Documents\CareerPilot AI"
+git switch main
+git pull                                   # start from the latest main
+git switch -c docs/my-change               # new branch: fix/..., docs/..., ops/..., feature/...
+# ... edit and save the file ...
+git status                                 # only your files should be listed (never .env / firebase-key.json)
+git add .
+git commit -m "Short description of the change"
+git push -u origin docs/my-change          # prints a pull/new/... link
+```
+
+Then on GitHub: open the printed link → **Create pull request** → wait for the green ticks → **Squash and
+merge** → **Delete branch**. Back on the laptop:
+
+```powershell
+git switch main
+git pull
+git branch -D docs/my-change
+```
+
+- If a pre-commit check says **Failed**, it usually fixed the file itself: run `git add .` and the same
+  `git commit` again.
+- A red cross on the pull request: click **Details**, fix the file, then `git add .`, `git commit`, `git push`
+  again on the same branch (the pull request updates by itself).
+- One-file text change without the laptop: GitHub → the file → pencil → **Commit changes...** → **Create a new
+  branch ... and start a pull request** → merge when green.
+- New Android version: merge the change and `.github/release-notes/vX.Y.Z.md` first, then on main:
+  `git tag vX.Y.Z` and `git push origin vX.Y.Z` (section 9).
