@@ -122,8 +122,8 @@ jobs:
       - name: Switch the Container App to the new image
         run: |
           az containerapp ingress update -n "$AZURE_APP" -g "$AZURE_RG" --target-port 7860 -o none
-          az containerapp update -n "$AZURE_APP" -g "$AZURE_RG" \
-            --image "$IMAGE:${{ github.sha }}" --revision-suffix "g${GITHUB_SHA::7}" -o none
+          # (no --revision-suffix: not supported on Azure's "express" environments)
+          az containerapp update -n "$AZURE_APP" -g "$AZURE_RG" --image "$IMAGE:${{ github.sha }}" -o none
 
       - name: Live URL
         id: url
