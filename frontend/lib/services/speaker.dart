@@ -102,13 +102,8 @@ class Speaker {
     _tts.setErrorHandler((_) => _finished());
     await _tts.setSpeechRate(rateFor(profileStore.setting('speech_rate')));
     await _tts.setPitch(1.0);
-    var voices = <Map>[];
-    try {
-      voices = ((await _tts.getVoices) as List?)?.cast<Map>() ?? [];
-    } catch (_) {
-      // keep the default voice
-    }
     final order = language == 'ur' ? ['ur', 'hi'] : ['en'];
+    final voices = await _loadVoices(order);
     for (final prefix in order) {
       final v = bestVoice(voices, prefix, wantMale: wantMale);
       if (v == null) continue;
@@ -125,6 +120,35 @@ class Speaker {
     } else {
       await _tts.setLanguage('en-US'); // no voice list (some browsers): the default English voice
     }
+  }
+
+  /// The browser's / phone's voice list. Chrome fills it a moment AFTER the page opens, so right
+  /// after a fresh page load it is still empty (that was the "this browser has no Urdu voice" note
+  /// that went away after a refresh). So ask again every 250 ms for up to 3 s until it arrives,
+  /// and once more shortly after if the language we need isn't in it yet (Edge adds its online
+  /// "Natural" voices a little later).
+  Future<List<Map>> _loadVoices(List<String> prefixes) async {
+    Future<List<Map>> fetch() async {
+      try {
+        return ((await _tts.getVoices) as List?)?.cast<Map>() ?? [];
+      } catch (_) {
+        return []; // keep the default voice
+      }
+    }
+
+    bool hasWanted(List<Map> vs) => vs.any((v) => prefixes.any('${v['locale']}'.toLowerCase().startsWith));
+
+    var voices = await fetch();
+    for (var i = 0; voices.isEmpty && i < 12; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      voices = await fetch();
+    }
+    if (!hasWanted(voices)) {
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      final again = await fetch();
+      if (again.length > voices.length) voices = again;
+    }
+    return voices;
   }
 
   /// Say one interviewer line. Urdu lines come as [text] (Urdu script) + [hindi] (the same
