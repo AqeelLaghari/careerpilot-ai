@@ -55,10 +55,11 @@ cd ..\frontend; flutter analyze; flutter test
 - **Pre-commit hooks** (`.pre-commit-config.yaml`): formatting, linting, secret scanning and a block on secret files before every commit.
 - **Dependabot**: weekly dependency update pull requests, tested by CI.
 - **Workflow**: feature branches, pull requests with a template, review, merge when CI is green. See [CONTRIBUTING.md](CONTRIBUTING.md).
-- **Planned** (see [ROADMAP.md](ROADMAP.md)): automatic deployment to Hugging Face Spaces and Firebase Hosting, APK builds on GitHub Releases, uptime monitoring.
+- **Continuous deployment**: merged backend changes go live on Azure Container Apps (OpenID Connect login, no stored password), the web app on Firebase Hosting, and a version tag builds the signed Android APK as a GitHub Release. A nightly check calls `/health`.
+- **Hosting guide**: [deploy/HOSTING.md](deploy/HOSTING.md): demo mode, credit, renewing or moving the backend (one-command setup: `deploy/azure-setup.ps1`), laptop backup, custom domain.
 
 ## Privacy
-Video never leaves the browser (only "where you looked" letters are sent). Interview audio is deleted
+Video never leaves the browser or the phone (only "where you looked" letters are sent). Interview audio is deleted
 right after transcription. Names, universities, companies, emails and phone numbers are replaced with
 placeholders before any text is sent to Gemini. Secrets live only in git-ignored files and secret stores.
 
