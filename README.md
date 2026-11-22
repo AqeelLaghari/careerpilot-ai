@@ -62,6 +62,4 @@ Video never leaves the browser (only "where you looked" letters are sent). Inter
 right after transcription. Names, universities, companies, emails and phone numbers are replaced with
 placeholders before any text is sent to Gemini. Secrets live only in git-ignored files and secret stores.
 
-## Development tools
-Development was assisted by Claude Code (an AI coding assistant). Features were specified, reviewed and
-tested by the team.
+
