@@ -1,0 +1,70 @@
+# Uptime check and demo switch for the live backend on Azure Container Apps.
+#
+# - Every night (02:00 Pakistan time) it switches the server back to normal "sleep" mode (in case
+#   "awake" was left on after a demo) and calls /health on the live server. If the server does not
+#   answer, the run fails and GitHub emails the repository owner. (At night on purpose, so it can
+#   never switch "awake" off during a daytime demo.)
+#   Why once a day and not every 5 minutes (UptimeRobot): the server sleeps when nobody uses it,
+#   which is what keeps it inside the free student credit. Any request wakes it for ~5 minutes,
+#   so a check every 5 minutes would keep it awake all the time (~$50+ a month).
+# - Run it by hand (Actions > Uptime > Run workflow) to choose a mode:
+#     check  = just check the server now
+#     awake  = keep one copy always running (for a demo / the defense: no wake-up wait, ~$2-5 a day)
+#     sleep  = back to normal: sleeps when unused (costs almost nothing)
+name: Uptime
+
+on:
+  schedule:
+    - cron: "0 21 * * *"         # 21:00 UTC = 02:00 PKT
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "check / awake (demo day) / sleep (normal)"
+        type: choice
+        options: [check, awake, sleep]
+        default: check
+
+permissions:
+  contents: read
+  id-token: write                # OpenID Connect login to Azure (no stored password)
+
+env:
+  AZURE_APP: careerpilot-api
+  AZURE_RG: careerpilot-rg
+
+jobs:
+  uptime:
+    name: Health check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set mode
+        if: github.event_name == 'schedule' || inputs.mode == 'awake' || inputs.mode == 'sleep'
+        run: |
+          # the nightly run always goes back to sleep (the safety net for a forgotten "awake")
+          min=$([ "${{ inputs.mode }}" = "awake" ] && echo 1 || echo 0)
+          az containerapp update -n "$AZURE_APP" -g "$AZURE_RG" --min-replicas "$min" -o none
+          echo "### Mode: ${{ inputs.mode || 'sleep (nightly)' }} (minimum copies running: $min)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check /health
+        run: |
+          fqdn=$(az containerapp show -n "$AZURE_APP" -g "$AZURE_RG" --query properties.configuration.ingress.fqdn -o tsv)
+          # A sleeping server needs a minute or two to wake up (start + load the AI models).
+          for i in $(seq 1 30); do
+            start=$(date +%s)
+            if curl -fs --max-time 30 "https://$fqdn/health" > health.json; then
+              echo "Server answered (try $i, $(( $(date +%s) - start )) s)"; cat health.json; echo
+              grep -q '"firestore_connected":true' health.json || { echo "::error::Firestore is not connected"; exit 1; }
+              grep -q '"gemini_key_set":true' health.json || { echo "::error::Gemini key is missing"; exit 1; }
+              echo "### Backend is up" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::The backend did not answer /health within ~10 minutes"; exit 1
