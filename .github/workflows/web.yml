@@ -1,0 +1,69 @@
+# Continuous deployment of the web app: on every push to main (= a merged pull request) that
+# changes the frontend, the Flutter web app is built and published on Firebase Hosting (free):
+#   https://careerpilot-ai-762bb.web.app
+# Pull requests only build it (to catch build errors before merging).
+#
+# The app reads the backend address from config.json on the website (frontend/web/config.json),
+# so switching servers is a one-line change; API_URL below is only the fallback.
+name: Web
+
+on:
+  push:
+    branches: [main]
+    paths: ["frontend/**", ".github/workflows/web.yml"]
+  pull_request:
+    paths: ["frontend/**", ".github/workflows/web.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  API_URL: https://careerpilot-api.wittypebble-6c0ea672.uaenorth.azurecontainerapps.io
+
+jobs:
+  web:
+    name: Build web app (+ deploy from main)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.41.7"
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Build
+        run: |
+          flutter build web --release \
+            --dart-define=API_URL="$API_URL" \
+            --dart-define=CONFIG_URL=config.json
+          du -sh build/web | awk '{print "### Web app size: " $1}' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Deploy to Firebase Hosting
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: careerpilot-ai-762bb
+          channelId: live
+          entryPoint: frontend
+
+      - name: Check the live site
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          curl -fsS https://careerpilot-ai-762bb.web.app/ | grep -qi "<html"
+          curl -fsS https://careerpilot-ai-762bb.web.app/config.json
+          echo "### Live: https://careerpilot-ai-762bb.web.app" >> "$GITHUB_STEP_SUMMARY"
