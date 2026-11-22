@@ -19,8 +19,17 @@ without help. Every step uses **Windows PowerShell** on the laptop that has the 
 {"api_url": "https://careerpilot-api.wittypebble-6c0ea672.uaenorth.azurecontainerapps.io"}
 ```
 
-To move the backend anywhere, you change this one line (section 6). You do **not** rebuild the APK, and the
-domain does not change (the domain points to the website, not to the backend).
+To move the backend anywhere, only this line changes, and **the scripts change it for you** (they push it on
+a new branch and print the pull request link). The GitHub workflows read the address from this file too. You
+do **not** rebuild the APK, and the domain does not change (it points to the website, not to the backend).
+
+**The three scripts** (in `deploy\`, run from the repo folder in PowerShell):
+
+| Script | What it does |
+|---|---|
+| `azure-setup.ps1` | builds the whole backend on the Azure account you are logged in to, copies the keys, gives GitHub deploy access, switches the website + app to it |
+| `laptop-server.ps1` | runs the backend on this laptop with a free public tunnel, switches the website + app to it |
+| `set-backend-url.ps1 <address>` | only switches the website + app to an address (e.g. back to Azure) |
 
 **Files that are never in GitHub** (keep a copy on a USB drive or Google Drive):
 
@@ -82,7 +91,7 @@ Start with A. If renewal is refused, do B. Keep C as the backup for the defense 
    - **"Azure for Students" is Active again (same name, same ID):** nothing else to do. Open
      `<server address>/health` to confirm (wait a minute for it to wake up).
    - **You got a new subscription with a different ID:** the old server is gone with the old subscription.
-     Do **option B steps B2-B6** with your own login. That rebuilds everything in 20 minutes.
+     Do **option B steps B2-B7** with your own login. That rebuilds everything in 20 minutes.
 4. If it says you are not eligible: do option B with a teammate.
 
 ## 5. Option B: move to another Azure account (teammate's)
@@ -117,74 +126,53 @@ powershell -ExecutionPolicy Bypass -File deploy\azure-setup.ps1
 - It reads `backend\.env` and `backend\firebase-key.json` (they must be in the backend folder) and saves them
   as Azure secrets. Nothing secret is printed.
 - If it stops with "does not allow region 'uaenorth'": run it again with `-Location centralindia`.
-- At the end it prints a **DONE** box with 3 IDs and the **new server address**. Keep that window open.
+- At the end it prints a **DONE** box with **3 IDs**, then pushes the new address on a new branch and prints
+  **LAST STEP** with a pull request link. Keep the window open.
 
-### B5. Tell GitHub about the new account (only the repo owner can do this)
+### B5. Paste the 3 IDs into GitHub (only the repo owner can do this)
 GitHub → repo → **Settings** → **Secrets and variables** → **Actions** → for each of these three click the
 pencil (**Update**), paste the value from the DONE box, **Update secret**:
 - `AZURE_CLIENT_ID`
 - `AZURE_TENANT_ID`
 - `AZURE_SUBSCRIPTION_ID`
 
-From now on, merging backend changes deploys to the new account, and the nightly check watches it.
-
-### B6. Point the website and the app to the new server
-1. GitHub → repo → open `frontend/web/config.json` → click the **pencil** (Edit).
-2. Replace the address with the new one from the DONE box, e.g.
-   `{"api_url": "https://careerpilot-api.<something>.centralindia.azurecontainerapps.io"}`
-   (keep the quotes; no `/` at the end).
-3. **Commit changes...** → choose **Create a new branch for this commit and start a pull request** →
-   **Propose changes** → **Create pull request**.
-4. When the checks are green: **Squash and merge** → **Delete branch**.
-5. About 5 minutes later the **Web** action finishes. Open the website, press **Ctrl+F5**, log in, open a page
-   that needs the server (e.g. upload a CV). Phones: close the app completely and reopen it.
+### B6. Merge the address change
+Open the **LAST STEP** link → **Create pull request** → wait for green → **Squash and merge** →
+**Delete branch**. About 5 minutes later the **Web** action has published it. Open the website, press
+**Ctrl+F5**, log in, use a page that needs the server (e.g. upload a CV). Phones: close the app fully and
+reopen it.
 
 ### B7. Check
-- GitHub → **Actions** → **Uptime** → **Run workflow** (mode **check**) → green tick = the new server works.
-- Optional tidy-up: in the same pull request (or a later one) replace the old address in
-  `.github/workflows/web.yml` and `.github/workflows/android.yml` (`API_URL:` lines). It is only a fallback,
-  so this is not urgent.
-
-The old account needs nothing: when it is disabled its server simply disappears.
+GitHub → **Actions** → **Uptime** → **Run workflow** (mode **check**) → green tick = the new server works
+and GitHub can reach it. The old account needs nothing: when it is disabled its server simply disappears.
 
 ## 6. Option C: run the backend on the laptop (Cloudflare Tunnel, free, no account)
 
 Use this if Azure is not available, or as a backup on defense day. The laptop must stay **on, plugged in and
 connected to the internet** the whole time, with sleep turned off (Settings → System → Power → Never).
 
-### C1. One-time install
+### C1. Start it (one command)
 ```powershell
-winget install -e --id Cloudflare.cloudflared
+cd "C:\Users\Hp\Documents\CareerPilot AI"
+git switch main
+git pull
+powershell -ExecutionPolicy Bypass -File deploy\laptop-server.ps1
 ```
-Close and reopen PowerShell. Check: `cloudflared --version`.
+- The first time it installs **cloudflared** (Cloudflare's free tunnel tool).
+- It opens **two windows** (backend + tunnel). **Leave both open**; closing either stops the server.
+- It waits until the public address (`https://some-words.trycloudflare.com`) answers, then prints
+  **LAST STEP** with a pull request link: open it → **Create pull request** → green → **Squash and merge**.
+- **The address changes every time**, so run it on the day you need it (e.g. the morning of the defense).
 
-### C2. Start the backend (window 1)
-```powershell
-cd "C:\Users\Hp\Documents\CareerPilot AI\backend"
-.\.venv\Scripts\Activate.ps1
-$env:APP_ENV = "production"
-uvicorn app.main:app --host 127.0.0.1 --port 7860
-```
-Wait for `Application startup complete`. Leave this window open. Check http://localhost:7860/health in the
-browser.
+### C2. Stop it / go back to Azure
+- Stop: close the two windows.
+- Back to Azure: `powershell -ExecutionPolicy Bypass -File deploy\set-backend-url.ps1 <Azure address>` →
+  merge its pull request. (The Azure address: Azure portal → **careerpilot-api** → **Application Url**.)
 
-### C3. Open the tunnel (window 2)
-```powershell
-cloudflared tunnel --url http://localhost:7860
-```
-After a few seconds it prints a box with an address like `https://some-random-words.trycloudflare.com`.
-Leave this window open too. Check `<that address>/health` in the browser.
-
-### C4. Point the website and the app to it
-Do **step B6** with the trycloudflare address.
-- **The address changes every time you restart cloudflared**, so do this on the day you need it (e.g. the
-  morning of the defense) and don't close window 2.
-- Stop: press **Ctrl+C** in both windows.
-
-### C5. While running from the laptop
-The **Docker** deploy and the nightly **Uptime** check still talk to Azure and will fail (GitHub emails you).
-To silence them: GitHub → **Actions** → click **Uptime** → **...** (top right) → **Disable workflow**; the same
-for **Docker**. Turn them on again (**Enable workflow**) when you are back on Azure.
+### C3. While running from the laptop
+The **Docker** deploy and the nightly **Uptime** check still talk to Azure and fail if Azure is gone (GitHub
+emails you). To silence them: GitHub → **Actions** → **Uptime** → **...** (top right) → **Disable workflow**;
+the same for **Docker**. Turn them on again (**Enable workflow**) when you are back on Azure.
 
 ## 7. Your own domain (careerpilot.tech)
 

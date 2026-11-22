@@ -4,7 +4,8 @@
 # Pull requests only build it (to catch build errors before merging).
 #
 # The app reads the backend address from config.json on the website (frontend/web/config.json),
-# so switching servers is a one-line change; API_URL below is only the fallback.
+# so switching servers is a one-line change (deploy/set-backend-url.ps1). The same address is built
+# in as the fallback, read from that file below.
 name: Web
 
 on:
@@ -21,9 +22,6 @@ permissions:
 concurrency:
   group: web-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-
-env:
-  API_URL: https://careerpilot-api.wittypebble-6c0ea672.uaenorth.azurecontainerapps.io
 
 jobs:
   web:
@@ -43,6 +41,9 @@ jobs:
           cache: true
 
       - run: flutter pub get
+
+      - name: Backend address (from frontend/web/config.json, the only place it is written)
+        run: echo "API_URL=$(python3 -c "import json;print(json.load(open('web/config.json'))['api_url'])")" >> "$GITHUB_ENV"
 
       - name: Build
         run: |

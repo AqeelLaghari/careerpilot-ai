@@ -12,7 +12,8 @@
 #      (never printed, never sent anywhere else)
 #   3. waits until the server answers /health with Firestore connected
 #   4. lets GitHub Actions deploy to this account without a password (OpenID Connect)
-#   5. prints the 3 values to paste into GitHub secrets and the new server address
+#   5. points the website + app to the new server (changes frontend/web/config.json on a new branch
+#      and prints the pull request link) and prints the 3 values to paste into GitHub secrets
 #
 # Run it from the repo folder in PowerShell:
 #   powershell -ExecutionPolicy Bypass -File deploy\azure-setup.ps1
@@ -27,7 +28,8 @@ param(
     [string]$Repo = "AqeelLaghari/careerpilot-ai",
     [string]$DeployAppName = "careerpilot-github-deploy",
     [switch]$SkipGitHub,           # only create the server (no GitHub deploy access)
-    [switch]$Yes                   # do not ask "this subscription?"
+    [switch]$Yes,                  # do not ask "this subscription?"
+    [switch]$KeepUrl               # do not point the website/app to this server (for a test copy)
 )
 
 $ErrorActionPreference = "Stop"
@@ -182,12 +184,13 @@ Write-Host "GitHub can now deploy to '$ResourceGroup' (and nothing else)"
 
 Write-Host ""
 Write-Host "=================================== DONE ===================================" -ForegroundColor Green
-Write-Host "1) GitHub > repo > Settings > Secrets and variables > Actions > update these 3 secrets:"
+Write-Host "1) GitHub > repo > Settings > Secrets and variables > Actions > update these 3 secrets"
+Write-Host "   (pencil = Update, paste, Update secret):"
 Write-Host "     AZURE_CLIENT_ID        = $appId"
 Write-Host "     AZURE_TENANT_ID        = $($account.tenant)"
 Write-Host "     AZURE_SUBSCRIPTION_ID  = $($account.sub)"
-Write-Host "2) In GitHub, edit frontend/web/config.json so it says:"
-Write-Host "     {""api_url"": ""$url""}"
-Write-Host "   (commit it on a new branch, open the pull request, merge it when green)"
-Write-Host "3) Check: $url/health"
-Write-Host "Full guide: deploy\HOSTING.md"
+Write-Host "2) Server: $url/health"
+if ($KeepUrl) { Write-Host "(-KeepUrl: the website and app still use the old server)"; exit 0 }
+Write-Host ""
+Write-Host "==> Pointing the website and the app to the new server" -ForegroundColor Cyan
+& (Join-Path $PSScriptRoot "set-backend-url.ps1") -Url $url

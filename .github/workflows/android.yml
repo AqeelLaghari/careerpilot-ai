@@ -28,7 +28,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  API_URL: https://careerpilot-api.wittypebble-6c0ea672.uaenorth.azurecontainerapps.io
+  # The app reads the backend address from this file on the website at start-up, so a server move
+  # needs no new APK. The built-in fallback (API_URL) is read from frontend/web/config.json below.
   CONFIG_URL: https://careerpilot-ai-762bb.web.app/config.json
 
 jobs:
@@ -62,6 +63,9 @@ jobs:
           cache: true
 
       - run: flutter pub get
+
+      - name: Backend address (from frontend/web/config.json, the only place it is written)
+        run: echo "API_URL=$(python3 -c "import json;print(json.load(open('web/config.json'))['api_url'])")" >> "$GITHUB_ENV"
 
       - name: Signing key (from secrets, only on this runner)
         env:
