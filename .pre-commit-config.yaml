@@ -17,10 +17,10 @@ repos:
   - repo: local
     hooks:
       - id: no-secret-files
-        name: Block secret files (.env, Firebase key)
+        name: Block secret files (.env, Firebase key, Android signing key)
         language: fail
         entry: "Secret file staged! These must never be committed:"
-        files: '(^|/)(\.env|.*\.env|firebase-key\.json|.*service-account.*\.json|google-services\.json)$'
+        files: '(^|/)(\.env|.*\.env|firebase-key\.json|.*service-account.*\.json|google-services\.json|key\.properties|.*\.jks|.*\.keystore)$'
         exclude: '\.env\.example$'
 
   - repo: https://github.com/astral-sh/ruff-pre-commit

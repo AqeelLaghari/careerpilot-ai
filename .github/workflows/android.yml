@@ -1,0 +1,108 @@
+# Android app: builds the signed release APK and publishes it as a GitHub Release.
+#
+# Start a release in either way:
+#   - push a version tag:   git tag v1.0.0  then  git push origin v1.0.0
+#   - or Actions > Android > Run workflow, and type the version (e.g. 1.0.1)
+# The release gets the APK, its SHA-256 checksum and the notes from .github/release-notes/vX.Y.Z.md
+# (or GitHub's automatic list of changes if there is no notes file).
+#
+# The signing key never enters the repo: it is a GitHub secret (ANDROID_KEYSTORE_BASE64 +
+# ANDROID_KEY_PASSWORD), written to the runner only for the build. The same key signs every
+# version, so phones accept updates and Google login keeps working.
+name: Android
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, e.g. 1.0.1 (creates the tag v1.0.1)"
+        required: true
+
+permissions:
+  contents: write              # create the release and the tag
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
+env:
+  API_URL: https://careerpilot-api.wittypebble-6c0ea672.uaenorth.azurecontainerapps.io
+  CONFIG_URL: https://careerpilot-ai-762bb.web.app/config.json
+
+jobs:
+  apk:
+    name: Build signed APK + GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: v
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then v="${GITHUB_REF_NAME#v}"; else v="${{ inputs.version }}"; v="${v#v}"; fi
+          echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::Version must look like 1.0.0"; exit 1; }
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "tag=v$v" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.41.7"
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Signing key (from secrets, only on this runner)
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "::error::Secrets ANDROID_KEYSTORE_BASE64 / ANDROID_KEY_PASSWORD are missing"; exit 1
+          fi
+          echo "$KEYSTORE_B64" | base64 -d > android/app/release.jks
+          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=upload\nstoreFile=release.jks\n' \
+            "$KEY_PASSWORD" "$KEY_PASSWORD" > android/key.properties
+
+      - name: Build APK
+        run: |
+          flutter build apk --release \
+            --build-name="${{ steps.v.outputs.version }}" --build-number="${{ github.run_number }}" \
+            --dart-define=API_URL="$API_URL" --dart-define=CONFIG_URL="$CONFIG_URL"
+          apk="CareerPilot-AI-${{ steps.v.outputs.tag }}.apk"
+          mv build/app/outputs/flutter-apk/app-release.apk "$apk"
+          sha256sum "$apk" > "$apk.sha256"
+          ls -lh "$apk" | awk '{print "### APK size: " $5}' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove the signing key from the runner
+        if: always()
+        run: rm -f android/app/release.jks android/key.properties
+
+      - name: Release notes
+        id: notes
+        run: |
+          f="../.github/release-notes/${{ steps.v.outputs.tag }}.md"
+          if [ -f "$f" ]; then echo "file=.github/release-notes/${{ steps.v.outputs.tag }}.md" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.v.outputs.tag }}
+          name: CareerPilot AI ${{ steps.v.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          body_path: ${{ steps.notes.outputs.file }}
+          generate_release_notes: ${{ steps.notes.outputs.file == '' }}
+          files: |
+            frontend/CareerPilot-AI-${{ steps.v.outputs.tag }}.apk
+            frontend/CareerPilot-AI-${{ steps.v.outputs.tag }}.apk.sha256
