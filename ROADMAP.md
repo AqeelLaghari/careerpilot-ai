@@ -122,10 +122,10 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - [x] **Day 22**: **DevOps foundation** (see "DevOps" below): GitHub Actions CI (backend tests + coverage, flutter analyze/test, ruff + dart format, gitleaks secret scan), backend Dockerfile + docker-compose (image built in CI), pre-commit hooks (formatting, block .env / firebase-key), Dependabot, PR + issue templates, feature-branch + pull-request workflow, GitHub Projects board
 - [x] **Day 23**: **Accounts & profile**: new login / sign-up design, Continue with Google, password rules (live checklist + strength bar), forgot password, email verification, 3-step profile setup (student / graduate / professional, university, degree, semester or graduation year, city, target role, links), profile photo (resized on device, stored in Firestore: Firebase Storage is not free), "My profile" page; profile details pre-fill the questionnaire and the interviewer greeting
 - [x] **Day 24**: **New look**: design system (Inter/Poppins font, palette, cards, skeleton loading, empty states, animations, dark mode), left sidebar on web (photo, name, university) / bottom tabs on phone, profile dropdown menu (profile, target role, settings: theme / voice / language, help, log out with confirm), new dashboard (score tiles, "your next step", ATS score history chart, recent activity) = orchestrator synthesis with live refresh; AI bullet rewriter button (Gemini fast, on click only)
-- [ ] **Day 25**: Restyle Resume, Career, Jobs, Interview and the report in the new look
+- [x] **Day 25**: Restyle Resume, Career, Jobs, Interview and the report in the new look
 - [ ] **Day 26**: Evaluation: parsing F1 on 25 labelled resumes (needs non-tech CVs); FAISS latency; WebSocket / interviewer latency
-- [ ] **Day 27**: **Urdu interviews** (full feature, see "Live video interview") + error handling / bug fixing
-- [ ] **Day 28**: **CD backend**: Docker image auto-deployed to Azure Container Apps by GitHub Actions on push to main (image on GitHub Container Registry, Azure login by OpenID Connect, app keys as Azure secrets; Hugging Face Spaces became paid for Docker apps in 2026), /debug endpoints off in production, structured logs, UptimeRobot monitoring of /health
+- [x] **Day 27**: **Urdu interviews** (full feature, see "Live video interview") + error handling / bug fixing
+- [x] **Day 28**: **CD backend**: Docker image auto-deployed to Azure Container Apps by GitHub Actions on push to main (image on GitHub Container Registry, Azure login by OpenID Connect, app keys as Azure secrets; Hugging Face Spaces became paid for Docker apps in 2026), /debug endpoints off in production, structured logs, daily /health check by GitHub Actions with email on failure + awake/sleep switch for demo days (not UptimeRobot every 5 min: it would keep the server from sleeping and use up the credit)
 - [ ] **Day 29**: **CD web + mobile**: auto-deploy to Firebase Hosting; Android APK built by GitHub Actions and attached to a GitHub Release (tag v1.0.0, release notes)
 - [ ] **Day 30**: Pilot test with 5 to 10 classmates (Google Form feedback)
 - [ ] **Day 31**: Fix pilot feedback
@@ -138,7 +138,7 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - **CD:** main → Azure Container Apps (backend) and Firebase Hosting (web); tag vX.Y.Z → APK built and attached to a GitHub Release.
 - **Workflow:** feature branches → pull request → CI must pass → review → merge; PR / issue templates; GitHub Projects board; semantic versioning; Dependabot updates. Branch protection needs a public repo (free) or a paid plan.
 - **Quality and security:** pre-commit hooks (format, block secrets), secret scanning, secrets only in GitHub / HF secret stores and git-ignored files.
-- **Monitoring:** UptimeRobot on /health, structured logs, request timing; debug endpoints disabled in production.
+- **Monitoring:** daily /health check (GitHub Actions, email on failure), structured logs, request timing; debug endpoints disabled in production.
 - **Docs:** pipeline diagram, screenshots of pipeline runs, DevOps section in the report.
 
 ## Future work (not in this FYP; for the report's "Future work" section)
