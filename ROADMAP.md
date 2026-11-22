@@ -126,7 +126,7 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - [ ] **Day 26**: Evaluation: parsing F1 on 25 labelled resumes (needs non-tech CVs); FAISS latency; WebSocket / interviewer latency
 - [x] **Day 27**: **Urdu interviews** (full feature, see "Live video interview") + error handling / bug fixing
 - [x] **Day 28**: **CD backend**: Docker image auto-deployed to Azure Container Apps by GitHub Actions on push to main (image on GitHub Container Registry, Azure login by OpenID Connect, app keys as Azure secrets; Hugging Face Spaces became paid for Docker apps in 2026), /debug endpoints off in production, structured logs, daily /health check by GitHub Actions with email on failure + awake/sleep switch for demo days (not UptimeRobot every 5 min: it would keep the server from sleeping and use up the credit)
-- [ ] **Day 29**: **CD web + mobile**: auto-deploy to Firebase Hosting; Android APK built by GitHub Actions and attached to a GitHub Release (tag v1.0.0, release notes)
+- [x] **Day 29**: **CD web + mobile**: auto-deploy to Firebase Hosting (https://careerpilot-ai-762bb.web.app); Android APK built and signed by GitHub Actions and attached to a GitHub Release (tag v1.0.0, release notes, SHA-256 checksum); both apps read the backend address from config.json on the website, so the server can be switched without rebuilding
 - [ ] **Day 30**: Pilot test with 5 to 10 classmates (Google Form feedback)
 - [ ] **Day 31**: Fix pilot feedback
 - [ ] **Day 32**: README (with CI badges), architecture + **CI/CD pipeline diagrams**, results tables for the report
