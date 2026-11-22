@@ -1,5 +1,6 @@
 # CareerPilot AI backend: one container with FastAPI + all the AI models.
-# The same image runs locally (docker compose), in CI (smoke test) and on Hugging Face Spaces.
+# The same image runs locally (docker compose), in CI (smoke test) and on Azure Container Apps
+# (deployed by .github/workflows/docker.yml on every merge into main).
 #
 #   docker build -t careerpilot-backend backend
 #   docker run -p 7860:7860 --env-file backend/.env careerpilot-backend
@@ -23,7 +24,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends libgomp1 curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Hugging Face Spaces runs containers as user 1000; never run as root
+# Run as an ordinary user (uid 1000), never as root
 RUN useradd --create-home --uid 1000 user
 WORKDIR /home/user/app
 
@@ -44,6 +45,10 @@ RUN python -c "from sentence_transformers import SentenceTransformer as S; S('se
 # 3) The application code (changes most often, so it comes last)
 COPY --chown=user:user . .
 RUN mkdir -p data/raw
+
+# Which git commit this image was built from (shown by /health); last, so it never breaks the cache
+ARG GIT_SHA=dev
+ENV GIT_SHA=${GIT_SHA}
 
 EXPOSE 7860
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \

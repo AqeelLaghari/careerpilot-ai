@@ -1,5 +1,11 @@
 # Builds the backend Docker image and smoke-tests it: the container must start and answer
 # /health, and the debug endpoints must not exist in production. Runs when backend files change.
+#
+# Continuous deployment: on a push to main (= a merged pull request) the tested image is pushed
+# to GitHub Container Registry and the Azure Container App is switched to it, then the live
+# /health is checked. Azure login uses OpenID Connect (no password stored anywhere): Azure trusts
+# GitHub tokens for this repository's main branch only. The app's own keys (Gemini, Firebase)
+# are Container App secrets on Azure and never pass through GitHub.
 name: Docker
 
 on:
@@ -15,7 +21,12 @@ permissions:
 
 concurrency:
   group: docker-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}   # never stop a deployment half way
+
+env:
+  IMAGE: ghcr.io/aqeellaghari/careerpilot-backend
+  AZURE_APP: careerpilot-api
+  AZURE_RG: careerpilot-rg
 
 jobs:
   build:
@@ -31,8 +42,9 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: backend
-          load: true             # keep it on the runner for the smoke test (not pushed anywhere)
+          load: true             # keep it on the runner for the smoke test
           tags: careerpilot-backend:ci
+          build-args: GIT_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -65,3 +77,70 @@ jobs:
       - name: Container logs
         if: always()
         run: docker logs api 2>&1 | tail -n 60
+
+  deploy:
+    name: Deploy to Azure
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment:
+      name: production
+      url: ${{ steps.url.outputs.url }}
+    permissions:
+      contents: read
+      packages: write        # push the image to ghcr.io
+      id-token: write        # OpenID Connect login to Azure
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image (same layers as the tested build, from the cache)
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:latest
+          build-args: GIT_SHA=${{ github.sha }}
+          cache-from: type=gha
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Switch the Container App to the new image
+        run: |
+          az containerapp ingress update -n "$AZURE_APP" -g "$AZURE_RG" --target-port 7860 -o none
+          az containerapp update -n "$AZURE_APP" -g "$AZURE_RG" \
+            --image "$IMAGE:${{ github.sha }}" --revision-suffix "g${GITHUB_SHA::7}" -o none
+
+      - name: Live URL
+        id: url
+        run: |
+          fqdn=$(az containerapp show -n "$AZURE_APP" -g "$AZURE_RG" --query properties.configuration.ingress.fqdn -o tsv)
+          echo "url=https://$fqdn" >> "$GITHUB_OUTPUT"
+
+      - name: Check the live server
+        run: |
+          # The app sleeps when unused; the first request wakes it (image pull + model loading).
+          for i in $(seq 1 60); do
+            if curl -fs --max-time 20 "${{ steps.url.outputs.url }}/health" > health.json \
+               && grep -q "\"commit\":\"${GITHUB_SHA}\"" health.json; then
+              echo "Live after ${i} tries"; cat health.json
+              echo "### Deployed: ${{ steps.url.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "The new version did not answer /health in 10 minutes"; exit 1

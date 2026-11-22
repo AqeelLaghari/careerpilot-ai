@@ -19,6 +19,9 @@ ADMIN_UIDS = {u.strip() for u in os.getenv("ADMIN_UIDS", "").split(",") if u.str
 # "development" on laptops; the Docker image sets "production" (debug endpoints are then switched off)
 APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
 APP_VERSION = os.getenv("APP_VERSION", "0.3.0")
+# Git commit the Docker image was built from (set by GitHub Actions); /health shows it so the
+# deployment can check that the new version is the one answering.
+GIT_SHA = os.getenv("GIT_SHA", "dev").strip()
 # Email/password accounts created on or after this date must verify their email (Day 23);
 # older test accounts keep working. Google accounts are always verified by Google.
 VERIFY_EMAIL_FROM = os.getenv("VERIFY_EMAIL_FROM", "2026-11-16")

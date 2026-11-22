@@ -16,7 +16,7 @@ Tick each box when it's done and committed to git.
 | OpenAI Whisper | `faster-whisper` (same Whisper models, runs free on CPU) | No API cost |
 | Gemini/OpenAI API | Gemini API free tier | $0 |
 | MediaPipe Face Mesh on mobile + web | MediaPipe Face Landmarker (iris) on **Flutter Web**. Mobile gets every feature except eye tracking | MediaPipe iris tracking has no stable Flutter mobile plugin. Web gives the panel a full demo |
-| AWS/GCP deployment | Backend on Hugging Face Spaces (Docker, free 16 GB RAM), web app on Firebase Hosting, Android APK | Free |
+| AWS/GCP deployment | Backend on Azure Container Apps (Docker, Azure for Students credit, no card; scales to zero when unused), web app on Firebase Hosting, Android APK | Free |
 
 ---
 
@@ -125,7 +125,7 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - [ ] **Day 25**: Restyle Resume, Career, Jobs, Interview and the report in the new look
 - [ ] **Day 26**: Evaluation: parsing F1 on 25 labelled resumes (needs non-tech CVs); FAISS latency; WebSocket / interviewer latency
 - [ ] **Day 27**: **Urdu interviews** (full feature, see "Live video interview") + error handling / bug fixing
-- [ ] **Day 28**: **CD backend**: Docker image auto-deployed to Hugging Face Spaces by GitHub Actions on push to main (secrets in GitHub / HF), /debug endpoints off in production, structured logs, UptimeRobot monitoring of /health
+- [ ] **Day 28**: **CD backend**: Docker image auto-deployed to Azure Container Apps by GitHub Actions on push to main (image on GitHub Container Registry, Azure login by OpenID Connect, app keys as Azure secrets; Hugging Face Spaces became paid for Docker apps in 2026), /debug endpoints off in production, structured logs, UptimeRobot monitoring of /health
 - [ ] **Day 29**: **CD web + mobile**: auto-deploy to Firebase Hosting; Android APK built by GitHub Actions and attached to a GitHub Release (tag v1.0.0, release notes)
 - [ ] **Day 30**: Pilot test with 5 to 10 classmates (Google Form feedback)
 - [ ] **Day 31**: Fix pilot feedback
@@ -134,8 +134,8 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 
 ## DevOps (decided 15 Nov 2026; the team's DevOps member does the hands-on parts from his own GitHub account)
 - **CI (GitHub Actions, free):** every push / pull request runs pytest with coverage, flutter analyze + test, ruff and dart format checks, gitleaks; status badges in the README.
-- **Containers:** backend Dockerfile (Python 3.11, Whisper, spaCy, SBERT models) + docker-compose for one-command local runs; the same image deploys to Hugging Face Spaces.
-- **CD:** main → Hugging Face Spaces (backend) and Firebase Hosting (web); tag vX.Y.Z → APK built and attached to a GitHub Release.
+- **Containers:** backend Dockerfile (Python 3.11, Whisper, spaCy, SBERT models) + docker-compose for one-command local runs; the same image deploys to Azure Container Apps.
+- **CD:** main → Azure Container Apps (backend) and Firebase Hosting (web); tag vX.Y.Z → APK built and attached to a GitHub Release.
 - **Workflow:** feature branches → pull request → CI must pass → review → merge; PR / issue templates; GitHub Projects board; semantic versioning; Dependabot updates. Branch protection needs a public repo (free) or a paid plan.
 - **Quality and security:** pre-commit hooks (format, block secrets), secret scanning, secrets only in GitHub / HF secret stores and git-ignored files.
 - **Monitoring:** UptimeRobot on /health, structured logs, request timing; debug endpoints disabled in production.
