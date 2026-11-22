@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 
@@ -180,7 +181,11 @@ class _AnswerScreenState extends State<AnswerScreen> {
 
   Future<void> _record() async {
     if (!await _recorder.hasPermission()) {
-      setState(() => _message = 'Microphone access is blocked. Allow the microphone for this site and try again.');
+      setState(
+        () => _message = kIsWeb
+            ? 'Microphone access is blocked. Allow the microphone for this site and try again.'
+            : 'Microphone access is blocked. Open Settings > Apps > CareerPilot AI > Permissions, allow the microphone, and try again.',
+      );
       return;
     }
     setState(() {

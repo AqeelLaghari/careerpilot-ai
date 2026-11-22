@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -108,7 +109,11 @@ class _LiveInterviewScreenState extends State<LiveInterviewScreen> {
     }
     await camera;
     if (!await _recorder.hasPermission()) {
-      _fail('Microphone access is blocked. Allow the microphone for this site and try again.');
+      _fail(
+        kIsWeb
+            ? 'Microphone access is blocked. Allow the microphone for this site and try again.'
+            : 'Microphone access is blocked. Open Settings > Apps > CareerPilot AI > Permissions, allow the microphone, and try again.',
+      );
       return;
     }
     if (mounted) setState(() => _stage = _Stage.lobby);
