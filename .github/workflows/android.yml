@@ -75,15 +75,17 @@ jobs:
           printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=upload\nstoreFile=release.jks\n' \
             "$KEY_PASSWORD" "$KEY_PASSWORD" > android/key.properties
 
-      - name: Build APK
+      - name: Build APKs (one per processor type, so each download is about half the size)
         run: |
-          flutter build apk --release \
+          flutter build apk --release --split-per-abi --target-platform android-arm64,android-arm \
             --build-name="${{ steps.v.outputs.version }}" --build-number="${{ github.run_number }}" \
             --dart-define=API_URL="$API_URL" --dart-define=CONFIG_URL="$CONFIG_URL"
-          apk="CareerPilot-AI-${{ steps.v.outputs.tag }}.apk"
-          mv build/app/outputs/flutter-apk/app-release.apk "$apk"
-          sha256sum "$apk" > "$apk.sha256"
-          ls -lh "$apk" | awk '{print "### APK size: " $5}' >> "$GITHUB_STEP_SUMMARY"
+          tag="${{ steps.v.outputs.tag }}"
+          out=build/app/outputs/flutter-apk
+          mv "$out/app-arm64-v8a-release.apk" "CareerPilot-AI-$tag.apk"               # almost every phone
+          mv "$out/app-armeabi-v7a-release.apk" "CareerPilot-AI-$tag-older-phones.apk" # old 32-bit phones
+          sha256sum CareerPilot-AI-$tag*.apk > "CareerPilot-AI-$tag.sha256"
+          ls -lh CareerPilot-AI-$tag*.apk | awk '{print "### " $9 ": " $5}' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Remove the signing key from the runner
         if: always()
@@ -105,4 +107,5 @@ jobs:
           generate_release_notes: ${{ steps.notes.outputs.file == '' }}
           files: |
             frontend/CareerPilot-AI-${{ steps.v.outputs.tag }}.apk
-            frontend/CareerPilot-AI-${{ steps.v.outputs.tag }}.apk.sha256
+            frontend/CareerPilot-AI-${{ steps.v.outputs.tag }}-older-phones.apk
+            frontend/CareerPilot-AI-${{ steps.v.outputs.tag }}.sha256

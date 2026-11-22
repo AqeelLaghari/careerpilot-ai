@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import '../../services/camera/face_camera.dart';
@@ -41,8 +42,13 @@ class _CameraCheckScreenState extends State<CameraCheckScreen> {
       setState(
         () => _problem = switch (r) {
           'NotAllowedError' =>
-            'Camera access is blocked. Click the camera icon in the address bar, allow it, and reload.',
-          'NotFoundError' => 'No camera was found. Connect a webcam and try again.',
+            kIsWeb
+                ? 'Camera access is blocked. Click the camera icon in the address bar, allow it, and reload.'
+                : 'Camera access is blocked. Open Settings > Apps > CareerPilot AI > Permissions, allow the camera, and try again.',
+          'NotFoundError' =>
+            kIsWeb
+                ? 'No camera was found. Connect a webcam and try again.'
+                : 'No front camera was found on this phone.',
           'NotReadableError' => 'The camera is being used by another app (Zoom, Teams…). Close it and try again.',
           'unsupported' => 'Camera check works in the web app for now.',
           _ => 'The camera could not start ($r).',
@@ -73,7 +79,7 @@ class _CameraCheckScreenState extends State<CameraCheckScreen> {
                 children: [
                   Text(
                     'Sit so your face is in the middle, with light in front of you. '
-                    'The video stays on your computer; only eye-contact numbers are used.',
+                    'The video stays on your ${kIsWeb ? 'computer' : 'phone'}; only eye-contact numbers are used.',
                     style: TextStyle(color: AppColors.textMuted),
                   ),
                   const SizedBox(height: 12),

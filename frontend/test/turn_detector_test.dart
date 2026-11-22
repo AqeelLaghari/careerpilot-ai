@@ -31,7 +31,38 @@ void main() {
       expect(d.feed(0.01, 100), isNull); // 2.5 s thinking pause
     }
     d.feed(0.3, 100);
-    expect(d.quietMs, 0);
+    expect(d.quietMs, greaterThan(0)); // 0.1 s of sound: not yet sure it is speech
+    d.feed(0.3, 100);
+    d.feed(0.3, 100);
+    expect(d.quietMs, 0); // 0.3 s: speaking again
+  });
+
+  test('short noises after the answer (clicks, breaths, a phone mic boosting the room) do not keep it listening', () {
+    final d = TurnDetector();
+    for (var i = 0; i < 10; i++) {
+      d.feed(0.01, 100); // the room before the answer
+    }
+    for (var i = 0; i < 20; i++) {
+      d.feed(0.3, 100); // 2 s answer
+    }
+    expect(d.hasSpoken, isTrue);
+    String? r;
+    var ms = 0;
+    for (var i = 1; i <= 50 && r == null; i++) {
+      r = d.feed(i % 4 == 0 ? 0.3 : 0.01, 100); // a 0.1 s noise burst every 0.4 s
+      ms += 100;
+    }
+    expect(r, 'end'); // the noises never stopped, but the answer still ended
+    expect(ms, 3000); // after exactly 3 s, as in a silent room
+  });
+
+  test('short noises before answering are not an answer', () {
+    final d = TurnDetector();
+    for (var i = 0; i < 40; i++) {
+      d.feed(i.isEven ? 0.3 : 0.01, 100); // clicking / rustling, never 0.25 s long
+    }
+    expect(d.hasSpoken, isFalse);
+    expect(d.spokenMs, 0);
   });
 
   test('a noisy room raises the speech threshold; a cough is not an answer', () {

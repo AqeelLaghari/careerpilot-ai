@@ -15,7 +15,7 @@ Tick each box when it's done and committed to git.
 | Redis + Firestore blackboard | Firestore (persistent) + in-process Python cache with the same interface | Redis needs a paid or self-hosted server. We can swap it in later without changing agent code |
 | OpenAI Whisper | `faster-whisper` (same Whisper models, runs free on CPU) | No API cost |
 | Gemini/OpenAI API | Gemini API free tier | $0 |
-| MediaPipe Face Mesh on mobile + web | MediaPipe Face Landmarker (iris) on **Flutter Web**. Mobile gets every feature except eye tracking | MediaPipe iris tracking has no stable Flutter mobile plugin. Web gives the panel a full demo |
+| MediaPipe Face Mesh on mobile + web | MediaPipe Face Landmarker (iris) on **Flutter Web** and, since Day 29A, natively on **Android** (same model and gaze maths) | MediaPipe iris tracking has no stable Flutter mobile plugin. Web gives the panel a full demo |
 | AWS/GCP deployment | Backend on Azure Container Apps (Docker, Azure for Students credit, no card; scales to zero when unused), web app on Firebase Hosting, Android APK | Free |
 
 ---
@@ -127,6 +127,8 @@ Sources: classmates (with permission) and the Kaggle "Resume Dataset" (Snehaan B
 - [x] **Day 27**: **Urdu interviews** (full feature, see "Live video interview") + error handling / bug fixing
 - [x] **Day 28**: **CD backend**: Docker image auto-deployed to Azure Container Apps by GitHub Actions on push to main (image on GitHub Container Registry, Azure login by OpenID Connect, app keys as Azure secrets; Hugging Face Spaces became paid for Docker apps in 2026), /debug endpoints off in production, structured logs, daily /health check by GitHub Actions with email on failure + awake/sleep switch for demo days (not UptimeRobot every 5 min: it would keep the server from sleeping and use up the credit)
 - [x] **Day 29**: **CD web + mobile**: auto-deploy to Firebase Hosting (https://careerpilot-ai-762bb.web.app); Android APK built and signed by GitHub Actions and attached to a GitHub Release (tag v1.0.0, release notes, SHA-256 checksum); both apps read the backend address from config.json on the website, so the server can be switched without rebuilding
+- [x] **Day 29A**: **Eye contact on Android**: front camera (CameraX) + MediaPipe Face Landmarker for Android, the same model and the web gaze maths ported to Dart (face_math.dart, tested to give the same numbers as the web); camera check, live eye-contact light and presence score on the phone; video never leaves the phone
+- [x] **Day 29B**: Phone polish + release v1.1.0: app icon and start-up screen with the logo; the live interview ignores short noises (a sound must last 0.25 s to count as speech) so a phone mic no longer keeps listening; phone-specific permission messages; release APKs split per processor type (about half the download)
 - [ ] **Day 30**: Pilot test with 5 to 10 classmates (Google Form feedback)
 - [ ] **Day 31**: Fix pilot feedback
 - [ ] **Day 32**: README (with CI badges), architecture + **CI/CD pipeline diagrams**, results tables for the report

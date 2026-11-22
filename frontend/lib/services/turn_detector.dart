@@ -5,6 +5,11 @@
 /// between words, so this finds the room's level even while the user talks). A fan or a
 /// noisy room therefore doesn't count as speech: speech = louder than
 /// max(minLevel, noise x noiseFactor). minLevel is low on purpose so a soft voice counts.
+///
+/// A sound only counts as speech once it lasts [minBurstMs] without a break. Phone microphones
+/// turn their sensitivity up in silence, so clicks, breaths, rustling and short noise bursts
+/// cross the threshold for a moment; before this rule each of them restarted the quiet timer and
+/// the interview kept listening long after the user had finished. Words are longer than that.
 class TurnDetector {
   TurnDetector({
     this.silenceMs = 3000,
@@ -13,6 +18,7 @@ class TurnDetector {
     this.minLevel = 0.035,
     this.noiseFactor = 2.0,
     this.windowMs = 4000,
+    this.minBurstMs = 250,
   });
 
   final int silenceMs; // quiet this long after speaking = end of the answer
@@ -21,12 +27,14 @@ class TurnDetector {
   final double minLevel;
   final double noiseFactor;
   final int windowMs;
+  final int minBurstMs; // a loud sound shorter than this is noise, not speech
   final List<(double, int)> _recent = []; // (level, ms) of the last windowMs
 
   double noise = 0.01;
   int spokenMs = 0;
   int quietMs = 0;
   int elapsedMs = 0;
+  int _burstMs = 0; // how long the current loud sound has lasted so far
   bool _ended = false;
   bool _warned = false;
 
@@ -53,9 +61,16 @@ class TurnDetector {
     }
     noise = _recent.map((e) => e.$1).reduce((a, b) => a < b ? a : b);
     if (level >= threshold) {
-      spokenMs += ms;
-      quietMs = 0;
+      final before = _burstMs;
+      _burstMs += ms;
+      if (_burstMs >= minBurstMs) {
+        spokenMs += before < minBurstMs ? _burstMs : ms; // the whole sound counts once it is speech
+        quietMs = 0;
+      } else {
+        quietMs += ms; // too short so far: still quiet
+      }
     } else {
+      _burstMs = 0;
       quietMs += ms;
     }
     if (hasSpoken && quietMs >= silenceMs) {
@@ -72,6 +87,7 @@ class TurnDetector {
   void reset() {
     spokenMs = 0;
     quietMs = 0;
+    _burstMs = 0;
     elapsedMs = 0;
     _ended = false;
     _warned = false;
