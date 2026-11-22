@@ -31,7 +31,7 @@ android {
         applicationId = "com.careerpilot.careerpilot"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = maxOf(24, flutter.minSdkVersion)   // MediaPipe needs Android 7.0+
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -51,8 +51,21 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName(if (keyProperties.isEmpty) "debug" else "release")
+            // keep MediaPipe's native-bound classes when the release build is shrunk
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+}
+
+// Live interview on Android: front camera (CameraX) + Google's MediaPipe Face Landmarker,
+// the same face model as the web app (see FaceTracker.kt).
+dependencies {
+    val camerax = "1.4.2"
+    implementation("androidx.camera:camera-core:$camerax")
+    implementation("androidx.camera:camera-camera2:$camerax")
+    implementation("androidx.camera:camera-lifecycle:$camerax")
+    implementation("androidx.camera:camera-view:$camerax")
+    implementation("com.google.mediapipe:tasks-vision:0.10.14")
 }
 
 kotlin {

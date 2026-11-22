@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Interview Coach: record spoken answers and stream them to the server -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- Interview Coach: front camera for eye contact (analysed on the phone, never uploaded) -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <uses-feature android:name="android.hardware.camera.front" android:required="false"/>
     <!-- Talk to the backend -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
