@@ -7,13 +7,15 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth import current_uid
-from app.config import APP_ENV, APP_VERSION
+from app.config import APP_ENV, APP_VERSION, GIT_SHA
 from app.deps import blackboard
+from app.logging_setup import route_uvicorn_logs
+from app.logging_setup import setup as setup_logging
 from app.orchestrator.blackboard import SECTIONS
 from app.routers import career, dashboard, interview, jobs, live_interview, market, profile, questionnaire, resume, roadmap
 from app.services import llm
 
-logging.basicConfig(level=logging.INFO)
+setup_logging(production=APP_ENV == "production")
 
 def _warm_up():
     """Load the SBERT model, role index and spaCy in the background at startup, so the
@@ -42,6 +44,8 @@ def _warm_up():
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    if APP_ENV == "production":
+        route_uvicorn_logs()                         # request logs as JSON too
     threading.Thread(target=_warm_up, daemon=True).start()
     yield
 
@@ -75,6 +79,7 @@ def health():
     return {
         "status": "ok",
         "version": APP_VERSION,
+        "commit": GIT_SHA,
         "environment": APP_ENV,
         "firestore_connected": blackboard.persistent,
         "gemini_key_set": llm.available(),
