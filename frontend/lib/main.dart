@@ -17,7 +17,7 @@ import 'widgets/brand.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: currentFirebaseOptions);
+  await Future.wait([Firebase.initializeApp(options: currentFirebaseOptions), loadServerConfig()]);
   runApp(const CareerPilotApp());
 }
 
