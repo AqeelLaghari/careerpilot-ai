@@ -1,7 +1,9 @@
 # Uptime check and demo switch for the live backend on Azure Container Apps.
 #
-# - Every morning (08:00 Pakistan time) it calls /health on the live server. If the server does
-#   not answer, the run fails and GitHub emails the repository owner.
+# - Every night (02:00 Pakistan time) it switches the server back to normal "sleep" mode (in case
+#   "awake" was left on after a demo) and calls /health on the live server. If the server does not
+#   answer, the run fails and GitHub emails the repository owner. (At night on purpose, so it can
+#   never switch "awake" off during a daytime demo.)
 #   Why once a day and not every 5 minutes (UptimeRobot): the server sleeps when nobody uses it,
 #   which is what keeps it inside the free student credit. Any request wakes it for ~5 minutes,
 #   so a check every 5 minutes would keep it awake all the time (~$50+ a month).
@@ -13,7 +15,7 @@ name: Uptime
 
 on:
   schedule:
-    - cron: "0 3 * * *"          # 03:00 UTC = 08:00 PKT
+    - cron: "0 21 * * *"         # 21:00 UTC = 02:00 PKT
   workflow_dispatch:
     inputs:
       mode:
@@ -43,11 +45,12 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Set mode
-        if: inputs.mode == 'awake' || inputs.mode == 'sleep'
+        if: github.event_name == 'schedule' || inputs.mode == 'awake' || inputs.mode == 'sleep'
         run: |
+          # the nightly run always goes back to sleep (the safety net for a forgotten "awake")
           min=$([ "${{ inputs.mode }}" = "awake" ] && echo 1 || echo 0)
           az containerapp update -n "$AZURE_APP" -g "$AZURE_RG" --min-replicas "$min" -o none
-          echo "### Mode: ${{ inputs.mode }} (minimum copies running: $min)" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Mode: ${{ inputs.mode || 'sleep (nightly)' }} (minimum copies running: $min)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Check /health
         run: |
